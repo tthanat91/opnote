@@ -50,9 +50,17 @@ h3,h4,h5{margin:0}
 .badge{font-size:.72rem;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.18)}
 .badge.ok{background:#d8f0e3;color:#14512f}
 .badge.warn{background:#fbe6cf;color:#7d4207}
-.linkout{background:none;border:none;color:#cfe6e0;text-decoration:underline;
-  cursor:pointer;font-size:.74rem;padding:2px 0}
-.linkout:hover{color:#fff}
+/* who is signed in, with the way out right beside it */
+.userbox{display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);
+  border-radius:14px;padding:6px 6px 6px 13px;max-width:100%}
+.ub-txt{min-width:0;line-height:1.2}
+.ub-lab{display:block;font-size:.6rem;letter-spacing:.06em;opacity:.8;text-transform:uppercase}
+.ub-txt b{display:block;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ubMeta{display:block;font-size:.68rem;opacity:.88}
+.ub-out{flex:none;background:#fff;color:var(--brand);border:none;border-radius:10px;
+  padding:6px 11px;font-size:.7rem;font-weight:700;line-height:1.15;cursor:pointer}
+.ub-out:hover{background:#eaf4f1}
 #queueBadge{cursor:pointer}
 #queueBadge{display:none;background:#fbe6cf;color:#7d4207;font-size:.72rem;
   padding:3px 9px;border-radius:999px}
@@ -283,8 +291,14 @@ table.flow td{padding-top:4px;vertical-align:top}
 
   <header class="topbar">
     <div class="brand">Operative Note<small>บันทึกการผ่าตัด · Vajira Hospital</small></div>
-    <span id="userBadge" class="badge" style="display:none"></span>
-    <button id="btnSignOutTop" class="linkout" style="display:none" title="ออกจากระบบ / Sign out">ออกจากระบบ · Sign out</button>
+    <div id="userBox" class="userbox" style="display:none">
+      <div class="ub-txt">
+        <span class="ub-lab">ลงชื่อเข้าใช้ · Signed in as</span>
+        <b id="userBadge"></b>
+        <span id="ubMeta"></span>
+      </div>
+      <button type="button" id="btnSignOutTop" class="ub-out">ออกจากระบบ<br>Sign out</button>
+    </div>
     <span id="connBadge" class="badge">…</span>
     <button id="queueBadge" title="แตะเพื่อส่งข้อมูลค้าง / tap to upload"></button>
     <nav class="mainnav">
@@ -518,11 +532,11 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=l"></script>
-<script src="figures.js?v=l"></script>
-<script src="figures-original.js?v=l"></script>
-<script src="letterhead.js?v=l"></script>
-<script src="templates.js?v=l"></script>
-<script src="app.js?v=l"></script>
+<script src="config.js?v=m"></script>
+<script src="figures.js?v=m"></script>
+<script src="figures-original.js?v=m"></script>
+<script src="letterhead.js?v=m"></script>
+<script src="templates.js?v=m"></script>
+<script src="app.js?v=m"></script>
 </body>
 </html>

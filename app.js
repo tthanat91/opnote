@@ -46,7 +46,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02l';
+  var APP_BUILD = '2026-08-02m';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -308,15 +308,22 @@
     applyIdentity();
   }
 
+  var ROLE_LABEL = {
+    admin: 'ผู้ดูแลระบบ · admin',
+    full: 'บันทึกและแก้ไขได้ · full access',
+    readonly: 'ดูและพิมพ์เท่านั้น · read-only'
+  };
+
   function applyIdentity() {
-    var badge = $('#userBadge');
-    var label = me && (me.name || me.license);
-    if (label) {
-      badge.textContent = label + (me.role === 'readonly' ? ' · อ่านอย่างเดียว' : '');
-      badge.className = 'badge ' + (me.role === 'readonly' ? 'warn' : 'ok');
-      badge.style.display = '';
-    } else {
-      badge.style.display = 'none';
+    /* the name of whoever this device is signed in as, with Sign out beside
+       it — so nobody writes a note under a colleague's name by accident */
+    var known = me && (me.name || me.license);
+    $('#userBox').style.display = known ? '' : 'none';
+    if (known) {
+      $('#userBadge').textContent = me.name || me.license;
+      $('#ubMeta').textContent =
+        (me.name && me.license ? me.license + ' · ' : '') +
+        (ROLE_LABEL[me.role] || me.role || '');
     }
     /* read-only means exactly that: Search only. The New tab is hidden so a
        blank note cannot be started, but opening an existing note for
@@ -337,7 +344,6 @@
     $('#navSettings').style.display = admin ? '' : 'none';
     if (!admin && !$('#view-settings').classList.contains('hidden')) showView('new');
 
-    $('#btnSignOutTop').style.display = (me && (me.name || me.license)) ? '' : 'none';
   }
 
   function signOut() {
