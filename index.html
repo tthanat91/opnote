@@ -24,6 +24,8 @@ body{
 }
 button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none !important}
+body.locked .app{visibility:hidden}
+body.locked{overflow:hidden}
 .muted{color:var(--muted)}
 h3,h4,h5{margin:0}
 
@@ -277,6 +279,7 @@ table.flow td{padding-top:4px;vertical-align:top}
 
   <header class="topbar">
     <div class="brand">Operative Note<small>บันทึกการผ่าตัด · Vajira Hospital</small></div>
+    <span id="userBadge" class="badge" style="display:none"></span>
     <span id="connBadge" class="badge">…</span>
     <span id="queueBadge"></span>
     <nav class="mainnav">
@@ -342,6 +345,11 @@ table.flow td{padding-top:4px;vertical-align:top}
       <div class="step hidden" data-step="4">
         <div class="panel">
           <h3>ตรวจทานก่อนพิมพ์ <span class="en">Review, then print to A4 or save as PDF</span></h3>
+          <p class="muted" id="roNote" style="display:none">
+            รหัสของคุณใช้ดูและพิมพ์ซ้ำได้เท่านั้น บันทึกลงทะเบียนไม่ได้<br>
+            <span class="en">Your key is read-only: you may fill in and print, but not save to the
+            registry. Ask for a full key if you need to save.</span>
+          </p>
           <p class="muted" id="lockNote" style="display:none">
             บันทึกนี้เกิน 30 วัน แก้ไขไม่ได้ เปิดดูและพิมพ์ซ้ำได้เท่านั้น<br>
             <span class="en">This note is older than 30 days — read-only, reprint permitted.</span>
@@ -391,7 +399,7 @@ table.flow td{padding-top:4px;vertical-align:top}
           </div>
         </div>
         <div class="field">
-          <label class="flabel"><span class="th">รหัสผ่านของทีม</span><span class="en">Team passcode — stored on this device only</span></label>
+          <label class="flabel"><span class="th">รหัสเข้าใช้งานของคุณ</span><span class="en">Your access key — stored on this device only</span></label>
           <div class="fbody"><input type="password" id="setPass" autocomplete="current-password"></div>
         </div>
         <p>
@@ -399,6 +407,7 @@ table.flow td{padding-top:4px;vertical-align:top}
           <button class="btn ghost" id="btnTest">ทดสอบการเชื่อมต่อ · Test</button>
           <button class="btn ghost" id="btnReloadTpl">โหลดแบบฟอร์มใหม่ · Reload templates</button>
           <button class="btn ghost" id="btnFlush">ส่งข้อมูลค้าง · Upload pending</button>
+          <button class="btn ghost" id="btnSignOut">ออกจากระบบ · Sign out</button>
         </p>
         <p class="muted" id="tplInfo"></p>
         <div id="connDiag" class="diag"></div>
@@ -482,11 +491,13 @@ table.flow td{padding-top:4px;vertical-align:top}
 
 <div id="passGate" class="gate hidden">
   <div class="gatebox">
-    <h3>รหัสผ่านของทีม<span class="en">Team passcode</span></h3>
+    <h3>รหัสเข้าใช้งาน<span class="en">Access key</span></h3>
     <p class="gatehint">ใส่ครั้งเดียวต่อเครื่อง แล้วระบบจะจำไว้ให้<br>
-      <span class="en">Entered once per device, then remembered.</span></p>
+      ชื่อของคุณจะถูกเติมในช่อง “ผู้บันทึกรายงาน” โดยอัตโนมัติ<br>
+      <span class="en">Entered once per device, then remembered. Your name is filled into every
+      note you write.</span></p>
     <input type="password" id="passInput" autocomplete="current-password"
-           inputmode="text" placeholder="รหัสผ่าน / passcode">
+           inputmode="text" placeholder="เลขที่ใบประกอบวิชาชีพ หรือรหัสที่ได้รับ">
     <p id="passMsg" class="gatemsg"></p>
     <div class="gateact">
       <button type="button" class="btn ghost" id="passCancel">ยกเลิก · Cancel</button>
@@ -502,11 +513,11 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=h"></script>
-<script src="figures.js?v=h"></script>
-<script src="figures-original.js?v=h"></script>
-<script src="letterhead.js?v=h"></script>
-<script src="templates.js?v=h"></script>
-<script src="app.js?v=h"></script>
+<script src="config.js?v=j"></script>
+<script src="figures.js?v=j"></script>
+<script src="figures-original.js?v=j"></script>
+<script src="letterhead.js?v=j"></script>
+<script src="templates.js?v=j"></script>
+<script src="app.js?v=j"></script>
 </body>
 </html>

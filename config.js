@@ -20,7 +20,11 @@ window.OPNOTE_CONFIG = {
   /* Ends with /exec — from Deploy ▸ Manage deployments */
   scriptUrl: 'https://script.google.com/macros/s/AKfycbxLJUtruIkUmVUyerwdtwQNO6EbUDPzsbLkOWSKn_sW-oyrcCsTgr5oUDPFFVeWXs9m/exec',
 
-  /* Shown on the passcode dialog so colleagues know who to ask */
+  /* true  = ask for the access key as soon as the page opens (recommended)
+     false = let anyone fill in and print, and only ask when they save    */
+  requireLogin: true,
+
+  /* Shown on the sign-in dialog so colleagues know who to ask */
   contact: 'ติดต่อ อ.ธนัท / contact Dr Thanat for the passcode'
 
 };

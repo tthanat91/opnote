@@ -17,7 +17,8 @@
     draft: 'opnote.draft',
     queue: 'opnote.queue',
     prefs: 'opnote.prefs',
-    pass: 'opnote.pass'
+    pass: 'opnote.pass',
+    me: 'opnote.me'
   };
 
   /* config.js ships the Sheet URL with the app so a colleague only has to
@@ -41,15 +42,16 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02c';
+  var EXPECTED_BUILD = '2026-08-02d';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02h';
+  var APP_BUILD = '2026-08-02j';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
   var passcode = localStorage.getItem(LS.pass) || '';
+  var me = readJSON(LS.me, null);   /* { name, license, role } once identified */
   var TEMPLATES = readJSON(LS.tpl, null) || window.DEFAULT_TEMPLATES;
 
   /* =================== state =================== */
@@ -266,29 +268,87 @@
   function api(method, payload) {
     if (!scriptUrl) return Promise.reject(new Error('ยังไม่ได้ตั้งค่า URL / no script URL'));
     return attempt(method, payload).then(function (r) {
-      /* the script asked for a passcode — collect it, then try once more */
       if (r && r.ok === false && r.auth) {
+        /* a read-only key is a valid key — never re-prompt for it */
+        if (r.reason === 'readonly') {
+          if (me) { me.role = 'readonly'; writeJSON(LS.me, me); applyIdentity(); }
+          throw new Error(r.error);
+        }
+        if (r.reason === 'blocked') { forgetIdentity(); throw new Error(r.error); }
         return askPasscode(!!passcode).then(function (given) {
-          if (!given) throw new Error('ต้องใส่รหัสผ่านของทีม / a team passcode is required');
-          return attempt(method, payload);
+          if (!given) throw new Error('ต้องใส่รหัสเข้าใช้งาน / an access key is required');
+          return attempt(method, payload).then(function (r2) {
+            if (r2 && r2.ok !== false) loadIdentity();
+            return r2;
+          });
         });
       }
       return r;
     });
   }
 
+  /* =================== who is using this device =================== */
+
+  function loadIdentity() {
+    if (!scriptUrl || !passcode) { applyIdentity(); return Promise.resolve(null); }
+    return attempt('GET', { action: 'me' }).then(function (r) {
+      if (r && r.ok && r.user) {
+        me = r.user;
+        writeJSON(LS.me, me);
+        applyIdentity();
+      }
+      return me;
+    }).catch(function () { return null; });
+  }
+
+  function forgetIdentity() {
+    me = null; passcode = '';
+    localStorage.removeItem(LS.me);
+    localStorage.removeItem(LS.pass);
+    applyIdentity();
+  }
+
+  function applyIdentity() {
+    var badge = $('#userBadge');
+    var label = me && (me.name || me.license);
+    if (label) {
+      badge.textContent = label + (me.role === 'readonly' ? ' · อ่านอย่างเดียว' : '');
+      badge.className = 'badge ' + (me.role === 'readonly' ? 'warn' : 'ok');
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+    var ro = !!(me && me.role === 'readonly');
+    $('#btnSave').style.display = ro ? 'none' : '';
+    $('#roNote').style.display = ro ? '' : 'none';
+  }
+
+  /* the person holding the key is, by default, the person writing the note */
+  function applyMyName() {
+    if (me && me.name && !S.data.recorder) {
+      S.data.recorder = me.name;
+      var n = document.querySelector('[data-key="recorder"]');
+      if (n && !n.value) n.value = me.name;
+    }
+  }
+
   /* =================== passcode dialog =================== */
 
-  function askPasscode(wasWrong) {
+  /* opts.locked = a sign-in gate on opening: no way past it except a key.
+     Otherwise it is a re-prompt in the middle of a task and can be cancelled. */
+  function showGate(opts) {
+    opts = opts || {};
     return new Promise(function (resolve) {
       var gate = $('#passGate'), input = $('#passInput'), msg = $('#passMsg');
-      msg.textContent = wasWrong
-        ? 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่ / That passcode was not accepted. Please try again.'
+      msg.textContent = opts.wrong
+        ? 'รหัสไม่ถูกต้อง กรุณาลองใหม่ / That key was not accepted. Please try again.'
         : (SITE.contact || '');
-      msg.className = wasWrong ? 'gatemsg warn' : 'gatemsg';
+      msg.className = 'gatemsg' + (opts.wrong ? ' warn' : '');
       input.value = '';
+      $('#passCancel').style.display = opts.locked ? 'none' : '';
       gate.classList.remove('hidden');
-      setTimeout(function () { input.focus(); }, 60);
+      if (opts.locked) document.body.classList.add('locked');
+      setTimeout(function () { input.focus(); }, 80);
 
       function done(value) {
         gate.classList.add('hidden');
@@ -299,13 +359,68 @@
       }
       $('#passOk').onclick = function () {
         var v = input.value.trim();
-        if (!v) return;
+        if (!v) { input.focus(); return; }
         passcode = v;
         localStorage.setItem(LS.pass, v);
         done(true);
       };
       $('#passCancel').onclick = function () { done(false); };
       input.onkeydown = function (e) { if (e.key === 'Enter') $('#passOk').onclick(); };
+    });
+  }
+
+  function askPasscode(wasWrong) { return showGate({ wrong: wasWrong }); }
+
+  /* --- sign-in on opening ------------------------------------------------
+     Checks the key with the Sheet before letting anyone in. If the device
+     is simply offline the check cannot be made, and a previously accepted
+     key is honoured rather than locking a surgeon out of a form they only
+     want to fill in and print. */
+
+  function verifyKey() {
+    return attempt('GET', { action: 'me' }).then(function (r) {
+      if (r && r.ok && r.user) {
+        me = r.user; writeJSON(LS.me, me);
+        return 'ok';
+      }
+      if (r && r.auth) return r.reason === 'blocked' ? 'blocked' : 'bad';
+      return 'ok';
+    }).catch(function () { return 'offline'; });
+  }
+
+  function signIn(wrong) {
+    return showGate({ locked: true, wrong: wrong }).then(function () {
+      return verifyKey().then(function (res) {
+        if (res === 'ok') return unlock();
+        if (res === 'offline') {
+          toast('ออฟไลน์ ยังตรวจสอบรหัสไม่ได้ / Offline — key not verified yet', 'warn');
+          return unlock();
+        }
+        if (res === 'blocked') {
+          forgetIdentity();
+          return signIn(true);
+        }
+        passcode = '';
+        localStorage.removeItem(LS.pass);
+        return signIn(true);
+      });
+    });
+  }
+
+  function unlock() {
+    document.body.classList.remove('locked');
+    applyIdentity();
+    applyMyName();
+    return true;
+  }
+
+  function ensureAccess() {
+    if (!scriptUrl || SITE.requireLogin === false) return Promise.resolve(unlock());
+    if (!passcode) return signIn(false);
+    return verifyKey().then(function (res) {
+      if (res === 'ok' || res === 'offline') return unlock();
+      if (res === 'blocked') forgetIdentity();
+      return signIn(true);
     });
   }
 
@@ -1107,7 +1222,8 @@
     else localStorage.setItem(LS.url, scriptUrl);
     passcode = $('#setPass').value.trim();
     if (passcode) localStorage.setItem(LS.pass, passcode);
-    else localStorage.removeItem(LS.pass);
+    else { localStorage.removeItem(LS.pass); me = null; localStorage.removeItem(LS.me); }
+    applyIdentity();
     prefs.hospital1 = $('#setHosp1').value;
     prefs.hospital2 = $('#setHosp2').value;
     prefs.formCode = $('#setForm').value;
@@ -1195,7 +1311,7 @@
       S = newNote();
       S.data.op_date = todayISO();
       S.data.surgeon = prefs.surgeon;
-      S.data.recorder = prefs.recorder;
+      S.data.recorder = (me && me.name) || prefs.recorder;
       S.data.department = prefs.department;
       syncCategoryUI(); buildCommonForm(); buildCategoryForm();
       renderSheetTabs(); mountCanvas(); renderPhotos();
@@ -1280,6 +1396,12 @@
       a.click();
     };
     $('#btnFlush').onclick = function () { flushQueue(); };
+    $('#btnSignOut').onclick = function () {
+      if (!window.confirm('ออกจากระบบบนเครื่องนี้? / Sign out on this device?')) return;
+      forgetIdentity();
+      showView('new');
+      ensureAccess();
+    };
 
     window.addEventListener('online', function () { updateConnBadge(); flushQueue(); });
     window.addEventListener('offline', updateConnBadge);
@@ -1310,13 +1432,16 @@
     } else {
       S.data.op_date = todayISO();
       S.data.surgeon = prefs.surgeon;
-      S.data.recorder = prefs.recorder;
+      S.data.recorder = (me && me.name) || prefs.recorder;
       S.data.department = prefs.department;
       buildCommonForm();
     }
 
     gotoStep(1);
-    if (scriptUrl) { loadTemplatesFromSheet(true); flushQueue(); }
+    applyIdentity();
+    ensureAccess().then(function () {
+      if (scriptUrl) { loadTemplatesFromSheet(true); flushQueue(); }
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
