@@ -30,6 +30,10 @@
 
   var EDIT_WINDOW_DAYS = 30;
 
+  /* must match BUILD in Code.gs — lets the app say plainly when an old
+     version of the script is still deployed */
+  var EXPECTED_BUILD = '2026-08-02b';
+
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || '';
   var TEMPLATES = readJSON(LS.tpl, null) || window.DEFAULT_TEMPLATES;
@@ -1036,32 +1040,52 @@
       out.innerHTML = 'กำลังทดสอบ… / testing…';
       api('GET', { action: 'ping' }).then(function (r) {
         if (r && r.ok) {
-          out.className = 'diag ok';
+          var current = r.build === EXPECTED_BUILD;
+          out.className = 'diag ' + (current ? 'ok' : 'warn');
           out.innerHTML = '<b>เชื่อมต่อสำเร็จ · Connection OK</b><br>' +
-            'เวลาที่เซิร์ฟเวอร์ตอบกลับ / server time: ' + esc(r.time || '');
-          toast('เชื่อมต่อสำเร็จ / Connection OK', 'ok');
+            'เวลาที่เซิร์ฟเวอร์ตอบกลับ / server time: ' + esc(r.time || '') + '<br>' +
+            'เวอร์ชันสคริปต์ / script build: <code>' + esc(r.build || 'unknown') + '</code>' +
+            (current ? ' &#10003;'
+              : '<br><br><b>สคริปต์ที่ deploy ยังเป็นเวอร์ชันเก่า</b> (คาดว่าเป็น <code>' +
+              esc(EXPECTED_BUILD) + '</code>)<br><span class="en">The deployed script is an older ' +
+              'build than this app expects. Paste the current Code.gs and deploy a New version.</span>');
+          toast(current ? 'เชื่อมต่อสำเร็จ / Connection OK'
+            : 'เชื่อมต่อได้ แต่สคริปต์เป็นเวอร์ชันเก่า / Connected, but the script is out of date',
+            current ? 'ok' : 'warn');
         } else {
           out.className = 'diag warn';
           out.innerHTML = '<b>ตอบกลับผิดรูปแบบ · Unexpected reply</b><br>' + esc(JSON.stringify(r));
         }
       }).catch(function (e) {
+        var stale = /script|loaded/i.test(e.message);
         out.className = 'diag warn';
         out.innerHTML = '<b>เชื่อมต่อไม่ได้ · Could not reach the script</b><br>' +
           esc(e.message) + '<br><br>' +
+          (stale
+            ? '<p><b>สาเหตุที่พบบ่อยที่สุด: เวอร์ชันที่ deploy ยังเป็นโค้ดเก่า</b><br>' +
+            '<span class="en">Most likely cause: the deployment is still running the old ' +
+            'Code.gs. The old version answers as JSON, and a browser will not execute a ' +
+            'script that is not served as JavaScript — which is exactly this error.</span></p>' +
+            '<p><a href="' + esc(scriptUrl) + '?action=ping&amp;callback=test" target="_blank" ' +
+            'rel="noopener"><b>กดที่นี่เพื่อตรวจสอบ / tap here to check</b></a><br>' +
+            'เห็น <code>test({"ok":true,…});</code> = โค้ดใหม่ทำงานแล้ว<br>' +
+            'เห็น <code>{"ok":true,…}</code> เฉย ๆ = ยังเป็นโค้ดเก่า ต้อง deploy ใหม่' +
+            '<br><span class="en">Wrapped in test(…) means the new code is live. ' +
+            'Bare JSON means the old version is still deployed.</span></p>'
+            : '') +
           'ตรวจสอบตามลำดับนี้ / check in this order:' +
           '<ol>' +
+          '<li><b>Deploy เวอร์ชันใหม่หลังแก้ Code.gs ทุกครั้ง</b><br>' +
+          'Deploy &#9656; Manage deployments &#9656; ไอคอนดินสอ &#9656; Version: <b>New version</b> ' +
+          '&#9656; Deploy<br>' +
+          '<span class="en">Saving the code is not enough. Use the pencil icon on the existing ' +
+          'deployment and pick <b>New version</b> — the URL then stays the same.</span></li>' +
+          '<li>ถ้าสร้าง <i>New deployment</i> ใหม่ จะได้ URL ใหม่ ต้องนำมาวางแทนของเดิม<br>' +
+          '<span class="en">Creating a fresh deployment instead gives a different /exec URL, ' +
+          'which must be pasted in above.</span></li>' +
+          '<li>Who has access = <b>Anyone</b>, Execute as = <b>Me</b></li>' +
           '<li>URL ต้องลงท้ายด้วย <code>/exec</code> ไม่ใช่ <code>/dev</code><br>' +
           '<span class="en">The URL must end in /exec, not /dev.</span></li>' +
-          '<li>Deploy &#9656; Manage deployments &#9656; แก้ไข &#9656; Who has access = <b>Anyone</b>' +
-          '<br><span class="en">and Execute as: Me.</span></li>' +
-          '<li>ถ้าเพิ่งแก้ Code.gs ต้อง Deploy เวอร์ชันใหม่เสมอ<br>' +
-          '<span class="en">After editing Code.gs you must deploy a <b>New version</b>, ' +
-          'otherwise the old code keeps serving.</span></li>' +
-          '<li><a href="' + esc(scriptUrl) + '?action=ping" target="_blank" rel="noopener">' +
-          'เปิด URL ทดสอบในแท็บใหม่ / open the ping URL in a new tab</a> — ' +
-          'ถ้าเห็น <code>{"ok":true}</code> แสดงว่าสคริปต์ปกติ' +
-          '<br><span class="en">If that shows ok:true the script is fine and the ' +
-          'problem is in this page; send me the message above.</span></li>' +
           '</ol>';
         toast('เชื่อมต่อไม่ได้ / Failed: ' + e.message, 'warn');
       });
