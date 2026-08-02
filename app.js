@@ -36,6 +36,10 @@
      version of the script is still deployed */
   var EXPECTED_BUILD = '2026-08-02b';
 
+  /* Shown in Settings. If this is not the newest value, the browser is
+     serving a cached copy of app.js — bump the ?v= tokens in index.html. */
+  var APP_BUILD = '2026-08-02f';
+
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || '';
   var TEMPLATES = readJSON(LS.tpl, null) || window.DEFAULT_TEMPLATES;
@@ -1031,8 +1035,10 @@
     $('#setLogo').checked = prefs.showLogo !== false;
     $('#setImgSize').value = prefs.imgSize || '55x38';
     var at = localStorage.getItem(LS.tplAt);
-    $('#tplInfo').textContent = TEMPLATES.length + ' fields' +
-      (at ? ' · updated ' + new Date(at).toLocaleString() : ' · built-in defaults');
+    $('#tplInfo').innerHTML = TEMPLATES.length + ' fields' +
+      (at ? ' · updated ' + esc(new Date(at).toLocaleString()) : ' · built-in defaults') +
+      ' · app build <code>' + esc(APP_BUILD) + '</code>' +
+      ' · ตราสัญลักษณ์ / crest ' + (window.LETTERHEAD_LOGO ? 'loaded &#10003;' : 'NOT loaded');
   }
 
   function saveSettings() {

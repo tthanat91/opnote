@@ -443,10 +443,14 @@ table.flow td{padding-top:4px;vertical-align:top}
 <div id="printRoot"></div>
 <div id="toast" class="toast"></div>
 
-<script src="figures.js"></script>
-<script src="figures-original.js"></script>
-<script src="letterhead.js"></script>
-<script src="templates.js"></script>
-<script src="app.js"></script>
+<!-- The ?v= tokens force the browser to fetch fresh copies. After uploading
+     changed files, bump every "v" below to the next letter or number and
+     upload index.html too — that is the only reliable way to defeat both the
+     browser cache and the GitHub Pages CDN. -->
+<script src="figures.js?v=f"></script>
+<script src="figures-original.js?v=f"></script>
+<script src="letterhead.js?v=f"></script>
+<script src="templates.js?v=f"></script>
+<script src="app.js?v=f"></script>
 </body>
 </html>
