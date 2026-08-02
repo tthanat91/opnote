@@ -111,6 +111,23 @@
     return null;
   }
 
+  /* The categories come from whatever appears in the Templates tab, so
+     typing a new category name in the Sheet creates a new card in the app.
+     Known keys keep their bilingual labels; unknown ones show the raw key
+     until a label is added to templates.js. */
+  function categoryList() {
+    var known = {};
+    (window.CATEGORIES || []).forEach(function (c) { known[c.key] = c; });
+    var seen = {}, out = [];
+    TEMPLATES.forEach(function (f) {
+      var k = f.category;
+      if (!k || k === 'common' || seen[k]) return;
+      seen[k] = true;
+      out.push(known[k] || { key: k, th: k, en: k });
+    });
+    return out.length ? out : (window.CATEGORIES || []);
+  }
+
   function loadTemplatesFromSheet(silent) {
     if (!scriptUrl) { if (!silent) toast('ยังไม่ได้ตั้งค่า URL / No script URL set', 'warn'); return Promise.resolve(false); }
     return api('GET', { action: 'templates' }).then(function (r) {
@@ -118,7 +135,7 @@
         TEMPLATES = r.templates;
         writeJSON(LS.tpl, TEMPLATES);
         localStorage.setItem(LS.tplAt, new Date().toISOString());
-        buildCommonForm(); buildCategoryForm();
+        renderCategoryPicker(); buildCommonForm(); buildCategoryForm();
         if (!silent) toast('โหลดแบบฟอร์มล่าสุดแล้ว / Templates updated (' + TEMPLATES.length + ' fields)', 'ok');
         return true;
       }
@@ -252,7 +269,7 @@
       ta.rows = 4; ta.dataset.key = f.key; ta.value = v || '';
       body.appendChild(ta);
 
-    } else if (f.type === 'select') {
+    } else if (f.type === 'select' || f.type === 'dropdown') {
       var sel = el('select');
       sel.dataset.key = f.key;
       sel.appendChild(new Option('— เลือก / select —', ''));
@@ -355,6 +372,38 @@
     });
     Object.keys(lists).forEach(function (k) { S.data[k] = lists[k]; });
     return S.data;
+  }
+
+  /* ---------- operating time ----------
+     Finish minus start, in minutes. A finish time earlier than the start is
+     read as crossing midnight rather than as an error, since that is the
+     commoner case in an emergency list. */
+
+  function minutesBetween(start, end) {
+    var a = /^(\d{1,2}):(\d{2})/.exec(String(start || ''));
+    var b = /^(\d{1,2}):(\d{2})/.exec(String(end || ''));
+    if (!a || !b) return null;
+    var d = (+b[1] * 60 + +b[2]) - (+a[1] * 60 + +a[2]);
+    if (d < 0) d += 1440;
+    return d;
+  }
+
+  function recalcTotalTime() {
+    var m = minutesBetween(S.data.time_start, S.data.time_end);
+    if (m == null) return;
+    S.data.time_total = String(m);
+    var node = document.querySelector('[data-key="time_total"]');
+    if (node) node.value = String(m);
+  }
+
+  /* 185 → "185 นาที (3 ชม. 5 นาที)"; anything non-numeric is left alone so a
+     hand-typed note survives. */
+  function fmtDuration(v) {
+    var s = String(v == null ? '' : v).trim();
+    if (!s) return '';
+    if (!/^\d+$/.test(s)) return s;
+    var n = parseInt(s, 10), h = Math.floor(n / 60), m = n % 60;
+    return n + ' นาที' + (h ? ' (' + h + ' ชม. ' + m + ' นาที)' : '');
   }
 
   function valueOf(key) {
@@ -611,8 +660,8 @@
   }
 
   function categoryLabel() {
-    var c = window.CATEGORIES.filter(function (x) { return x.key === S.category; })[0];
-    return c ? c.th + ' / ' + c.en : S.category;
+    var c = categoryList().filter(function (x) { return x.key === S.category; })[0];
+    return c ? (c.th === c.en ? c.th : c.th + ' / ' + c.en) : S.category;
   }
 
   function detailBlocks() {
@@ -664,7 +713,7 @@
       row('วันที่', 'Date', thaiDate(valueOf('op_date'))) +
       row('เริ่มเวลา', 'Start', valueOf('time_start')) +
       row('เสร็จเวลา', 'Finish', valueOf('time_end')) +
-      row('รวมเวลา', 'Total', valueOf('time_total')) +
+      row('รวมเวลา', 'Total', fmtDuration(valueOf('time_total'))) +
       '</div>' +
       idBar() +
       row('การวินิจฉัยก่อนผ่าตัด', 'Pre-operative diagnosis', valueOf('preop_dx')) +
@@ -920,8 +969,12 @@
 
   function renderCategoryPicker() {
     var box = $('#catPick');
+    var list = categoryList();
+    if (!list.filter(function (c) { return c.key === S.category; }).length && list.length) {
+      S.category = list[0].key;
+    }
     box.innerHTML = '';
-    window.CATEGORIES.forEach(function (c) {
+    list.forEach(function (c) {
       var b = el('button', 'catcard' + (c.key === S.category ? ' on' : ''));
       b.type = 'button';
       b.dataset.cat = c.key;
@@ -988,12 +1041,14 @@
       harvest(); saveDraft(); gotoStep(Math.min(4, curStep + 1));
     };
 
-    document.addEventListener('input', function (e) {
-      if (e.target.dataset && e.target.dataset.key) saveDraft();
-    });
-    document.addEventListener('change', function (e) {
-      if (e.target.dataset && e.target.dataset.key) saveDraft();
-    });
+    function onFieldChanged(e) {
+      var k = e.target.dataset && e.target.dataset.key;
+      if (!k) return;
+      saveDraft();
+      if (k === 'time_start' || k === 'time_end') { recalcTotalTime(); saveDraft(); }
+    }
+    document.addEventListener('input', onFieldChanged);
+    document.addEventListener('change', onFieldChanged);
 
     /* drawing toolbar */
     $$('#penColors button').forEach(function (b) {

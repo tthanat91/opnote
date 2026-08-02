@@ -39,7 +39,7 @@
     f('common', COMMON, 'op_date', 'วันที่ผ่าตัด', 'Date of operation', 'date'),
     f('common', COMMON, 'time_start', 'เริ่มเวลา', 'Start time', 'time'),
     f('common', COMMON, 'time_end', 'เสร็จเวลา', 'Finish time', 'time'),
-    f('common', COMMON, 'time_total', 'รวมเวลา', 'Total time', 'text'),
+    f('common', COMMON, 'time_total', 'รวมเวลา (นาที)', 'Total time (minutes, calculated)', 'number'),
     f('common', COMMON, 'department', 'ภาควิชา', 'Department', 'text'),
 
     f('common', IDENT, 'hn', 'HN', 'HN', 'text'),
