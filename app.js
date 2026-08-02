@@ -371,6 +371,7 @@
       }
     });
     Object.keys(lists).forEach(function (k) { S.data[k] = lists[k]; });
+    recalcTotalTime();
     return S.data;
   }
 
@@ -388,12 +389,21 @@
     return d;
   }
 
+  /* Recomputed by harvest(), so it does not depend on which events a
+     particular browser chooses to fire for a time picker — the value is
+     correct whenever the form is read, which includes every save and print.
+     A total the user has typed by hand is left alone. */
+  var lastAutoTotal = null;
+
   function recalcTotalTime() {
     var m = minutesBetween(S.data.time_start, S.data.time_end);
     if (m == null) return;
+    var cur = String(S.data.time_total == null ? '' : S.data.time_total).trim();
+    if (cur !== '' && cur !== String(lastAutoTotal) && cur !== String(m)) return;
+    lastAutoTotal = m;
     S.data.time_total = String(m);
     var node = document.querySelector('[data-key="time_total"]');
-    if (node) node.value = String(m);
+    if (node && node.value !== String(m)) node.value = String(m);
   }
 
   /* 185 → "185 นาที (3 ชม. 5 นาที)"; anything non-numeric is left alone so a
@@ -1042,13 +1052,11 @@
     };
 
     function onFieldChanged(e) {
-      var k = e.target.dataset && e.target.dataset.key;
-      if (!k) return;
-      saveDraft();
-      if (k === 'time_start' || k === 'time_end') { recalcTotalTime(); saveDraft(); }
+      if (e.target.dataset && e.target.dataset.key) saveDraft();
     }
     document.addEventListener('input', onFieldChanged);
     document.addEventListener('change', onFieldChanged);
+    document.addEventListener('blur', onFieldChanged, true);
 
     /* drawing toolbar */
     $$('#penColors button').forEach(function (b) {
