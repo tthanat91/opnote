@@ -201,9 +201,28 @@
       });
   }
 
+  function fetchGet(params) {
+    var url = scriptUrl + (scriptUrl.indexOf('?') > -1 ? '&' : '?') + qs(params);
+    return fetch(url, { method: 'GET', redirect: 'follow' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
   function api(method, payload) {
     if (!scriptUrl) return Promise.reject(new Error('ยังไม่ได้ตั้งค่า URL / no script URL'));
-    if (method === 'GET') return jsonp(payload);
+
+    /* A direct request works in Chrome whatever version of Code.gs is
+       deployed; JSONP is the fallback that rescues Safari. Trying both
+       means neither browser depends on the other's quirk. */
+    if (method === 'GET') {
+      return fetchGet(payload).catch(function (e1) {
+        return jsonp(payload).catch(function (e2) {
+          throw new Error('ทั้งสองวิธีล้มเหลว / both methods failed — ' +
+            'direct: ' + e1.message + ' · script: ' + e2.message);
+        });
+      });
+    }
 
     return fetch(scriptUrl, {
       method: 'POST', redirect: 'follow',
@@ -1057,24 +1076,27 @@
           out.innerHTML = '<b>ตอบกลับผิดรูปแบบ · Unexpected reply</b><br>' + esc(JSON.stringify(r));
         }
       }).catch(function (e) {
-        var stale = /script|loaded/i.test(e.message);
         out.className = 'diag warn';
         out.innerHTML = '<b>เชื่อมต่อไม่ได้ · Could not reach the script</b><br>' +
           esc(e.message) + '<br><br>' +
-          (stale
-            ? '<p><b>สาเหตุที่พบบ่อยที่สุด: เวอร์ชันที่ deploy ยังเป็นโค้ดเก่า</b><br>' +
-            '<span class="en">Most likely cause: the deployment is still running the old ' +
-            'Code.gs. The old version answers as JSON, and a browser will not execute a ' +
-            'script that is not served as JavaScript — which is exactly this error.</span></p>' +
-            '<p><a href="' + esc(scriptUrl) + '?action=ping&amp;callback=test" target="_blank" ' +
-            'rel="noopener"><b>กดที่นี่เพื่อตรวจสอบ / tap here to check</b></a><br>' +
-            'เห็น <code>test({"ok":true,…});</code> = โค้ดใหม่ทำงานแล้ว<br>' +
-            'เห็น <code>{"ok":true,…}</code> เฉย ๆ = ยังเป็นโค้ดเก่า ต้อง deploy ใหม่' +
-            '<br><span class="en">Wrapped in test(…) means the new code is live. ' +
-            'Bare JSON means the old version is still deployed.</span></p>'
-            : '') +
+          '<p><b>สาเหตุที่พบบ่อยที่สุด: สิทธิ์การเข้าถึงตั้งเป็น “Anyone with Google account”</b><br>' +
+          '<span class="en">Most likely cause: the deployment’s access is set to ' +
+          '<b>Anyone with Google account</b> instead of <b>Anyone</b>. Opening the URL yourself ' +
+          'then works, because your browser is signed in — but a request made by this page ' +
+          'carries no Google session, is redirected to a login screen, and fails.</span></p>' +
+          '<p><b>วิธีตรวจสอบ / how to confirm:</b> ' +
+          '<a href="' + esc(scriptUrl) + '?action=ping" target="_blank" rel="noopener">' +
+          'เปิดลิงก์นี้ในหน้าต่างส่วนตัว (incognito)</a> ' +
+          '&#8212; คัดลอกลิงก์ไปเปิดในหน้าต่างที่ไม่ได้ล็อกอิน Google<br>' +
+          '<span class="en">Copy that link into an incognito window. If it still prints ' +
+          'ok:true you are fine; if it shows a Google sign-in page, the access setting is ' +
+          'the problem.</span></p>' +
           'ตรวจสอบตามลำดับนี้ / check in this order:' +
           '<ol>' +
+          '<li><b>Who has access = <code>Anyone</code></b> — ไม่ใช่ ' +
+          '<code>Anyone with Google account</code><br>' +
+          '<span class="en">These two sit next to each other in the dropdown and are easy to ' +
+          'confuse. Only plain <b>Anyone</b> works. Execute as must be <b>Me</b>.</span></li>' +
           '<li><b>Deploy เวอร์ชันใหม่หลังแก้ Code.gs ทุกครั้ง</b><br>' +
           'Deploy &#9656; Manage deployments &#9656; ไอคอนดินสอ &#9656; Version: <b>New version</b> ' +
           '&#9656; Deploy<br>' +
@@ -1083,7 +1105,6 @@
           '<li>ถ้าสร้าง <i>New deployment</i> ใหม่ จะได้ URL ใหม่ ต้องนำมาวางแทนของเดิม<br>' +
           '<span class="en">Creating a fresh deployment instead gives a different /exec URL, ' +
           'which must be pasted in above.</span></li>' +
-          '<li>Who has access = <b>Anyone</b>, Execute as = <b>Me</b></li>' +
           '<li>URL ต้องลงท้ายด้วย <code>/exec</code> ไม่ใช่ <code>/dev</code><br>' +
           '<span class="en">The URL must end in /exec, not /dev.</span></li>' +
           '</ol>';
