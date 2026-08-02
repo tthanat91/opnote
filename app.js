@@ -128,21 +128,85 @@
 
   /* =================== network =================== */
 
-  /* Apps Script accepts "simple" requests without a CORS preflight, so the
-     body is sent as text/plain even though it contains JSON. */
+  /* ---------------------------------------------------------------
+     Talking to Apps Script.
+
+     A deployed /exec URL answers with a 302 redirect to
+     script.googleusercontent.com. Safari — on macOS and on iPad —
+     refuses to hand back the body of a cross-origin fetch that has
+     been redirected, and reports it as "Load failed", even though the
+     same URL opens perfectly in a browser tab. Chrome is lenient here;
+     Safari is not.
+
+     So reads go out as JSONP: the reply is loaded as a <script>, which
+     redirects are allowed to do and which CORS never touches. Writes
+     try a normal fetch first, and if the browser hides the answer the
+     request is repeated in no-cors mode — the data still reaches the
+     Sheet — and the save is then confirmed with a JSONP status check.
+     --------------------------------------------------------------- */
+
+  var JSONP_TIMEOUT = 25000;
+
+  function qs(params) {
+    return Object.keys(params).map(function (k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+  }
+
+  function jsonp(params) {
+    return new Promise(function (resolve, reject) {
+      var cb = 'opnote_cb_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+      var script = document.createElement('script');
+      var done = false;
+
+      function cleanup() {
+        done = true;
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      var timer = setTimeout(function () {
+        if (!done) { cleanup(); reject(new Error('หมดเวลารอ / request timed out')); }
+      }, JSONP_TIMEOUT);
+
+      window[cb] = function (data) { if (!done) { cleanup(); resolve(data); } };
+      script.onerror = function () {
+        if (!done) { cleanup(); reject(new Error('เรียกสคริปต์ไม่สำเร็จ / script could not be loaded')); }
+      };
+      script.src = scriptUrl + (scriptUrl.indexOf('?') > -1 ? '&' : '?') +
+        qs(params) + '&callback=' + cb;
+      document.head.appendChild(script);
+    });
+  }
+
+  function postBlind(payload) {
+    return fetch(scriptUrl, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function () { return confirmSaved(payload.id, 0); });
+  }
+
+  function confirmSaved(id, tries) {
+    return new Promise(function (r) { setTimeout(r, tries === 0 ? 2500 : 2000); })
+      .then(function () { return jsonp({ action: 'status', id: id }); })
+      .then(function (r) {
+        if (r && r.ok && r.exists) return { ok: true, id: id, confirmed: true };
+        if (tries < 6) return confirmSaved(id, tries + 1);
+        throw new Error('ส่งแล้วแต่ยืนยันไม่ได้ / sent but could not be confirmed');
+      });
+  }
+
   function api(method, payload) {
-    if (!scriptUrl) return Promise.reject(new Error('no script URL'));
-    var url = scriptUrl, opt = { method: method, redirect: 'follow' };
-    if (method === 'GET') {
-      var qs = Object.keys(payload).map(function (k) {
-        return encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]);
-      }).join('&');
-      url += (url.indexOf('?') > -1 ? '&' : '?') + qs;
-    } else {
-      opt.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
-      opt.body = JSON.stringify(payload);
-    }
-    return fetch(url, opt).then(function (r) { return r.json(); });
+    if (!scriptUrl) return Promise.reject(new Error('ยังไม่ได้ตั้งค่า URL / no script URL'));
+    if (method === 'GET') return jsonp(payload);
+
+    return fetch(scriptUrl, {
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); })
+      .catch(function () { return postBlind(payload); });
   }
 
   /* =================== form building =================== */
@@ -967,9 +1031,40 @@
     $('#btnSaveSettings').onclick = saveSettings;
     $('#btnTest').onclick = function () {
       saveSettings();
+      var out = $('#connDiag');
+      out.className = 'diag';
+      out.innerHTML = 'กำลังทดสอบ… / testing…';
       api('GET', { action: 'ping' }).then(function (r) {
-        toast(r && r.ok ? 'เชื่อมต่อสำเร็จ / Connection OK' : 'ตอบกลับผิดรูปแบบ / Unexpected reply', r && r.ok ? 'ok' : 'warn');
-      }).catch(function (e) { toast('เชื่อมต่อไม่ได้ / Failed: ' + e.message, 'warn'); });
+        if (r && r.ok) {
+          out.className = 'diag ok';
+          out.innerHTML = '<b>เชื่อมต่อสำเร็จ · Connection OK</b><br>' +
+            'เวลาที่เซิร์ฟเวอร์ตอบกลับ / server time: ' + esc(r.time || '');
+          toast('เชื่อมต่อสำเร็จ / Connection OK', 'ok');
+        } else {
+          out.className = 'diag warn';
+          out.innerHTML = '<b>ตอบกลับผิดรูปแบบ · Unexpected reply</b><br>' + esc(JSON.stringify(r));
+        }
+      }).catch(function (e) {
+        out.className = 'diag warn';
+        out.innerHTML = '<b>เชื่อมต่อไม่ได้ · Could not reach the script</b><br>' +
+          esc(e.message) + '<br><br>' +
+          'ตรวจสอบตามลำดับนี้ / check in this order:' +
+          '<ol>' +
+          '<li>URL ต้องลงท้ายด้วย <code>/exec</code> ไม่ใช่ <code>/dev</code><br>' +
+          '<span class="en">The URL must end in /exec, not /dev.</span></li>' +
+          '<li>Deploy &#9656; Manage deployments &#9656; แก้ไข &#9656; Who has access = <b>Anyone</b>' +
+          '<br><span class="en">and Execute as: Me.</span></li>' +
+          '<li>ถ้าเพิ่งแก้ Code.gs ต้อง Deploy เวอร์ชันใหม่เสมอ<br>' +
+          '<span class="en">After editing Code.gs you must deploy a <b>New version</b>, ' +
+          'otherwise the old code keeps serving.</span></li>' +
+          '<li><a href="' + esc(scriptUrl) + '?action=ping" target="_blank" rel="noopener">' +
+          'เปิด URL ทดสอบในแท็บใหม่ / open the ping URL in a new tab</a> — ' +
+          'ถ้าเห็น <code>{"ok":true}</code> แสดงว่าสคริปต์ปกติ' +
+          '<br><span class="en">If that shows ok:true the script is fine and the ' +
+          'problem is in this page; send me the message above.</span></li>' +
+          '</ol>';
+        toast('เชื่อมต่อไม่ได้ / Failed: ' + e.message, 'warn');
+      });
     };
     $('#btnReloadTpl').onclick = function () { loadTemplatesFromSheet(false).then(fillSettings); };
     $('#btnBackup').onclick = function () {
