@@ -16,8 +16,14 @@
     tplAt: 'opnote.templatesAt',
     draft: 'opnote.draft',
     queue: 'opnote.queue',
-    prefs: 'opnote.prefs'
+    prefs: 'opnote.prefs',
+    pass: 'opnote.pass'
   };
+
+  /* config.js ships the Sheet URL with the app so a colleague only has to
+     open the link. A device-specific URL in Settings still wins, which is
+     how you would point one iPad at a test Sheet. */
+  var SITE = window.OPNOTE_CONFIG || {};
 
   var DEFAULT_PREFS = {
     hospital1: 'คณะแพทยศาสตร์วชิรพยาบาล มหาวิทยาลัยนวมินทราธิราช',
@@ -35,14 +41,15 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02b';
+  var EXPECTED_BUILD = '2026-08-02c';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02g';
+  var APP_BUILD = '2026-08-02h';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
-  var scriptUrl = localStorage.getItem(LS.url) || '';
+  var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
+  var passcode = localStorage.getItem(LS.pass) || '';
   var TEMPLATES = readJSON(LS.tpl, null) || window.DEFAULT_TEMPLATES;
 
   /* =================== state =================== */
@@ -233,15 +240,15 @@
     });
   }
 
-  function api(method, payload) {
-    if (!scriptUrl) return Promise.reject(new Error('ยังไม่ได้ตั้งค่า URL / no script URL'));
+  function attempt(method, payload) {
+    var body = Object.assign({}, payload, { pass: passcode });
 
     /* A direct request works in Chrome whatever version of Code.gs is
        deployed; JSONP is the fallback that rescues Safari. Trying both
        means neither browser depends on the other's quirk. */
     if (method === 'GET') {
-      return fetchGet(payload).catch(function (e1) {
-        return jsonp(payload).catch(function (e2) {
+      return fetchGet(body).catch(function (e1) {
+        return jsonp(body).catch(function (e2) {
           throw new Error('ทั้งสองวิธีล้มเหลว / both methods failed — ' +
             'direct: ' + e1.message + ' · script: ' + e2.message);
         });
@@ -251,9 +258,55 @@
     return fetch(scriptUrl, {
       method: 'POST', redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     }).then(function (r) { return r.json(); })
-      .catch(function () { return postBlind(payload); });
+      .catch(function () { return postBlind(body); });
+  }
+
+  function api(method, payload) {
+    if (!scriptUrl) return Promise.reject(new Error('ยังไม่ได้ตั้งค่า URL / no script URL'));
+    return attempt(method, payload).then(function (r) {
+      /* the script asked for a passcode — collect it, then try once more */
+      if (r && r.ok === false && r.auth) {
+        return askPasscode(!!passcode).then(function (given) {
+          if (!given) throw new Error('ต้องใส่รหัสผ่านของทีม / a team passcode is required');
+          return attempt(method, payload);
+        });
+      }
+      return r;
+    });
+  }
+
+  /* =================== passcode dialog =================== */
+
+  function askPasscode(wasWrong) {
+    return new Promise(function (resolve) {
+      var gate = $('#passGate'), input = $('#passInput'), msg = $('#passMsg');
+      msg.textContent = wasWrong
+        ? 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่ / That passcode was not accepted. Please try again.'
+        : (SITE.contact || '');
+      msg.className = wasWrong ? 'gatemsg warn' : 'gatemsg';
+      input.value = '';
+      gate.classList.remove('hidden');
+      setTimeout(function () { input.focus(); }, 60);
+
+      function done(value) {
+        gate.classList.add('hidden');
+        $('#passOk').onclick = null;
+        $('#passCancel').onclick = null;
+        input.onkeydown = null;
+        resolve(value);
+      }
+      $('#passOk').onclick = function () {
+        var v = input.value.trim();
+        if (!v) return;
+        passcode = v;
+        localStorage.setItem(LS.pass, v);
+        done(true);
+      };
+      $('#passCancel').onclick = function () { done(false); };
+      input.onkeydown = function (e) { if (e.key === 'Enter') $('#passOk').onclick(); };
+    });
   }
 
   /* =================== form building =================== */
@@ -1028,6 +1081,10 @@
 
   function fillSettings() {
     $('#setUrl').value = scriptUrl;
+    $('#setPass').value = passcode;
+    $('#urlNote').textContent = SITE.scriptUrl
+      ? 'ตั้งค่ามาให้แล้วในแอป ปกติไม่ต้องแก้ / Supplied with the app — normally leave as is.'
+      : 'ยังไม่ได้ตั้งค่าใน config.js / Not set in config.js, so each device must paste it.';
     $('#setHosp1').value = prefs.hospital1;
     $('#setHosp2').value = prefs.hospital2;
     $('#setForm').value = prefs.formCode;
@@ -1045,8 +1102,12 @@
   }
 
   function saveSettings() {
-    scriptUrl = $('#setUrl').value.trim().replace(/\s+/g, '');
-    localStorage.setItem(LS.url, scriptUrl);
+    scriptUrl = $('#setUrl').value.trim().replace(/\s+/g, '') || SITE.scriptUrl || '';
+    if (scriptUrl === (SITE.scriptUrl || '')) localStorage.removeItem(LS.url);
+    else localStorage.setItem(LS.url, scriptUrl);
+    passcode = $('#setPass').value.trim();
+    if (passcode) localStorage.setItem(LS.pass, passcode);
+    else localStorage.removeItem(LS.pass);
     prefs.hospital1 = $('#setHosp1').value;
     prefs.hospital2 = $('#setHosp2').value;
     prefs.formCode = $('#setForm').value;

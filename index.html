@@ -154,6 +154,23 @@ table.results th,table.results td{border-bottom:1px solid var(--line);padding:9p
 table.results th{background:#eef4f3;color:var(--brand);font-size:.78rem}
 table.results td.act{white-space:nowrap}
 
+/* ============================ passcode gate ============================ */
+.gate{position:fixed;inset:0;z-index:80;background:rgba(11,45,41,.55);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(3px)}
+.gatebox{background:#fff;border-radius:16px;padding:22px 24px;max-width:420px;width:100%;
+  box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.gatebox h3{font-size:1.15rem;color:var(--brand);margin-bottom:4px}
+.gatebox h3 .en{font-size:.72em;font-weight:400}
+.gatehint{font-size:.85rem;color:var(--muted);margin:6px 0 14px}
+.gatehint .en{display:inline}
+#passInput{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+  font-size:1.05rem;letter-spacing:.05em}
+#passInput:focus{outline:none;border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(14,122,109,.16)}
+.gatemsg{font-size:.82rem;color:var(--muted);margin:9px 0 0;min-height:1em}
+.gatemsg.warn{color:#a4560c;font-weight:600}
+.gateact{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+
 /* ============================ diagnostics ============================ */
 .diag:empty{display:none}
 .diag{margin-top:10px;padding:11px 14px;border-radius:10px;font-size:.86rem;
@@ -368,7 +385,14 @@ table.flow td{padding-top:4px;vertical-align:top}
         <h3>การเชื่อมต่อ Google Sheet <span class="en">Google Apps Script connection</span></h3>
         <div class="field">
           <label class="flabel"><span class="th">URL ของ Web App</span><span class="en">Apps Script web app URL (ends with /exec)</span></label>
-          <div class="fbody"><input type="text" id="setUrl" placeholder="https://script.google.com/macros/s/…/exec"></div>
+          <div class="fbody">
+            <input type="text" id="setUrl" placeholder="https://script.google.com/macros/s/…/exec">
+            <p class="muted" id="urlNote" style="font-size:.78rem;margin:5px 0 0"></p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="flabel"><span class="th">รหัสผ่านของทีม</span><span class="en">Team passcode — stored on this device only</span></label>
+          <div class="fbody"><input type="password" id="setPass" autocomplete="current-password"></div>
         </div>
         <p>
           <button class="btn" id="btnSaveSettings">บันทึกการตั้งค่า · Save settings</button>
@@ -456,6 +480,21 @@ table.flow td{padding-top:4px;vertical-align:top}
   </main>
 </div>
 
+<div id="passGate" class="gate hidden">
+  <div class="gatebox">
+    <h3>รหัสผ่านของทีม<span class="en">Team passcode</span></h3>
+    <p class="gatehint">ใส่ครั้งเดียวต่อเครื่อง แล้วระบบจะจำไว้ให้<br>
+      <span class="en">Entered once per device, then remembered.</span></p>
+    <input type="password" id="passInput" autocomplete="current-password"
+           inputmode="text" placeholder="รหัสผ่าน / passcode">
+    <p id="passMsg" class="gatemsg"></p>
+    <div class="gateact">
+      <button type="button" class="btn ghost" id="passCancel">ยกเลิก · Cancel</button>
+      <button type="button" class="btn" id="passOk">ตกลง · OK</button>
+    </div>
+  </div>
+</div>
+
 <div id="printRoot"></div>
 <div id="toast" class="toast"></div>
 
@@ -463,10 +502,11 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="figures.js?v=g"></script>
-<script src="figures-original.js?v=g"></script>
-<script src="letterhead.js?v=g"></script>
-<script src="templates.js?v=g"></script>
-<script src="app.js?v=g"></script>
+<script src="config.js?v=h"></script>
+<script src="figures.js?v=h"></script>
+<script src="figures-original.js?v=h"></script>
+<script src="letterhead.js?v=h"></script>
+<script src="templates.js?v=h"></script>
+<script src="app.js?v=h"></script>
 </body>
 </html>
