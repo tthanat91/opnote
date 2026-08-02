@@ -50,6 +50,10 @@ h3,h4,h5{margin:0}
 .badge{font-size:.72rem;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.18)}
 .badge.ok{background:#d8f0e3;color:#14512f}
 .badge.warn{background:#fbe6cf;color:#7d4207}
+.linkout{background:none;border:none;color:#cfe6e0;text-decoration:underline;
+  cursor:pointer;font-size:.74rem;padding:2px 0}
+.linkout:hover{color:#fff}
+#queueBadge{cursor:pointer}
 #queueBadge{display:none;background:#fbe6cf;color:#7d4207;font-size:.72rem;
   padding:3px 9px;border-radius:999px}
 
@@ -280,12 +284,13 @@ table.flow td{padding-top:4px;vertical-align:top}
   <header class="topbar">
     <div class="brand">Operative Note<small>บันทึกการผ่าตัด · Vajira Hospital</small></div>
     <span id="userBadge" class="badge" style="display:none"></span>
+    <button id="btnSignOutTop" class="linkout" style="display:none" title="ออกจากระบบ / Sign out">ออกจากระบบ · Sign out</button>
     <span id="connBadge" class="badge">…</span>
-    <span id="queueBadge"></span>
+    <button id="queueBadge" title="แตะเพื่อส่งข้อมูลค้าง / tap to upload"></button>
     <nav class="mainnav">
-      <button data-view="new" class="on">ใหม่ · New</button>
+      <button data-view="new" id="navNew" class="on">ใหม่ · New</button>
       <button data-view="search">ค้นหา · Search</button>
-      <button data-view="settings">ตั้งค่า · Settings</button>
+      <button data-view="settings" id="navSettings">ตั้งค่า · Settings</button>
     </nav>
   </header>
 
@@ -513,11 +518,11 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=j"></script>
-<script src="figures.js?v=j"></script>
-<script src="figures-original.js?v=j"></script>
-<script src="letterhead.js?v=j"></script>
-<script src="templates.js?v=j"></script>
-<script src="app.js?v=j"></script>
+<script src="config.js?v=l"></script>
+<script src="figures.js?v=l"></script>
+<script src="figures-original.js?v=l"></script>
+<script src="letterhead.js?v=l"></script>
+<script src="templates.js?v=l"></script>
+<script src="app.js?v=l"></script>
 </body>
 </html>

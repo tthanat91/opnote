@@ -42,11 +42,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02d';
+  var EXPECTED_BUILD = '2026-08-02e';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02j';
+  var APP_BUILD = '2026-08-02l';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -318,9 +318,33 @@
     } else {
       badge.style.display = 'none';
     }
+    /* read-only means exactly that: Search only. The New tab is hidden so a
+       blank note cannot be started, but opening an existing note for
+       reprinting still works — that view is reached from Search, not from
+       the tab bar. */
     var ro = !!(me && me.role === 'readonly');
     $('#btnSave').style.display = ro ? 'none' : '';
     $('#roNote').style.display = ro ? '' : 'none';
+    $('#navNew').style.display = ro ? 'none' : '';
+    $('#btnNew').style.display = ro ? 'none' : '';
+    if (ro && !S.id && !$('#view-new').classList.contains('hidden')) showView('search');
+
+    /* Settings is an administrator's screen: it holds the Sheet URL, the
+       letterhead and the template reload. Everyone else gets New and
+       Search only. Sign-out and the pending-upload badge sit in the header
+       so that hiding Settings never strands anyone. */
+    var admin = !me || me.role === 'admin' || me.open || me.shared;
+    $('#navSettings').style.display = admin ? '' : 'none';
+    if (!admin && !$('#view-settings').classList.contains('hidden')) showView('new');
+
+    $('#btnSignOutTop').style.display = (me && (me.name || me.license)) ? '' : 'none';
+  }
+
+  function signOut() {
+    if (!window.confirm('ออกจากระบบบนเครื่องนี้? / Sign out on this device?')) return;
+    forgetIdentity();
+    showView('new');
+    ensureAccess();
   }
 
   /* the person holding the key is, by default, the person writing the note */
@@ -1396,11 +1420,10 @@
       a.click();
     };
     $('#btnFlush').onclick = function () { flushQueue(); };
-    $('#btnSignOut').onclick = function () {
-      if (!window.confirm('ออกจากระบบบนเครื่องนี้? / Sign out on this device?')) return;
-      forgetIdentity();
-      showView('new');
-      ensureAccess();
+    $('#btnSignOut').onclick = signOut;
+    $('#btnSignOutTop').onclick = signOut;
+    $('#queueBadge').onclick = function () {
+      if (readJSON(LS.queue, []).length) flushQueue();
     };
 
     window.addEventListener('online', function () { updateConnBadge(); flushQueue(); });
