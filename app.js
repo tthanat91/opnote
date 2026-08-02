@@ -42,11 +42,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02e';
+  var EXPECTED_BUILD = '2026-08-02f';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02m';
+  var APP_BUILD = '2026-08-02n';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -248,11 +248,14 @@
     /* A direct request works in Chrome whatever version of Code.gs is
        deployed; JSONP is the fallback that rescues Safari. Trying both
        means neither browser depends on the other's quirk. */
+    /* JSONP goes first: it works in every browser, whereas a plain fetch is
+       guaranteed to fail on Safari because of the Apps Script redirect.
+       Trying fetch first cost a wasted round trip on every read. */
     if (method === 'GET') {
-      return fetchGet(body).catch(function (e1) {
-        return jsonp(body).catch(function (e2) {
+      return jsonp(body).catch(function (e1) {
+        return fetchGet(body).catch(function (e2) {
           throw new Error('ทั้งสองวิธีล้มเหลว / both methods failed — ' +
-            'direct: ' + e1.message + ' · script: ' + e2.message);
+            'script: ' + e1.message + ' · direct: ' + e2.message);
         });
       });
     }
@@ -447,6 +450,19 @@
   function ensureAccess() {
     if (!scriptUrl || SITE.requireLogin === false) return Promise.resolve(unlock());
     if (!passcode) return signIn(false);
+
+    /* A device that has signed in before opens straight away and is
+       re-checked in the background, so nobody waits on Apps Script waking
+       up. A key that has since been revoked locks the app a second later,
+       and could not have saved anything in the meantime anyway. */
+    if (me) {
+      unlock();
+      verifyKey().then(function (res) {
+        if (res === 'bad' || res === 'blocked') { forgetIdentity(); signIn(true); }
+      });
+      return Promise.resolve(true);
+    }
+
     return verifyKey().then(function (res) {
       if (res === 'ok' || res === 'offline') return unlock();
       if (res === 'blocked') forgetIdentity();
