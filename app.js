@@ -1,0 +1,1028 @@
+/* =====================================================================
+   app.js — Operative Note (บันทึกการผ่าตัด)
+   Static front-end. Talks to a Google Apps Script web app that writes
+   to your own Google Sheet and Drive folder. Works fully offline for
+   filling in and printing; saving queues until the connection returns.
+   ===================================================================== */
+
+(function () {
+  'use strict';
+
+  /* =================== configuration =================== */
+
+  var LS = {
+    url: 'opnote.scriptUrl',
+    tpl: 'opnote.templates',
+    tplAt: 'opnote.templatesAt',
+    draft: 'opnote.draft',
+    queue: 'opnote.queue',
+    prefs: 'opnote.prefs'
+  };
+
+  var DEFAULT_PREFS = {
+    hospital1: 'คณะแพทยศาสตร์วชิรพยาบาล มหาวิทยาลัยนวมินทราธิราช',
+    hospital2: '681 ถนนสามเสน แขวงวชิรพยาบาล เขตดุสิต กรุงเทพฯ 10300  โทรศัพท์ 0-2244-3000  โทรสาร 0-2241-4388',
+    formCode: 'MR 08.1  แก้ไขครั้งที่ 00',
+    department: 'ศัลยศาสตร์',
+    surgeon: '',
+    recorder: ''
+  };
+
+  var EDIT_WINDOW_DAYS = 30;
+
+  var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
+  var scriptUrl = localStorage.getItem(LS.url) || '';
+  var TEMPLATES = readJSON(LS.tpl, null) || window.DEFAULT_TEMPLATES;
+
+  /* =================== state =================== */
+
+  var S = newNote();
+
+  function newNote() {
+    return {
+      id: null,
+      createdAt: null,
+      category: 'colorectal',
+      data: {},
+      sheets: [],
+      photos: [],
+      active: 0,
+      mode: 'new'
+    };
+  }
+
+  /* =================== tiny helpers =================== */
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+  function readJSON(k, dflt) {
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : dflt; } catch (e) { return dflt; }
+  }
+  function writeJSON(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* quota */ }
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function nl2br(s) { return esc(s).replace(/\n/g, '<br>'); }
+  function uid() {
+    return 'ON-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+  function toast(msg, kind) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (kind || '');
+    clearTimeout(t._h);
+    t._h = setTimeout(function () { t.className = 'toast'; }, 3600);
+  }
+  function bilingual(th, en) {
+    return '<span class="th">' + esc(th) + '</span><span class="en">' + esc(en) + '</span>';
+  }
+  function todayISO() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function thaiDate(iso) {
+    if (!iso) return '';
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    return p[2] + ' / ' + p[1] + ' / ' + (parseInt(p[0], 10) + 543);
+  }
+
+  /* =================== templates =================== */
+
+  function fieldsFor(cat) {
+    return TEMPLATES.filter(function (f) { return f.category === cat; });
+  }
+  function fieldByKey(key) {
+    for (var i = 0; i < TEMPLATES.length; i++) if (TEMPLATES[i].key === key) return TEMPLATES[i];
+    return null;
+  }
+
+  function loadTemplatesFromSheet(silent) {
+    if (!scriptUrl) { if (!silent) toast('ยังไม่ได้ตั้งค่า URL / No script URL set', 'warn'); return Promise.resolve(false); }
+    return api('GET', { action: 'templates' }).then(function (r) {
+      if (r && r.ok && r.templates && r.templates.length) {
+        TEMPLATES = r.templates;
+        writeJSON(LS.tpl, TEMPLATES);
+        localStorage.setItem(LS.tplAt, new Date().toISOString());
+        buildCommonForm(); buildCategoryForm();
+        if (!silent) toast('โหลดแบบฟอร์มล่าสุดแล้ว / Templates updated (' + TEMPLATES.length + ' fields)', 'ok');
+        return true;
+      }
+      if (!silent) toast('ไม่พบข้อมูลแบบฟอร์ม / No templates returned', 'warn');
+      return false;
+    }).catch(function (e) {
+      if (!silent) toast('เชื่อมต่อไม่สำเร็จ / Connection failed: ' + e.message, 'warn');
+      return false;
+    });
+  }
+
+  /* =================== network =================== */
+
+  /* Apps Script accepts "simple" requests without a CORS preflight, so the
+     body is sent as text/plain even though it contains JSON. */
+  function api(method, payload) {
+    if (!scriptUrl) return Promise.reject(new Error('no script URL'));
+    var url = scriptUrl, opt = { method: method, redirect: 'follow' };
+    if (method === 'GET') {
+      var qs = Object.keys(payload).map(function (k) {
+        return encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]);
+      }).join('&');
+      url += (url.indexOf('?') > -1 ? '&' : '?') + qs;
+    } else {
+      opt.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+      opt.body = JSON.stringify(payload);
+    }
+    return fetch(url, opt).then(function (r) { return r.json(); });
+  }
+
+  /* =================== form building =================== */
+
+  function fieldControl(f) {
+    var v = S.data[f.key];
+    var wrap = el('div', 'field f-' + f.type);
+    wrap.appendChild(el('label', 'flabel', bilingual(f.th, f.en)));
+    var body = el('div', 'fbody');
+    var i;
+
+    if (f.type === 'heading') {
+      wrap.className = 'field-heading';
+      wrap.innerHTML = '<h4>' + bilingual(f.th, f.en) + '</h4>';
+      return wrap;
+    }
+
+    if (f.type === 'textarea') {
+      var ta = el('textarea');
+      ta.rows = 4; ta.dataset.key = f.key; ta.value = v || '';
+      body.appendChild(ta);
+
+    } else if (f.type === 'select') {
+      var sel = el('select');
+      sel.dataset.key = f.key;
+      sel.appendChild(new Option('— เลือก / select —', ''));
+      f.options.forEach(function (o) { sel.appendChild(new Option(o, o)); });
+      sel.value = v || '';
+      body.appendChild(sel);
+
+    } else if (f.type === 'radio') {
+      var rg = el('div', 'optgrid');
+      f.options.forEach(function (o, ix) {
+        var id = 'r_' + f.key + '_' + ix;
+        var lab = el('label', 'opt');
+        lab.innerHTML = '<input type="radio" id="' + id + '" name="' + esc(f.key) + '" ' +
+          'data-key="' + esc(f.key) + '" data-role="radio" value="' + esc(o) + '"' +
+          (v === o ? ' checked' : '') + '><span>' + esc(o) + '</span>';
+        rg.appendChild(lab);
+      });
+      var clr = el('button', 'linkbtn', 'ล้างตัวเลือก / clear');
+      clr.type = 'button';
+      clr.onclick = function () {
+        $$('input[name="' + f.key + '"]', rg).forEach(function (x) { x.checked = false; });
+        S.data[f.key] = ''; saveDraft();
+      };
+      body.appendChild(rg); body.appendChild(clr);
+
+    } else if (f.type === 'checkbox') {
+      var lab2 = el('label', 'opt single');
+      lab2.innerHTML = '<input type="checkbox" data-key="' + esc(f.key) + '" data-role="bool"' +
+        (v ? ' checked' : '') + '><span>ใช่ / Yes</span>';
+      body.appendChild(lab2);
+
+    } else if (f.type === 'checklist') {
+      var arr = Array.isArray(v) ? v : (v ? String(v).split(';').map(function (s) { return s.trim(); }) : []);
+      var cg = el('div', 'optgrid');
+      f.options.forEach(function (o, ix) {
+        var lab3 = el('label', 'opt');
+        lab3.innerHTML = '<input type="checkbox" data-key="' + esc(f.key) + '" data-role="list" ' +
+          'value="' + esc(o) + '"' + (arr.indexOf(o) > -1 ? ' checked' : '') + '><span>' + esc(o) + '</span>';
+        cg.appendChild(lab3);
+      });
+      body.appendChild(cg);
+      var other = el('input', 'other');
+      other.type = 'text';
+      other.placeholder = 'อื่น ๆ ระบุ / other, specify';
+      other.dataset.key = f.key + '_other';
+      other.value = S.data[f.key + '_other'] || '';
+      body.appendChild(other);
+
+    } else {
+      var inp = el('input');
+      inp.type = (f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : f.type === 'time' ? 'time' : 'text');
+      if (f.type === 'number') inp.inputMode = 'decimal';
+      inp.dataset.key = f.key;
+      inp.value = v == null ? '' : v;
+      body.appendChild(inp);
+    }
+
+    wrap.appendChild(body);
+    return wrap;
+  }
+
+  function renderFields(list, container) {
+    container.innerHTML = '';
+    var curSection = null, sec = null;
+    list.forEach(function (f) {
+      if (f.section !== curSection) {
+        curSection = f.section;
+        sec = el('section', 'fieldset');
+        var parts = String(curSection || '').split('|');
+        sec.appendChild(el('h3', null, bilingual((parts[0] || '').trim(), (parts[1] || '').trim())));
+        var grid = el('div', 'fgrid');
+        sec.appendChild(grid);
+        sec._grid = grid;
+        container.appendChild(sec);
+      }
+      sec._grid.appendChild(fieldControl(f));
+    });
+    if (!list.length) container.appendChild(el('p', 'muted', 'ยังไม่มีหัวข้อในหมวดนี้ / No fields defined for this category.'));
+  }
+
+  function buildCommonForm() { renderFields(fieldsFor('common'), $('#commonFields')); }
+  function buildCategoryForm() { renderFields(fieldsFor(S.category), $('#catFields')); }
+
+  /* read every visible control back into S.data */
+  function harvest() {
+    var lists = {};
+    $$('[data-key]').forEach(function (n) {
+      var k = n.dataset.key, role = n.dataset.role;
+      if (role === 'list') {
+        if (!lists[k]) lists[k] = [];
+        if (n.checked) lists[k].push(n.value);
+      } else if (role === 'radio') {
+        if (n.checked) S.data[k] = n.value;
+        else if (S.data[k] === n.value && !n.checked) S.data[k] = S.data[k];
+      } else if (role === 'bool') {
+        S.data[k] = n.checked;
+      } else if (n.tagName === 'SELECT' || n.tagName === 'TEXTAREA' || n.tagName === 'INPUT') {
+        S.data[k] = n.value;
+      }
+    });
+    Object.keys(lists).forEach(function (k) { S.data[k] = lists[k]; });
+    return S.data;
+  }
+
+  function valueOf(key) {
+    var v = S.data[key];
+    if (Array.isArray(v)) v = v.join('; ');
+    if (v === true) return 'ใช่ / Yes';
+    if (v === false) return '';
+    var f = fieldByKey(key);
+    if (f && f.type === 'checklist' && S.data[key + '_other']) {
+      v = (v ? v + '; ' : '') + S.data[key + '_other'];
+    }
+    return v == null ? '' : String(v);
+  }
+
+  /* =================== drawing =================== */
+
+  var cv, ctx, drawing = false, cur = null;
+  var tool = { color: '#111111', width: 3, mode: 'pen' };
+
+  /* A figure is either a raster (Ball's original diagrams, stored as a PNG
+     data URI) or a vector drawn in figures.js. Both end up as an image URL. */
+  function figSvgUrl(figKey) {
+    var f = window.FIGURES[figKey];
+    if (f.png) return f.png;
+    var svg = f.svg.replace('<svg ', '<svg width="' + f.w + '" height="' + f.h + '" ');
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  function activeSheet() { return S.sheets[S.active] || null; }
+
+  function addSheet(figKey) {
+    S.sheets.push({ fig: figKey, strokes: [], texts: [] });
+    S.active = S.sheets.length - 1;
+    renderSheetTabs(); mountCanvas(); saveDraft();
+  }
+
+  function renderSheetTabs() {
+    var box = $('#sheetTabs');
+    box.innerHTML = '';
+    S.sheets.forEach(function (sh, i) {
+      var b = el('button', 'chip' + (i === S.active ? ' on' : ''),
+        (i + 1) + '. ' + esc(window.FIGURES[sh.fig].en));
+      b.type = 'button';
+      b.onclick = function () { S.active = i; renderSheetTabs(); mountCanvas(); };
+      box.appendChild(b);
+    });
+    var add = el('button', 'chip add', '＋ เพิ่มรูป / Add figure');
+    add.type = 'button';
+    add.onclick = function () { $('#figPicker').classList.toggle('hidden'); };
+    box.appendChild(add);
+  }
+
+  function renderFigPicker() {
+    var p = $('#figPicker');
+    p.innerHTML = '';
+    Object.keys(window.FIGURES).forEach(function (k) {
+      var f = window.FIGURES[k];
+      var b = el('button', 'figcard');
+      b.type = 'button';
+      b.innerHTML = '<img alt="" src="' + figSvgUrl(k) + '"><span>' + bilingual(f.th, f.en) + '</span>';
+      b.onclick = function () { addSheet(k); p.classList.add('hidden'); };
+      p.appendChild(b);
+    });
+  }
+
+  function mountCanvas() {
+    var host = $('#canvasHost');
+    var sh = activeSheet();
+    if (!sh) { host.innerHTML = '<p class="muted">ยังไม่มีรูป — กด “เพิ่มรูป” / No figure yet — tap “Add figure”.</p>'; return; }
+    var fig = window.FIGURES[sh.fig];
+    host.innerHTML = '';
+    var stage = el('div', 'stage');
+    stage.style.aspectRatio = fig.w + ' / ' + fig.h;
+    stage.style.backgroundImage = 'url("' + figSvgUrl(sh.fig) + '")';
+    cv = el('canvas', 'ink');
+    stage.appendChild(cv);
+    host.appendChild(stage);
+    sizeCanvas(fig);
+    bindPointer();
+  }
+
+  function sizeCanvas(fig) {
+    var rect = cv.parentNode.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cv.width = Math.max(2, Math.round(rect.width * dpr));
+    cv.height = Math.max(2, Math.round(rect.width * (fig.h / fig.w) * dpr));
+    ctx = cv.getContext('2d');
+    redraw();
+  }
+
+  function drawStroke(c, st, w, h) {
+    if (!st.p.length) return;
+    c.save();
+    c.globalCompositeOperation = st.e ? 'destination-out' : 'source-over';
+    c.strokeStyle = st.c;
+    c.lineWidth = Math.max(1, st.w * (w / 1000));
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(st.p[0][0] * w, st.p[0][1] * h);
+    for (var i = 1; i < st.p.length; i++) {
+      var a = st.p[i - 1], b = st.p[i];
+      c.quadraticCurveTo(a[0] * w, a[1] * h, (a[0] + b[0]) / 2 * w, (a[1] + b[1]) / 2 * h);
+    }
+    c.stroke();
+    c.restore();
+  }
+
+  function drawTextItem(c, t, w, h) {
+    c.save();
+    c.fillStyle = t.c;
+    c.font = '600 ' + Math.round(t.s * w / 1000) + 'px Helvetica, Arial, sans-serif';
+    c.textBaseline = 'middle';
+    c.fillText(t.t, t.x * w, t.y * h);
+    c.restore();
+  }
+
+  function redraw() {
+    var sh = activeSheet();
+    if (!ctx || !sh) return;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    sh.strokes.forEach(function (st) { drawStroke(ctx, st, cv.width, cv.height); });
+    sh.texts.forEach(function (t) { drawTextItem(ctx, t, cv.width, cv.height); });
+  }
+
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  }
+
+  function bindPointer() {
+    cv.style.touchAction = 'none';
+    cv.addEventListener('pointerdown', function (e) {
+      var sh = activeSheet(); if (!sh) return;
+      if (tool.mode === 'text') {
+        var txt = window.prompt('ข้อความ / Text:');
+        if (txt) {
+          var p = pos(e);
+          sh.texts.push({ t: txt, x: p[0], y: p[1], c: tool.color, s: 26 + tool.width * 4 });
+          redraw(); saveDraft();
+        }
+        return;
+      }
+      cv.setPointerCapture(e.pointerId);
+      drawing = true;
+      cur = { c: tool.color, w: tool.mode === 'eraser' ? tool.width * 5 : tool.width, e: tool.mode === 'eraser', p: [pos(e)] };
+      sh.strokes.push(cur);
+      redraw();
+    });
+    cv.addEventListener('pointermove', function (e) {
+      if (!drawing || !cur) return;
+      cur.p.push(pos(e));
+      redraw();
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+      cv.addEventListener(ev, function () {
+        if (!drawing) return;
+        drawing = false;
+        if (cur) cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
+        cur = null; saveDraft();
+      });
+    });
+  }
+
+  function loadImage(src) {
+    return new Promise(function (res, rej) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { rej(new Error('image load failed')); };
+      im.src = src;
+    });
+  }
+
+  function exportSheet(sh, targetW) {
+    var fig = window.FIGURES[sh.fig];
+    /* vectors can be rendered at any size; rasters are exported near their
+       own resolution so the line art stays crisp on paper */
+    var natural = fig.png ? Math.min(1600, Math.max(1000, fig.w * 2)) : 1400;
+    var w = targetW || natural, h = Math.round(w * fig.h / fig.w);
+    return loadImage(figSvgUrl(sh.fig)).then(function (img) {
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var x = c.getContext('2d');
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h);
+      x.drawImage(img, 0, 0, w, h);
+      sh.strokes.forEach(function (st) { drawStroke(x, st, w, h); });
+      sh.texts.forEach(function (t) { drawTextItem(x, t, w, h); });
+      return c.toDataURL('image/png');
+    });
+  }
+
+  function exportAllSheets() {
+    return Promise.all(S.sheets.map(function (sh) { return exportSheet(sh); }));
+  }
+
+  /* =================== photos =================== */
+
+  function addPhotos(files) {
+    var jobs = Array.prototype.slice.call(files).map(function (file) {
+      return new Promise(function (res) {
+        var fr = new FileReader();
+        fr.onload = function () {
+          loadImage(fr.result).then(function (im) {
+            var max = 1400, sc = Math.min(1, max / Math.max(im.width, im.height));
+            var c = document.createElement('canvas');
+            c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
+            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+            S.photos.push({ name: file.name, caption: '', dataUrl: c.toDataURL('image/jpeg', 0.85) });
+            res();
+          }).catch(res);
+        };
+        fr.readAsDataURL(file);
+      });
+    });
+    return Promise.all(jobs).then(function () { renderPhotos(); saveDraft(); });
+  }
+
+  function renderPhotos() {
+    var box = $('#photoList');
+    box.innerHTML = '';
+    S.photos.forEach(function (p, i) {
+      var card = el('div', 'photo');
+      card.innerHTML = '<img src="' + (p.dataUrl || p.url) + '" alt="">';
+      var cap = el('input');
+      cap.type = 'text'; cap.placeholder = 'คำบรรยาย / caption'; cap.value = p.caption || '';
+      cap.oninput = function () { p.caption = cap.value; saveDraft(); };
+      var del = el('button', 'linkbtn danger', 'ลบ / remove');
+      del.type = 'button';
+      del.onclick = function () { S.photos.splice(i, 1); renderPhotos(); saveDraft(); };
+      card.appendChild(cap); card.appendChild(del);
+      box.appendChild(card);
+    });
+    if (!S.photos.length) box.appendChild(el('p', 'muted', 'ยังไม่มีรูปถ่าย / No photos attached.'));
+  }
+
+  /* =================== printable document =================== */
+
+  function row(th, en, val, cls) {
+    return '<div class="prow ' + (cls || '') + '">' +
+      '<div class="plab"><span class="th">' + esc(th) + '</span>' +
+      '<span class="en">' + esc(en) + '</span></div>' +
+      '<div class="pval">' + nl2br(val || '') + '</div></div>';
+  }
+
+  function idBar() {
+    return '<table class="idbar"><tr>' +
+      '<td><b>AN</b> ' + esc(valueOf('an')) + '</td>' +
+      '<td><b>HN</b> ' + esc(valueOf('hn')) + '</td>' +
+      '<td class="wide"><b>ชื่อ</b> ' + esc(valueOf('patient_name')) + '</td>' +
+      '<td><b>เพศ</b> ' + esc(valueOf('sex')) + '</td>' +
+      '<td><b>อายุ</b> ' + esc(valueOf('age')) + '</td>' +
+      '<td><b>ADMIT</b> ' + esc(thaiDate(valueOf('admit_date'))) + '</td>' +
+      '<td><b>ward</b> ' + esc(valueOf('ward')) + '</td>' +
+      '</tr></table>';
+  }
+
+  function categoryLabel() {
+    var c = window.CATEGORIES.filter(function (x) { return x.key === S.category; })[0];
+    return c ? c.th + ' / ' + c.en : S.category;
+  }
+
+  function detailBlocks() {
+    var out = '', curSec = null;
+    fieldsFor(S.category).forEach(function (f) {
+      var v = valueOf(f.key);
+      if (!v) return;
+      if (f.section !== curSec) {
+        if (curSec !== null) out += '</div>';
+        curSec = f.section;
+        var parts = String(curSec).split('|');
+        out += '<div class="dsec"><h5>' + esc((parts[0] || '').trim()) +
+          ' <i>' + esc((parts[1] || '').trim()) + '</i></h5>';
+      }
+      out += row(f.th, f.en, v);
+    });
+    if (curSec !== null) out += '</div>';
+    return out || '<p class="muted">—</p>';
+  }
+
+  function figureHTML(pngs, from) {
+    var out = '';
+    for (var i = from; i < pngs.length; i++) {
+      out += '<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
+        '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>';
+    }
+    return out;
+  }
+
+  function photosHTML() {
+    if (!S.photos.length) return '';
+    return '<div class="photogrid">' + S.photos.map(function (p) {
+      return '<figure class="pph"><img src="' + (p.dataUrl || p.url) + '" alt="">' +
+        '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>';
+    }).join('') + '</div>';
+  }
+
+  function buildDocument(pngs) {
+    var p1 =
+      '<section class="pg">' +
+      '<div class="hosphead"><div class="h1">' + esc(prefs.hospital1) + '</div>' +
+      '<div class="h2">' + esc(prefs.hospital2) + '</div></div>' +
+      '<div class="formtitle"><span></span><b>รายงานการผ่าตัด (OPERATIVE NOTE)</b><span class="pgtag">หน้าแรก</span></div>' +
+      '<div class="inline2">' +
+      row('เลขที่ห้องผ่าตัด', 'OR room', valueOf('or_room')) +
+      row('ภาควิชา', 'Department', valueOf('department') || prefs.department) +
+      '</div>' +
+      '<div class="inline4">' +
+      row('วันที่', 'Date', thaiDate(valueOf('op_date'))) +
+      row('เริ่มเวลา', 'Start', valueOf('time_start')) +
+      row('เสร็จเวลา', 'Finish', valueOf('time_end')) +
+      row('รวมเวลา', 'Total', valueOf('time_total')) +
+      '</div>' +
+      idBar() +
+      row('การวินิจฉัยก่อนผ่าตัด', 'Pre-operative diagnosis', valueOf('preop_dx')) +
+      row('ข้อบ่งชี้ในการผ่าตัด', 'Indication', valueOf('indication')) +
+      row('จุดมุ่งหมายในการผ่าตัด', 'Aim of operation', valueOf('aim')) +
+      row('การวินิจฉัยหลังผ่าตัด', 'Post-operative diagnosis', valueOf('postop_dx')) +
+      row('ชนิดของการผ่าตัด', 'Operation performed', valueOf('operation')) +
+      row('อวัยวะหรือสิ่งที่ถูกตัดออก', 'Organ / tissue removed', valueOf('organ_removed')) +
+      row('ชิ้นเนื้อที่ส่งตรวจทางพยาธิวิทยา', 'Specimen to pathology', valueOf('pathology_sent')) +
+      row('ภาวะแทรกซ้อนระหว่างผ่าตัด', 'Intra-operative complication', valueOf('intraop_complication')) +
+      '<div class="inline2">' +
+      row('ประมาณการเสียเลือด (มล.)', 'Estimated blood loss', valueOf('ebl')) +
+      row('การให้ทดแทน', 'Replacement', valueOf('transfusion')) +
+      '</div>' +
+      '<div class="inline2">' +
+      row('แพทย์ผู้ผ่าตัด', 'Surgeon', valueOf('surgeon')) +
+      row('ผู้ช่วย', 'Assistant', valueOf('assistant')) +
+      '</div>' +
+      '<div class="inline2">' +
+      row('แพทย์ที่ปรึกษา', 'Consultant', valueOf('consultant')) +
+      row('ผู้บันทึกรายงาน', 'Recorded by', valueOf('recorder')) +
+      '</div>' +
+      '<div class="inline2">' +
+      row('วิสัญญีแพทย์', 'Anaesthetist', valueOf('anaesthetist')) +
+      row('วิธีระงับความรู้สึก', 'Anaesthesia', valueOf('anaesthesia')) +
+      '</div>' +
+      '<div class="inline2">' +
+      row('พยาบาลส่งเครื่องมือ', 'Scrub nurse', valueOf('scrub_nurse')) +
+      row('พยาบาลช่วยรอบนอก', 'Circulating nurse', valueOf('circulating_nurse')) +
+      '</div>' +
+      row('อื่น ๆ', 'Others', valueOf('others_note')) +
+      '<div class="findbox"><div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
+      '<div class="bbody">' + nl2br(valueOf('findings')) +
+      (pngs.length ? '<figure class="fig"><img src="' + pngs[0] + '" alt="">' +
+        '<figcaption>' + esc(window.FIGURES[S.sheets[0].fig].en) + '</figcaption></figure>' : '') +
+      '</div></div>' +
+      '<div class="pgfoot"><span>ต่อหน้าหลัง</span><span>' + esc(prefs.formCode) + '</span></div>' +
+      '</section>';
+
+    var p2 =
+      '<section class="pg last">' +
+      '<table class="flow"><thead><tr><th>' + idBar() +
+      '<div class="formtitle small"><span></span><b>รายละเอียดขั้นตอนการผ่าตัด</b>' +
+      '<span class="pgtag">หน้าหลัง</span></div></th></tr></thead>' +
+      '<tbody><tr><td>' +
+      '<div class="catline"><b>หมวด / Category:</b> ' + esc(categoryLabel()) + '</div>' +
+      detailBlocks() +
+      figureHTML(pngs, 1) +
+      photosHTML() +
+      '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
+      '<span>(' + esc(valueOf('surgeon')) + ')</span></div>' +
+      '<div class="pgfoot"><span></span><span>' + esc(prefs.formCode) + '</span></div>' +
+      '</td></tr></tbody></table></section>';
+
+    return p1 + p2;
+  }
+
+  function refreshPreview() {
+    harvest();
+    return exportAllSheets().then(function (pngs) {
+      var html = buildDocument(pngs);
+      $('#printRoot').innerHTML = html;
+      $('#previewBox').innerHTML = html;
+      return pngs;
+    });
+  }
+
+  /* =================== saving =================== */
+
+  function payload(pngs) {
+    harvest();
+    return {
+      action: S.mode === 'edit' ? 'update' : 'save',
+      id: S.id || uid(),
+      createdAt: S.createdAt || new Date().toISOString(),
+      category: S.category,
+      categoryLabel: categoryLabel(),
+      data: S.data,
+      sheets: S.sheets.map(function (sh) {
+        return { fig: sh.fig, strokes: sh.strokes, texts: sh.texts };
+      }),
+      figures: pngs.map(function (d, i) {
+        return { name: 'figure' + (i + 1) + '_' + S.sheets[i].fig + '.png', dataUrl: d };
+      }),
+      photos: S.photos.filter(function (p) { return p.dataUrl; }).map(function (p, i) {
+        return { name: 'photo' + (i + 1) + '.jpg', caption: p.caption || '', dataUrl: p.dataUrl };
+      })
+    };
+  }
+
+  function doSave() {
+    var btn = $('#btnSave');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก… / Saving…';
+    return refreshPreview().then(function (pngs) {
+      var pl = payload(pngs);
+      S.id = pl.id; S.createdAt = pl.createdAt;
+      if (!scriptUrl) { queue(pl); throw new Error('ยังไม่ได้ตั้งค่า Google Sheet / Sheet not configured'); }
+      return api('POST', pl).then(function (r) {
+        if (!r || !r.ok) throw new Error((r && r.error) || 'save failed');
+        S.mode = 'edit';
+        toast('บันทึกเรียบร้อย / Saved to Google Sheet', 'ok');
+        localStorage.removeItem(LS.draft);
+      });
+    }).catch(function (e) {
+      toast('บันทึกลงเครื่องไว้ก่อน จะส่งเมื่อออนไลน์ / Queued locally: ' + e.message, 'warn');
+    }).then(function () {
+      btn.disabled = false; btn.textContent = 'บันทึก / Save';
+      updateQueueBadge();
+    });
+  }
+
+  function queue(pl) {
+    var q = readJSON(LS.queue, []);
+    q = q.filter(function (x) { return x.id !== pl.id; });
+    q.push(pl);
+    writeJSON(LS.queue, q);
+  }
+
+  function flushQueue() {
+    var q = readJSON(LS.queue, []);
+    if (!q.length || !scriptUrl) { updateQueueBadge(); return Promise.resolve(); }
+    var next = q[0];
+    return api('POST', next).then(function (r) {
+      if (r && r.ok) {
+        q.shift(); writeJSON(LS.queue, q);
+        if (q.length) return flushQueue();
+        toast('ส่งข้อมูลค้างขึ้นระบบครบแล้ว / Pending notes uploaded', 'ok');
+      }
+    }).catch(function () { /* stay queued */ })
+      .then(updateQueueBadge);
+  }
+
+  function updateQueueBadge() {
+    var n = readJSON(LS.queue, []).length;
+    var b = $('#queueBadge');
+    b.textContent = n ? n + ' รอส่ง / pending' : '';
+    b.style.display = n ? 'inline-block' : 'none';
+  }
+
+  function saveDraft() {
+    harvest();
+    writeJSON(LS.draft, {
+      at: Date.now(), id: S.id, createdAt: S.createdAt, mode: S.mode,
+      category: S.category, data: S.data,
+      sheets: S.sheets, photos: S.photos
+    });
+  }
+
+  function restoreDraft(d) {
+    S = newNote();
+    S.id = d.id; S.createdAt = d.createdAt; S.mode = d.mode || 'new';
+    S.category = d.category || 'colorectal';
+    S.data = d.data || {};
+    S.sheets = d.sheets || [];
+    S.photos = d.photos || [];
+    S.active = 0;
+    syncCategoryUI();
+    buildCommonForm(); buildCategoryForm();
+    renderSheetTabs(); mountCanvas(); renderPhotos();
+  }
+
+  /* =================== search & reopen =================== */
+
+  function runSearch() {
+    var q = $('#searchQ').value.trim();
+    var box = $('#searchResults');
+    if (!scriptUrl) { box.innerHTML = '<p class="muted">ต้องตั้งค่า Google Sheet ก่อน / Connect the Sheet first (Settings).</p>'; return; }
+    box.innerHTML = '<p class="muted">กำลังค้นหา… / Searching…</p>';
+    api('GET', { action: 'list', q: q, limit: 100 }).then(function (r) {
+      if (!r || !r.ok) throw new Error((r && r.error) || 'search failed');
+      if (!r.rows.length) { box.innerHTML = '<p class="muted">ไม่พบข้อมูล / No matching notes.</p>'; return; }
+      var t = '<table class="results"><thead><tr>' +
+        '<th>วันที่ / Date</th><th>HN</th><th>AN</th><th>ชื่อ / Name</th>' +
+        '<th>หมวด / Category</th><th>การผ่าตัด / Operation</th><th></th></tr></thead><tbody>';
+      r.rows.forEach(function (n) {
+        var days = (Date.now() - new Date(n.createdAt).getTime()) / 86400000;
+        var can = days <= EDIT_WINDOW_DAYS;
+        t += '<tr><td>' + esc(thaiDate(n.op_date) || '') + '</td><td>' + esc(n.hn || '') +
+          '</td><td>' + esc(n.an || '') + '</td><td>' + esc(n.patient_name || '') +
+          '</td><td>' + esc(n.categoryLabel || n.category || '') + '</td><td>' + esc(n.operation || '') + '</td>' +
+          '<td class="act"><button class="mini" data-open="' + esc(n.id) + '">เปิด/ดูพิมพ์<br>Open</button>' +
+          (can ? '<button class="mini go" data-edit="' + esc(n.id) + '">แก้ไข<br>Edit</button>'
+            : '<span class="mini off" title="เกิน 30 วัน">ล็อกแล้ว<br>Locked</span>') +
+          '</td></tr>';
+      });
+      box.innerHTML = t + '</tbody></table>';
+      $$('[data-open]', box).forEach(function (b) {
+        b.onclick = function () { openNote(b.dataset.open, false); };
+      });
+      $$('[data-edit]', box).forEach(function (b) {
+        b.onclick = function () { openNote(b.dataset.edit, true); };
+      });
+    }).catch(function (e) {
+      box.innerHTML = '<p class="muted">ค้นหาไม่สำเร็จ / Search failed: ' + esc(e.message) + '</p>';
+    });
+  }
+
+  function openNote(id, editable) {
+    api('GET', { action: 'get', id: id }).then(function (r) {
+      if (!r || !r.ok || !r.note) throw new Error('not found');
+      var n = r.note;
+      S = newNote();
+      S.id = n.id; S.createdAt = n.createdAt;
+      S.category = n.category || 'colorectal';
+      S.data = n.data || {};
+      S.sheets = n.sheets || [];
+      S.photos = (n.photoUrls || []).map(function (u) {
+        return { url: u.url, caption: u.caption || '', name: u.name || '' };
+      });
+      S.mode = editable ? 'edit' : 'view';
+      syncCategoryUI();
+      buildCommonForm(); buildCategoryForm();
+      renderSheetTabs(); mountCanvas(); renderPhotos();
+      showView('new');
+      gotoStep(editable ? 1 : 4);
+      $('#btnSave').style.display = editable ? '' : 'none';
+      $('#lockNote').style.display = editable ? 'none' : '';
+      if (!editable) refreshPreview();
+      toast(editable ? 'เปิดเพื่อแก้ไข / Opened for editing' : 'เปิดเพื่อดูและพิมพ์ / Opened read-only', 'ok');
+    }).catch(function (e) {
+      toast('เปิดไม่สำเร็จ / Could not open: ' + e.message, 'warn');
+    });
+  }
+
+  /* =================== navigation =================== */
+
+  function showView(v) {
+    $$('.view').forEach(function (n) { n.classList.toggle('hidden', n.id !== 'view-' + v); });
+    $$('.mainnav button').forEach(function (b) { b.classList.toggle('on', b.dataset.view === v); });
+  }
+
+  function gotoStep(n) {
+    $$('.step').forEach(function (s) { s.classList.toggle('hidden', +s.dataset.step !== n); });
+    $$('.stepbtn').forEach(function (b) { b.classList.toggle('on', +b.dataset.step === n); });
+    $('#btnPrev').disabled = n === 1;
+    $('#btnNext').style.visibility = n === 4 ? 'hidden' : '';
+    if (n === 3 && S.sheets.length === 0) {
+      (window.FIGURE_DEFAULTS[S.category] || ['blank']).forEach(function (k) {
+        S.sheets.push({ fig: k, strokes: [], texts: [] });
+      });
+      S.active = 0; renderSheetTabs();
+    }
+    if (n === 3) { renderSheetTabs(); mountCanvas(); renderPhotos(); }
+    if (n === 4) refreshPreview();
+    window.scrollTo(0, 0);
+  }
+
+  function syncCategoryUI() {
+    $$('#catPick .catcard').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.cat === S.category);
+    });
+  }
+
+  function renderCategoryPicker() {
+    var box = $('#catPick');
+    box.innerHTML = '';
+    window.CATEGORIES.forEach(function (c) {
+      var b = el('button', 'catcard' + (c.key === S.category ? ' on' : ''));
+      b.type = 'button';
+      b.dataset.cat = c.key;
+      b.innerHTML = bilingual(c.th, c.en);
+      b.onclick = function () {
+        if (S.category === c.key) return;
+        S.category = c.key;
+        S.sheets = [];
+        syncCategoryUI(); buildCategoryForm(); saveDraft();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  /* =================== settings =================== */
+
+  function fillSettings() {
+    $('#setUrl').value = scriptUrl;
+    $('#setHosp1').value = prefs.hospital1;
+    $('#setHosp2').value = prefs.hospital2;
+    $('#setForm').value = prefs.formCode;
+    $('#setDept').value = prefs.department;
+    $('#setSurgeon').value = prefs.surgeon;
+    $('#setRecorder').value = prefs.recorder;
+    var at = localStorage.getItem(LS.tplAt);
+    $('#tplInfo').textContent = TEMPLATES.length + ' fields' +
+      (at ? ' · updated ' + new Date(at).toLocaleString() : ' · built-in defaults');
+  }
+
+  function saveSettings() {
+    scriptUrl = $('#setUrl').value.trim().replace(/\s+/g, '');
+    localStorage.setItem(LS.url, scriptUrl);
+    prefs.hospital1 = $('#setHosp1').value;
+    prefs.hospital2 = $('#setHosp2').value;
+    prefs.formCode = $('#setForm').value;
+    prefs.department = $('#setDept').value;
+    prefs.surgeon = $('#setSurgeon').value;
+    prefs.recorder = $('#setRecorder').value;
+    writeJSON(LS.prefs, prefs);
+    toast('บันทึกการตั้งค่าแล้ว / Settings saved', 'ok');
+    updateConnBadge();
+  }
+
+  function updateConnBadge() {
+    var b = $('#connBadge');
+    if (!scriptUrl) { b.textContent = 'ยังไม่เชื่อมต่อ Sheet / not connected'; b.className = 'badge warn'; return; }
+    b.textContent = navigator.onLine ? 'เชื่อมต่อแล้ว / connected' : 'ออฟไลน์ / offline';
+    b.className = 'badge ' + (navigator.onLine ? 'ok' : 'warn');
+  }
+
+  /* =================== boot =================== */
+
+  function bind() {
+    $$('.mainnav button').forEach(function (b) {
+      b.onclick = function () { showView(b.dataset.view); if (b.dataset.view === 'settings') fillSettings(); };
+    });
+    $$('.stepbtn').forEach(function (b) { b.onclick = function () { harvest(); gotoStep(+b.dataset.step); }; });
+    $('#btnPrev').onclick = function () {
+      var curStep = +$$('.stepbtn.on')[0].dataset.step;
+      harvest(); gotoStep(Math.max(1, curStep - 1));
+    };
+    $('#btnNext').onclick = function () {
+      var curStep = +$$('.stepbtn.on')[0].dataset.step;
+      harvest(); saveDraft(); gotoStep(Math.min(4, curStep + 1));
+    };
+
+    document.addEventListener('input', function (e) {
+      if (e.target.dataset && e.target.dataset.key) saveDraft();
+    });
+    document.addEventListener('change', function (e) {
+      if (e.target.dataset && e.target.dataset.key) saveDraft();
+    });
+
+    /* drawing toolbar */
+    $$('#penColors button').forEach(function (b) {
+      b.onclick = function () {
+        tool.color = b.dataset.color; tool.mode = 'pen';
+        $$('#penColors button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        $$('.toolbtn').forEach(function (x) { x.classList.remove('on'); });
+      };
+    });
+    $('#penSize').oninput = function () { tool.width = +this.value; };
+    $('#toolPen').onclick = function () { tool.mode = 'pen'; markTool(this); };
+    $('#toolEraser').onclick = function () { tool.mode = 'eraser'; markTool(this); };
+    $('#toolText').onclick = function () { tool.mode = 'text'; markTool(this); };
+    function markTool(b) { $$('.toolbtn').forEach(function (x) { x.classList.toggle('on', x === b); }); }
+    $('#toolUndo').onclick = function () {
+      var sh = activeSheet(); if (!sh) return;
+      if (sh.strokes.length) sh.strokes.pop();
+      else if (sh.texts.length) sh.texts.pop();
+      redraw(); saveDraft();
+    };
+    $('#toolClear').onclick = function () {
+      var sh = activeSheet(); if (!sh) return;
+      if (!window.confirm('ล้างภาพวาดทั้งหมดในแผ่นนี้? / Clear all drawing on this sheet?')) return;
+      sh.strokes = []; sh.texts = []; redraw(); saveDraft();
+    };
+    $('#toolDeleteSheet').onclick = function () {
+      if (!S.sheets.length) return;
+      if (!window.confirm('ลบแผ่นรูปนี้? / Remove this figure sheet?')) return;
+      S.sheets.splice(S.active, 1);
+      S.active = Math.max(0, S.active - 1);
+      renderSheetTabs(); mountCanvas(); saveDraft();
+    };
+    $('#photoInput').onchange = function () { addPhotos(this.files); this.value = ''; };
+
+    /* review actions */
+    $('#btnPrint').onclick = function () { refreshPreview().then(function () { window.print(); }); };
+    $('#btnSave').onclick = doSave;
+    $('#btnRefresh').onclick = function () { refreshPreview(); };
+    $('#btnNew').onclick = function () {
+      if (!window.confirm('เริ่มบันทึกใหม่? ข้อมูลที่ยังไม่บันทึกจะหายไป / Start a new note? Unsaved data will be lost.')) return;
+      localStorage.removeItem(LS.draft);
+      S = newNote();
+      S.data.op_date = todayISO();
+      S.data.surgeon = prefs.surgeon;
+      S.data.recorder = prefs.recorder;
+      S.data.department = prefs.department;
+      syncCategoryUI(); buildCommonForm(); buildCategoryForm();
+      renderSheetTabs(); mountCanvas(); renderPhotos();
+      $('#btnSave').style.display = ''; $('#lockNote').style.display = 'none';
+      gotoStep(1);
+    };
+
+    /* search */
+    $('#btnSearch').onclick = runSearch;
+    $('#searchQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') runSearch(); });
+
+    /* settings */
+    $('#btnSaveSettings').onclick = saveSettings;
+    $('#btnTest').onclick = function () {
+      saveSettings();
+      api('GET', { action: 'ping' }).then(function (r) {
+        toast(r && r.ok ? 'เชื่อมต่อสำเร็จ / Connection OK' : 'ตอบกลับผิดรูปแบบ / Unexpected reply', r && r.ok ? 'ok' : 'warn');
+      }).catch(function (e) { toast('เชื่อมต่อไม่ได้ / Failed: ' + e.message, 'warn'); });
+    };
+    $('#btnReloadTpl').onclick = function () { loadTemplatesFromSheet(false).then(fillSettings); };
+    $('#btnBackup').onclick = function () {
+      var blob = new Blob([JSON.stringify({
+        prefs: prefs, templates: TEMPLATES,
+        draft: readJSON(LS.draft, null), queue: readJSON(LS.queue, [])
+      }, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = todayISO() + '-opnote-backup.json';
+      a.click();
+    };
+    $('#btnFlush').onclick = function () { flushQueue(); };
+
+    window.addEventListener('online', function () { updateConnBadge(); flushQueue(); });
+    window.addEventListener('offline', updateConnBadge);
+    window.addEventListener('resize', function () {
+      var sh = activeSheet();
+      if (sh && cv && cv.parentNode) sizeCanvas(window.FIGURES[sh.fig]);
+    });
+  }
+
+  function init() {
+    renderCategoryPicker();
+    renderFigPicker();
+    buildCommonForm();
+    buildCategoryForm();
+    bind();
+    updateConnBadge();
+    updateQueueBadge();
+
+    var d = readJSON(LS.draft, null);
+    if (d && d.data && Object.keys(d.data).length) {
+      if (window.confirm('พบร่างที่ยังไม่บันทึก ต้องการเปิดต่อหรือไม่?\nAn unsaved draft was found. Continue editing it?')) {
+        restoreDraft(d);
+      } else {
+        localStorage.removeItem(LS.draft);
+        S.data.op_date = todayISO();
+        buildCommonForm();
+      }
+    } else {
+      S.data.op_date = todayISO();
+      S.data.surgeon = prefs.surgeon;
+      S.data.recorder = prefs.recorder;
+      S.data.department = prefs.department;
+      buildCommonForm();
+    }
+
+    gotoStep(1);
+    if (scriptUrl) { loadTemplatesFromSheet(true); flushQueue(); }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+})();

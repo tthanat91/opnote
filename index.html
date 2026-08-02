@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5c53">
+<title>Operative Note · บันทึกการผ่าตัด</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b5c53'/%3E%3Cpath d='M9 8h11l4 4v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z' fill='%23fff'/%3E%3C/svg%3E">
+
+<style>
+/* ============================ base ============================ */
+:root{
+  --ink:#16211f; --muted:#6b7b78; --line:#d7e0de; --bg:#f4f7f6;
+  --brand:#0b5c53; --brand-2:#0e7a6d; --accent:#b8542a;
+  --ok:#1f7a4d; --warn:#a4560c; --radius:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Sarabun","TH Sarabun New","Noto Sans Thai",Thonburi,-apple-system,
+              BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:16px; line-height:1.5; color:var(--ink); background:var(--bg);
+  -webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none !important}
+.muted{color:var(--muted)}
+h3,h4,h5{margin:0}
+
+/* bilingual label pairs */
+.th{display:block}
+.en{display:block;font-size:.78em;color:var(--muted);line-height:1.25}
+
+/* ============================ chrome ============================ */
+.topbar{
+  position:sticky;top:0;z-index:30;background:var(--brand);color:#fff;
+  display:flex;align-items:center;gap:14px;padding:10px 16px;
+  padding-top:calc(10px + env(safe-area-inset-top));flex-wrap:wrap;
+}
+.brand{font-weight:700;letter-spacing:.2px;line-height:1.15}
+.brand small{display:block;font-weight:400;opacity:.85;font-size:.72em}
+.mainnav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.mainnav button{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  color:#fff;border-radius:999px;padding:6px 14px;cursor:pointer;font-size:.9rem;
+}
+.mainnav button.on{background:#fff;color:var(--brand);font-weight:600}
+.badge{font-size:.72rem;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.18)}
+.badge.ok{background:#d8f0e3;color:#14512f}
+.badge.warn{background:#fbe6cf;color:#7d4207}
+#queueBadge{display:none;background:#fbe6cf;color:#7d4207;font-size:.72rem;
+  padding:3px 9px;border-radius:999px}
+
+main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
+
+/* ============================ steps ============================ */
+.steps{display:flex;gap:8px;overflow:auto;padding-bottom:10px;margin-bottom:6px}
+.stepbtn{
+  flex:1 1 0;min-width:120px;background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius);padding:9px 10px;cursor:pointer;text-align:left;line-height:1.2;
+}
+.stepbtn b{display:block;font-size:.9rem}
+.stepbtn small{color:var(--muted);font-size:.72rem}
+.stepbtn.on{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand);background:#eef6f4}
+
+.stepnav{
+  position:fixed;left:0;right:0;bottom:0;z-index:25;background:#fff;
+  border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;
+  padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));
+}
+.stepnav .grow{flex:1}
+
+/* ============================ forms ============================ */
+.fieldset{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:14px}
+.fieldset h3{font-size:1rem;color:var(--brand);border-bottom:1px solid var(--line);
+  padding-bottom:8px;margin-bottom:12px}
+.fieldset h3 .en{color:#7fa9a2}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.f-textarea,.field.f-checklist,.field.f-radio{grid-column:1/-1}
+.flabel{font-weight:600;font-size:.92rem}
+.flabel .en{font-weight:400}
+.fbody input[type=text],.fbody input[type=number],.fbody input[type=date],
+.fbody input[type=time],.fbody select,.fbody textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fdfefe;
+}
+.fbody textarea{resize:vertical;min-height:84px;line-height:1.55}
+.fbody input:focus,.fbody select:focus,.fbody textarea:focus{
+  outline:none;border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(14,122,109,.14)}
+.optgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px}
+.opt{display:flex;gap:8px;align-items:flex-start;background:#f8fbfa;border:1px solid var(--line);
+  border-radius:9px;padding:8px 10px;cursor:pointer;font-size:.9rem}
+.opt input{margin-top:3px;flex:none;width:18px;height:18px;accent-color:var(--brand)}
+.opt.single{max-width:220px}
+.other{margin-top:8px;width:100%;padding:8px 11px;border:1px dashed var(--line);border-radius:9px}
+.linkbtn{background:none;border:none;color:var(--brand-2);cursor:pointer;font-size:.8rem;
+  padding:2px 0;text-decoration:underline}
+.linkbtn.danger{color:#a12f2f}
+
+/* category picker */
+#catPick{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.catcard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;cursor:pointer;text-align:left;font-weight:600}
+.catcard.on{border-color:var(--brand);background:#e9f4f2;box-shadow:inset 0 0 0 1px var(--brand)}
+
+/* ============================ drawing ============================ */
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px}
+.panel > h3{font-size:1rem;color:var(--brand);margin-bottom:10px}
+#sheetTabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{background:#f1f5f4;border:1px solid var(--line);border-radius:999px;padding:6px 13px;
+  cursor:pointer;font-size:.85rem}
+.chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.chip.add{border-style:dashed;color:var(--brand-2)}
+#figPicker{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;
+  margin-bottom:12px;background:#f8fbfa;border:1px dashed var(--line);border-radius:var(--radius);padding:10px}
+.figcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;cursor:pointer;text-align:center}
+.figcard img{width:100%;height:88px;object-fit:contain}
+.figcard span{font-size:.75rem}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolbtn{background:#f1f5f4;border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.85rem}
+.toolbtn.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+#penColors{display:flex;gap:6px}
+#penColors button{width:28px;height:28px;border-radius:50%;border:2px solid #fff;
+  box-shadow:0 0 0 1px var(--line);cursor:pointer}
+#penColors button.on{box-shadow:0 0 0 3px var(--brand-2)}
+#penSize{width:110px;accent-color:var(--brand)}
+.stage{position:relative;width:100%;background:#fff no-repeat center/contain;
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none}
+canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#photoList{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.photo{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}
+.photo img{width:100%;height:120px;object-fit:cover;border-radius:7px;display:block;margin-bottom:6px}
+.photo input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:.8rem}
+
+/* ============================ buttons ============================ */
+.btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:11px 20px;
+  cursor:pointer;font-weight:600}
+.btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+.btn.alt{background:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.mini{background:#eef4f3;border:1px solid var(--line);border-radius:7px;padding:5px 9px;
+  font-size:.72rem;cursor:pointer;line-height:1.15;margin:2px}
+.mini.go{background:var(--brand);color:#fff;border-color:var(--brand)}
+.mini.off{display:inline-block;background:#f3f3f3;color:#999;border:1px solid var(--line);
+  border-radius:7px;padding:5px 9px;font-size:.72rem}
+
+/* ============================ search ============================ */
+.searchbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.searchbar input{flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--line);border-radius:10px}
+table.results{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden;font-size:.86rem}
+table.results th,table.results td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+table.results th{background:#eef4f3;color:var(--brand);font-size:.78rem}
+table.results td.act{white-space:nowrap}
+
+/* ============================ toast ============================ */
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(140%);
+  bottom:86px;background:#16211f;color:#fff;padding:11px 18px;border-radius:10px;
+  z-index:60;max-width:90vw;transition:transform .25s;font-size:.88rem}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--ok)} .toast.warn{background:var(--warn)}
+
+/* ============================ preview / print ============================ */
+#previewBox{background:#dfe6e4;padding:14px;border-radius:var(--radius);overflow:auto}
+#previewBox .pg{transform-origin:top left}
+#printRoot{display:none}
+
+.pg{
+  background:#fff;width:186mm;min-height:272mm;margin:0 auto 14px;padding:6mm 7mm;
+  font-size:13px;line-height:1.42;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
+}
+.hosphead{text-align:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:5px}
+.hosphead .h1{font-size:16px;font-weight:700}
+.hosphead .h2{font-size:10.5px}
+.formtitle{display:flex;justify-content:space-between;align-items:center;
+  border:1.5px solid #000;padding:3px 8px;font-size:14px;margin-bottom:5px}
+.formtitle.small{font-size:12.5px;margin-top:4px}
+.formtitle .pgtag{font-size:11px}
+.prow{display:flex;gap:6px;border-bottom:1px dotted #999;padding:2.5px 0;align-items:baseline}
+.plab{flex:0 0 40%;font-weight:600;font-size:12px}
+.plab .en{font-size:9.5px;color:#666;display:inline;margin-left:4px}
+.plab .th{display:inline}
+.pval{flex:1;min-width:0;word-wrap:break-word}
+.inline2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.inline4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px}
+.inline2 .plab,.inline4 .plab{flex:0 0 auto;margin-right:6px}
+table.idbar{width:100%;border-collapse:collapse;margin:5px 0;font-size:11.5px}
+table.idbar td{border:1px solid #000;padding:2.5px 5px}
+table.idbar td.wide{width:32%}
+.findbox{border:1.5px solid #000;margin-top:6px}
+.findbox .bhead{background:#eee;border-bottom:1px solid #000;padding:2px 8px;font-weight:700;font-size:12.5px}
+.findbox .bhead i{font-weight:400;font-size:10.5px;color:#444}
+.findbox .bbody{padding:6px 8px;min-height:52mm}
+.dsec{margin-bottom:8px;break-inside:avoid}
+.dsec h5{background:#eee;border-left:3px solid #000;padding:2px 7px;font-size:12px;margin:8px 0 3px}
+.dsec h5 i{font-weight:400;color:#555;font-size:10.5px}
+.catline{border:1px solid #000;padding:3px 8px;margin-bottom:6px;font-size:12.5px;background:#f6f6f6}
+figure.fig{margin:8px 0;text-align:center;break-inside:avoid}
+figure.fig img{max-width:88%;max-height:105mm;object-fit:contain;border:1px solid #ccc}
+figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
+.photogrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+figure.pph{margin:0;break-inside:avoid}
+figure.pph img{width:100%;height:38mm;object-fit:cover;border:1px solid #999}
+figure.pph figcaption{font-size:9.5px;color:#555}
+.signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
+.pgfoot{display:flex;justify-content:space-between;font-size:10px;margin-top:8px;color:#333}
+table.flow{width:100%;border-collapse:collapse}
+table.flow th{text-align:left;font-weight:400}
+table.flow td{padding-top:4px;vertical-align:top}
+
+@media print{
+  @page{size:A4;margin:11mm}
+  body{background:#fff;font-size:12.5px}
+  .app,.toast,.stepnav{display:none !important}
+  #printRoot{display:block}
+  .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:always}
+  .pg.last{page-break-after:auto}
+  figure.fig img{max-height:98mm}
+}
+
+@media (max-width:640px){
+  .plab{flex:0 0 46%}
+  .pg{width:100%;padding:8px}
+  .brand small{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">Operative Note<small>บันทึกการผ่าตัด · Vajira Hospital</small></div>
+    <span id="connBadge" class="badge">…</span>
+    <span id="queueBadge"></span>
+    <nav class="mainnav">
+      <button data-view="new" class="on">ใหม่ · New</button>
+      <button data-view="search">ค้นหา · Search</button>
+      <button data-view="settings">ตั้งค่า · Settings</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- =================== NEW / EDIT =================== -->
+    <section class="view" id="view-new">
+
+      <div class="steps">
+        <button class="stepbtn on" data-step="1"><b>1 · ผู้ป่วย</b><small>Patient &amp; form</small></button>
+        <button class="stepbtn" data-step="2"><b>2 · รายละเอียด</b><small>Procedure detail</small></button>
+        <button class="stepbtn" data-step="3"><b>3 · รูปวาด</b><small>Figures &amp; photos</small></button>
+        <button class="stepbtn" data-step="4"><b>4 · ตรวจทาน</b><small>Review &amp; print</small></button>
+      </div>
+
+      <div class="step" data-step="1">
+        <div id="catPick"></div>
+        <div id="commonFields"></div>
+      </div>
+
+      <div class="step hidden" data-step="2">
+        <div id="catFields"></div>
+      </div>
+
+      <div class="step hidden" data-step="3">
+        <div class="panel">
+          <h3>รูปวาดประกอบ <span class="en">Annotated figures — draw with finger, Apple Pencil or mouse</span></h3>
+          <div id="sheetTabs"></div>
+          <div id="figPicker" class="hidden"></div>
+          <div class="toolbar">
+            <div id="penColors">
+              <button type="button" class="on" data-color="#111111" style="background:#111"></button>
+              <button type="button" data-color="#c62828" style="background:#c62828"></button>
+              <button type="button" data-color="#1565c0" style="background:#1565c0"></button>
+              <button type="button" data-color="#2e7d32" style="background:#2e7d32"></button>
+              <button type="button" data-color="#ef6c00" style="background:#ef6c00"></button>
+            </div>
+            <input type="range" id="penSize" min="1" max="10" value="3" title="ขนาดปากกา / pen size">
+            <button type="button" class="toolbtn on" id="toolPen">✏️ วาด · Draw</button>
+            <button type="button" class="toolbtn" id="toolText">T ข้อความ · Text</button>
+            <button type="button" class="toolbtn" id="toolEraser">◻︎ ลบ · Erase</button>
+            <button type="button" class="toolbtn" id="toolUndo">↩︎ ย้อน · Undo</button>
+            <button type="button" class="toolbtn" id="toolClear">ล้าง · Clear</button>
+            <button type="button" class="toolbtn" id="toolDeleteSheet">🗑 ลบแผ่น · Delete sheet</button>
+          </div>
+          <div id="canvasHost"></div>
+        </div>
+
+        <div class="panel">
+          <h3>รูปถ่ายชิ้นเนื้อ / ภาพในห้องผ่าตัด
+            <span class="en">Specimen or intra-operative photographs — printed small on the note</span></h3>
+          <p><input type="file" id="photoInput" accept="image/*" multiple></p>
+          <div id="photoList"></div>
+        </div>
+      </div>
+
+      <div class="step hidden" data-step="4">
+        <div class="panel">
+          <h3>ตรวจทานก่อนพิมพ์ <span class="en">Review, then print to A4 or save as PDF</span></h3>
+          <p class="muted" id="lockNote" style="display:none">
+            บันทึกนี้เกิน 30 วัน แก้ไขไม่ได้ เปิดดูและพิมพ์ซ้ำได้เท่านั้น<br>
+            <span class="en">This note is older than 30 days — read-only, reprint permitted.</span>
+          </p>
+          <p>
+            <button class="btn" id="btnPrint">🖨 พิมพ์ / บันทึกเป็น PDF · Print / Save as PDF</button>
+            <button class="btn ghost" id="btnRefresh">รีเฟรชตัวอย่าง · Refresh preview</button>
+            <button class="btn alt" id="btnSave">บันทึก / Save</button>
+          </p>
+        </div>
+        <div id="previewBox"></div>
+      </div>
+
+      <div class="stepnav">
+        <button class="btn ghost" id="btnPrev">← ก่อนหน้า · Back</button>
+        <button class="btn ghost" id="btnNew">＋ บันทึกใหม่ · New note</button>
+        <span class="grow"></span>
+        <button class="btn" id="btnNext">ถัดไป · Next →</button>
+      </div>
+    </section>
+
+    <!-- =================== SEARCH =================== -->
+    <section class="view hidden" id="view-search">
+      <div class="panel">
+        <h3>ค้นหาบันทึกการผ่าตัด <span class="en">Search by HN, AN, patient name or operation</span></h3>
+        <div class="searchbar">
+          <input type="text" id="searchQ" placeholder="HN / AN / ชื่อผู้ป่วย / ชนิดการผ่าตัด">
+          <button class="btn" id="btnSearch">ค้นหา · Search</button>
+        </div>
+        <p class="muted" style="font-size:.85rem">
+          แก้ไขได้ภายใน 30 วันนับจากวันที่บันทึก หลังจากนั้นเปิดดูและพิมพ์ซ้ำได้เท่านั้น<br>
+          <span class="en">Notes stay editable for 30 days; after that they are read-only but can still be reprinted.</span>
+        </p>
+      </div>
+      <div id="searchResults"></div>
+    </section>
+
+    <!-- =================== SETTINGS =================== -->
+    <section class="view hidden" id="view-settings">
+      <div class="panel">
+        <h3>การเชื่อมต่อ Google Sheet <span class="en">Google Apps Script connection</span></h3>
+        <div class="field">
+          <label class="flabel"><span class="th">URL ของ Web App</span><span class="en">Apps Script web app URL (ends with /exec)</span></label>
+          <div class="fbody"><input type="text" id="setUrl" placeholder="https://script.google.com/macros/s/…/exec"></div>
+        </div>
+        <p>
+          <button class="btn" id="btnSaveSettings">บันทึกการตั้งค่า · Save settings</button>
+          <button class="btn ghost" id="btnTest">ทดสอบการเชื่อมต่อ · Test</button>
+          <button class="btn ghost" id="btnReloadTpl">โหลดแบบฟอร์มใหม่ · Reload templates</button>
+          <button class="btn ghost" id="btnFlush">ส่งข้อมูลค้าง · Upload pending</button>
+        </p>
+        <p class="muted" id="tplInfo"></p>
+      </div>
+
+      <div class="panel">
+        <h3>หัวกระดาษและค่าตั้งต้น <span class="en">Letterhead and personal defaults</span></h3>
+        <div class="fgrid">
+          <div class="field" style="grid-column:1/-1">
+            <label class="flabel"><span class="th">ชื่อสถาบัน บรรทัดที่ 1</span><span class="en">Institution, line 1</span></label>
+            <div class="fbody"><input type="text" id="setHosp1"></div>
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label class="flabel"><span class="th">ที่อยู่ บรรทัดที่ 2</span><span class="en">Address, line 2</span></label>
+            <div class="fbody"><input type="text" id="setHosp2"></div>
+          </div>
+          <div class="field">
+            <label class="flabel"><span class="th">รหัสแบบฟอร์ม</span><span class="en">Form code</span></label>
+            <div class="fbody"><input type="text" id="setForm"></div>
+          </div>
+          <div class="field">
+            <label class="flabel"><span class="th">ภาควิชา</span><span class="en">Department</span></label>
+            <div class="fbody"><input type="text" id="setDept"></div>
+          </div>
+          <div class="field">
+            <label class="flabel"><span class="th">ชื่อแพทย์ผู้ผ่าตัด (ค่าตั้งต้น)</span><span class="en">Default surgeon</span></label>
+            <div class="fbody"><input type="text" id="setSurgeon"></div>
+          </div>
+          <div class="field">
+            <label class="flabel"><span class="th">ผู้บันทึกรายงาน (ค่าตั้งต้น)</span><span class="en">Default recorder</span></label>
+            <div class="fbody"><input type="text" id="setRecorder"></div>
+          </div>
+        </div>
+        <p><button class="btn" id="btnBackup">ดาวน์โหลดสำรองข้อมูลในเครื่อง · Download local backup</button></p>
+      </div>
+
+      <div class="panel">
+        <h3>วิธีเพิ่มหรือแก้ไขช่องกรอก <span class="en">How to add or change fields</span></h3>
+        <p style="font-size:.9rem">
+          เปิด Google Sheet ของคุณ ไปที่แท็บ <b>Templates</b> แล้วเพิ่มหนึ่งแถวต่อหนึ่งช่องกรอก
+          คอลัมน์คือ <code>category, section, key, th, en, type, options</code>
+          จากนั้นกลับมากด “โหลดแบบฟอร์มใหม่”<br>
+          <span class="en">Open the <b>Templates</b> tab of your Sheet and add one row per field, then press
+          “Reload templates”. To turn a free-text box into checkboxes later, add rows of type
+          <code>checklist</code> with your options separated by semicolons — old free-text answers stay in
+          their own column and are never lost.</span>
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="printRoot"></div>
+<div id="toast" class="toast"></div>
+
+<script src="figures.js"></script>
+<script src="figures-original.js"></script>
+<script src="templates.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
