@@ -179,7 +179,7 @@ table.results td.act{white-space:nowrap}
 
 .pg{
   background:#fff;width:186mm;min-height:272mm;margin:0 auto 14px;padding:6mm 7mm;
-  font-size:13px;line-height:1.42;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
+  font-size:var(--fs,12px);line-height:1.4;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
 }
 .hosphead{display:flex;align-items:center;gap:8px;
   border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:5px}
@@ -193,13 +193,18 @@ table.results td.act{white-space:nowrap}
 .formtitle.small{font-size:12.5px;margin-top:4px}
 .formtitle .pgtag{font-size:11px}
 .prow{display:flex;gap:6px;border-bottom:1px dotted #999;padding:2.5px 0;align-items:baseline}
-.plab{flex:0 0 40%;font-weight:600;font-size:12px}
-.plab .en{font-size:9.5px;color:#666;display:inline;margin-left:4px}
+.plab{flex:0 0 40%;font-weight:600;font-size:1em}
+.plab .en{font-size:.78em;color:#666;display:inline;margin-left:4px;font-weight:400}
 .plab .th{display:inline}
-.pval{flex:1;min-width:0;word-wrap:break-word}
+.pval{flex:1;min-width:0;word-wrap:break-word;font-size:1em}
 .inline2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 .inline4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px}
 .inline2 .plab,.inline4 .plab{flex:0 0 auto;margin-right:6px}
+/* the four-up row is too narrow for a label and a value side by side,
+   so stack them: label on top, value beneath */
+.inline4 .prow{display:block}
+.inline4 .plab,.inline4 .pval{display:block;margin:0}
+.inline4 .pval{padding-left:1px}
 table.idbar{width:100%;border-collapse:collapse;margin:5px 0;font-size:11.5px}
 table.idbar td{border:1px solid #000;padding:2.5px 5px}
 table.idbar td.wide{width:32%}
@@ -409,6 +414,17 @@ table.flow td{padding-top:4px;vertical-align:top}
             </div>
           </div>
           <div class="field">
+            <label class="flabel"><span class="th">ขนาดตัวอักษรเมื่อพิมพ์</span><span class="en">Printed text size</span></label>
+            <div class="fbody">
+              <select id="setFontSize">
+                <option value="10.5">เล็กมาก · Very small — 10.5 px</option>
+                <option value="11">เล็ก · Small — 11 px</option>
+                <option value="12">มาตรฐาน · Standard — 12 px</option>
+                <option value="13">ใหญ่ · Large — 13 px</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
             <label class="flabel"><span class="th">ขนาดรูปสูงสุดเมื่อพิมพ์</span><span class="en">Maximum printed image size</span></label>
             <div class="fbody">
               <select id="setImgSize">
@@ -447,10 +463,10 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="figures.js?v=f"></script>
-<script src="figures-original.js?v=f"></script>
-<script src="letterhead.js?v=f"></script>
-<script src="templates.js?v=f"></script>
-<script src="app.js?v=f"></script>
+<script src="figures.js?v=g"></script>
+<script src="figures-original.js?v=g"></script>
+<script src="letterhead.js?v=g"></script>
+<script src="templates.js?v=g"></script>
+<script src="app.js?v=g"></script>
 </body>
 </html>

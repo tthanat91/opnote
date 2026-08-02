@@ -27,7 +27,8 @@
     surgeon: '',
     recorder: '',
     showLogo: true,
-    imgSize: '55x38'      /* max printed width × height, in millimetres */
+    imgSize: '55x38',     /* max printed width × height, in millimetres */
+    fontSize: '12'        /* printed body text size, in px */
   };
 
   var EDIT_WINDOW_DAYS = 30;
@@ -38,7 +39,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02f';
+  var APP_BUILD = '2026-08-02g';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || '';
@@ -104,7 +105,7 @@
     if (!iso) return '';
     var p = String(iso).split('-');
     if (p.length !== 3) return iso;
-    return p[2] + ' / ' + p[1] + ' / ' + (parseInt(p[0], 10) + 543);
+    return p[2] + '/' + p[1] + '/' + (parseInt(p[0], 10) + 543);
   }
 
   /* =================== templates =================== */
@@ -419,7 +420,7 @@
     if (!s) return '';
     if (!/^\d+$/.test(s)) return s;
     var n = parseInt(s, 10), h = Math.floor(n / 60), m = n % 60;
-    return n + ' นาที' + (h ? ' (' + h + ' ชม. ' + m + ' นาที)' : '');
+    return n + ' นาที' + (h ? ' (' + h + ' ชม. ' + m + ' น.)' : '');
   }
 
   function valueOf(key) {
@@ -717,7 +718,8 @@
 
   function imgVars() {
     var p = String(prefs.imgSize || '55x38').split('x');
-    return '--imgw:' + (+p[0] || 55) + 'mm;--imgh:' + (+p[1] || 38) + 'mm';
+    return '--imgw:' + (+p[0] || 55) + 'mm;--imgh:' + (+p[1] || 38) + 'mm' +
+      ';--fs:' + (parseFloat(prefs.fontSize) || 12) + 'px';
   }
 
   function letterhead() {
@@ -1034,6 +1036,7 @@
     $('#setRecorder').value = prefs.recorder;
     $('#setLogo').checked = prefs.showLogo !== false;
     $('#setImgSize').value = prefs.imgSize || '55x38';
+    $('#setFontSize').value = String(prefs.fontSize || '12');
     var at = localStorage.getItem(LS.tplAt);
     $('#tplInfo').innerHTML = TEMPLATES.length + ' fields' +
       (at ? ' · updated ' + esc(new Date(at).toLocaleString()) : ' · built-in defaults') +
@@ -1052,6 +1055,7 @@
     prefs.recorder = $('#setRecorder').value;
     prefs.showLogo = $('#setLogo').checked;
     prefs.imgSize = $('#setImgSize').value;
+    prefs.fontSize = $('#setFontSize').value;
     writeJSON(LS.prefs, prefs);
     toast('บันทึกการตั้งค่าแล้ว / Settings saved', 'ok');
     updateConnBadge();
