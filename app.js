@@ -46,7 +46,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02n';
+  var APP_BUILD = '2026-08-02p';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1376,13 +1376,31 @@
       var out = $('#connDiag');
       out.className = 'diag';
       out.innerHTML = 'กำลังทดสอบ… / testing…';
-      api('GET', { action: 'ping' }).then(function (r) {
+      var t0 = Date.now(), timings = [];
+      function timedPing() {
+        var t = Date.now();
+        return api('GET', { action: 'ping' }).then(function (r) {
+          timings.push(Date.now() - t);
+          return r;
+        });
+      }
+      timedPing().then(function (r) {
+        return timedPing().then(function () { return timedPing(); }).then(function () { return r; });
+      }).then(function (r) {
         if (r && r.ok) {
           var current = r.build === EXPECTED_BUILD;
           out.className = 'diag ' + (current ? 'ok' : 'warn');
+          var slow = timings[0] > 4000;
           out.innerHTML = '<b>เชื่อมต่อสำเร็จ · Connection OK</b><br>' +
-            'เวลาที่เซิร์ฟเวอร์ตอบกลับ / server time: ' + esc(r.time || '') + '<br>' +
             'เวอร์ชันสคริปต์ / script build: <code>' + esc(r.build || 'unknown') + '</code>' +
+            ' · เวอร์ชันแอป / app build: <code>' + esc(APP_BUILD) + '</code><br>' +
+            'ความเร็ว 3 ครั้ง / three round trips: <b>' + timings.join(' · ') + ' ms</b><br>' +
+            '<span class="en">' +
+            (slow
+              ? 'The first call was slow and later ones faster — that is Google waking the ' +
+                'script up (cold start). Nothing in the app can shorten it.'
+              : 'All three were quick, so the script is warm and the network is fine.') +
+            '</span>' +
             (current ? ' &#10003;'
               : '<br><br><b>สคริปต์ที่ deploy ยังเป็นเวอร์ชันเก่า</b> (คาดว่าเป็น <code>' +
               esc(EXPECTED_BUILD) + '</code>)<br><span class="en">The deployed script is an older ' +
@@ -1485,7 +1503,13 @@
     gotoStep(1);
     applyIdentity();
     ensureAccess().then(function () {
-      if (scriptUrl) { loadTemplatesFromSheet(true); flushQueue(); }
+      if (!scriptUrl) return;
+      /* Templates change once in a while, not once a session. Refreshing
+         them on every open added a second cold-start-prone request that
+         competed with the sign-in check. Six hours, or press Reload. */
+      var at = Date.parse(localStorage.getItem(LS.tplAt) || '') || 0;
+      if (Date.now() - at > 6 * 3600 * 1000) loadTemplatesFromSheet(true);
+      flushQueue();
     });
   }
 
