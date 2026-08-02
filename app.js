@@ -25,7 +25,9 @@
     formCode: 'MR 08.1  แก้ไขครั้งที่ 00',
     department: 'ศัลยศาสตร์',
     surgeon: '',
-    recorder: ''
+    recorder: '',
+    showLogo: true,
+    imgSize: '55x38'      /* max printed width × height, in millimetres */
   };
 
   var EDIT_WINDOW_DAYS = 30;
@@ -698,7 +700,7 @@
       out += '<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
         '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>';
     }
-    return out;
+    return out ? '<div class="figrow">' + out + '</div>' : '';
   }
 
   function photosHTML() {
@@ -709,11 +711,23 @@
     }).join('') + '</div>';
   }
 
+  function imgVars() {
+    var p = String(prefs.imgSize || '55x38').split('x');
+    return '--imgw:' + (+p[0] || 55) + 'mm;--imgh:' + (+p[1] || 38) + 'mm';
+  }
+
+  function letterhead() {
+    var crest = (prefs.showLogo && window.LETTERHEAD_LOGO)
+      ? '<div class="crest"><img alt="" src="' + window.LETTERHEAD_LOGO + '"></div>' : '';
+    return '<div class="hosphead">' + crest +
+      '<div class="txt"><div class="h1">' + esc(prefs.hospital1) + '</div>' +
+      '<div class="h2">' + esc(prefs.hospital2) + '</div></div></div>';
+  }
+
   function buildDocument(pngs) {
     var p1 =
-      '<section class="pg">' +
-      '<div class="hosphead"><div class="h1">' + esc(prefs.hospital1) + '</div>' +
-      '<div class="h2">' + esc(prefs.hospital2) + '</div></div>' +
+      '<section class="pg" style="' + imgVars() + '">' +
+      letterhead() +
       '<div class="formtitle"><span></span><b>รายงานการผ่าตัด (OPERATIVE NOTE)</b><span class="pgtag">หน้าแรก</span></div>' +
       '<div class="inline2">' +
       row('เลขที่ห้องผ่าตัด', 'OR room', valueOf('or_room')) +
@@ -756,15 +770,20 @@
       '</div>' +
       row('อื่น ๆ', 'Others', valueOf('others_note')) +
       '<div class="findbox"><div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
-      '<div class="bbody">' + nl2br(valueOf('findings')) +
+      '<div class="bbody">' +
       (pngs.length ? '<figure class="fig"><img src="' + pngs[0] + '" alt="">' +
         '<figcaption>' + esc(window.FIGURES[S.sheets[0].fig].en) + '</figcaption></figure>' : '') +
+      nl2br(valueOf('findings')) +
+      (valueOf('specimen_description')
+        ? '<div class="speclab">คำอธิบายชิ้นเนื้อ <i>Specimen description</i></div>' +
+        nl2br(valueOf('specimen_description'))
+        : '') +
       '</div></div>' +
       '<div class="pgfoot"><span>ต่อหน้าหลัง</span><span>' + esc(prefs.formCode) + '</span></div>' +
       '</section>';
 
     var p2 =
-      '<section class="pg last">' +
+      '<section class="pg last" style="' + imgVars() + '">' +
       '<table class="flow"><thead><tr><th>' + idBar() +
       '<div class="formtitle small"><span></span><b>รายละเอียดขั้นตอนการผ่าตัด</b>' +
       '<span class="pgtag">หน้าหลัง</span></div></th></tr></thead>' +
@@ -1009,6 +1028,8 @@
     $('#setDept').value = prefs.department;
     $('#setSurgeon').value = prefs.surgeon;
     $('#setRecorder').value = prefs.recorder;
+    $('#setLogo').checked = prefs.showLogo !== false;
+    $('#setImgSize').value = prefs.imgSize || '55x38';
     var at = localStorage.getItem(LS.tplAt);
     $('#tplInfo').textContent = TEMPLATES.length + ' fields' +
       (at ? ' · updated ' + new Date(at).toLocaleString() : ' · built-in defaults');
@@ -1023,6 +1044,8 @@
     prefs.department = $('#setDept').value;
     prefs.surgeon = $('#setSurgeon').value;
     prefs.recorder = $('#setRecorder').value;
+    prefs.showLogo = $('#setLogo').checked;
+    prefs.imgSize = $('#setImgSize').value;
     writeJSON(LS.prefs, prefs);
     toast('บันทึกการตั้งค่าแล้ว / Settings saved', 'ok');
     updateConnBadge();

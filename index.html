@@ -181,7 +181,11 @@ table.results td.act{white-space:nowrap}
   background:#fff;width:186mm;min-height:272mm;margin:0 auto 14px;padding:6mm 7mm;
   font-size:13px;line-height:1.42;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
 }
-.hosphead{text-align:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:5px}
+.hosphead{display:flex;align-items:center;gap:8px;
+  border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:5px}
+.hosphead .crest{flex:0 0 auto;width:19mm}
+.hosphead .crest img{width:100%;display:block}
+.hosphead .txt{flex:1;text-align:center;min-width:0}
 .hosphead .h1{font-size:16px;font-weight:700}
 .hosphead .h2{font-size:10.5px}
 .formtitle{display:flex;justify-content:space-between;align-items:center;
@@ -202,17 +206,25 @@ table.idbar td.wide{width:32%}
 .findbox{border:1.5px solid #000;margin-top:6px}
 .findbox .bhead{background:#eee;border-bottom:1px solid #000;padding:2px 8px;font-weight:700;font-size:12.5px}
 .findbox .bhead i{font-weight:400;font-size:10.5px;color:#444}
-.findbox .bbody{padding:6px 8px;min-height:52mm}
+.findbox .bbody{padding:6px 8px;min-height:52mm;overflow:hidden}
+.findbox .bbody .speclab{font-weight:700;font-size:11.5px;margin-top:5px;
+  border-top:1px dotted #999;padding-top:3px}
+.findbox .bbody .speclab i{font-weight:400;color:#555;font-size:10.5px}
+/* images inside the findings box float so text still runs beside them */
+.findbox figure.fig{float:right;margin:0 0 4px 8px;width:var(--imgw,55mm);text-align:center}
+.findbox figure.fig img{max-width:var(--imgw,55mm);max-height:var(--imgh,38mm)}
 .dsec{margin-bottom:8px;break-inside:avoid}
 .dsec h5{background:#eee;border-left:3px solid #000;padding:2px 7px;font-size:12px;margin:8px 0 3px}
 .dsec h5 i{font-weight:400;color:#555;font-size:10.5px}
 .catline{border:1px solid #000;padding:3px 8px;margin-bottom:6px;font-size:12.5px;background:#f6f6f6}
 figure.fig{margin:8px 0;text-align:center;break-inside:avoid}
-figure.fig img{max-width:88%;max-height:105mm;object-fit:contain;border:1px solid #ccc}
+figure.fig img{max-width:var(--imgw,55mm);max-height:var(--imgh,38mm);
+  object-fit:contain;border:1px solid #ccc}
 figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
-.photogrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
-figure.pph{margin:0;break-inside:avoid}
-figure.pph img{width:100%;height:38mm;object-fit:cover;border:1px solid #999}
+.figrow{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin-top:6px}
+.photogrid{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+figure.pph{margin:0;break-inside:avoid;width:var(--imgw,55mm)}
+figure.pph img{width:100%;max-height:var(--imgh,38mm);object-fit:contain;border:1px solid #999}
 figure.pph figcaption{font-size:9.5px;color:#555}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
 .pgfoot{display:flex;justify-content:space-between;font-size:10px;margin-top:8px;color:#333}
@@ -390,6 +402,23 @@ table.flow td{padding-top:4px;vertical-align:top}
             <label class="flabel"><span class="th">ผู้บันทึกรายงาน (ค่าตั้งต้น)</span><span class="en">Default recorder</span></label>
             <div class="fbody"><input type="text" id="setRecorder"></div>
           </div>
+          <div class="field">
+            <label class="flabel"><span class="th">แสดงตราสัญลักษณ์บนหัวกระดาษ</span><span class="en">Show the crest on the letterhead</span></label>
+            <div class="fbody">
+              <label class="opt single"><input type="checkbox" id="setLogo"><span>แสดง / show</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="flabel"><span class="th">ขนาดรูปสูงสุดเมื่อพิมพ์</span><span class="en">Maximum printed image size</span></label>
+            <div class="fbody">
+              <select id="setImgSize">
+                <option value="40x30">เล็ก · Small — 40 × 30 mm</option>
+                <option value="55x38">มาตรฐาน · Standard — 55 × 38 mm</option>
+                <option value="85x60">ใหญ่ · Large — 85 × 60 mm</option>
+                <option value="165x110">เต็มหน้า · Full width — 165 × 110 mm</option>
+              </select>
+            </div>
+          </div>
         </div>
         <p><button class="btn" id="btnBackup">ดาวน์โหลดสำรองข้อมูลในเครื่อง · Download local backup</button></p>
       </div>
@@ -416,6 +445,7 @@ table.flow td{padding-top:4px;vertical-align:top}
 
 <script src="figures.js"></script>
 <script src="figures-original.js"></script>
+<script src="letterhead.js"></script>
 <script src="templates.js"></script>
 <script src="app.js"></script>
 </body>

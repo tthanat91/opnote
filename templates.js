@@ -74,6 +74,7 @@
     f('common', TEAM, 'others_note', 'อื่น ๆ', 'Others', 'text'),
 
     f('common', 'สิ่งตรวจพบ | Findings', 'findings', 'สิ่งตรวจพบ', 'Operative findings', 'textarea'),
+    f('common', 'สิ่งตรวจพบ | Findings', 'specimen_description', 'คำอธิบายชิ้นเนื้อ', 'Specimen description', 'textarea'),
 
     /* ---------------- COLORECTAL ---------------- */
     f('colorectal', 'การเข้าถึง | Approach', 'cr_approach', 'วิธีการผ่าตัด', 'Surgical approach', 'radio',
