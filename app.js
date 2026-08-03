@@ -42,11 +42,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02f';
+  var EXPECTED_BUILD = '2026-08-02g';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02p';
+  var APP_BUILD = '2026-08-02q';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -411,9 +411,17 @@
      want to fill in and print. */
 
   function verifyKey() {
-    return attempt('GET', { action: 'me' }).then(function (r) {
+    /* bootstrap returns identity and the field definitions together, so a
+       fresh sign-in costs one round trip instead of two */
+    return attempt('GET', { action: 'bootstrap' }).then(function (r) {
       if (r && r.ok && r.user) {
         me = r.user; writeJSON(LS.me, me);
+        if (r.templates && r.templates.length) {
+          TEMPLATES = r.templates;
+          writeJSON(LS.tpl, TEMPLATES);
+          localStorage.setItem(LS.tplAt, new Date().toISOString());
+          renderCategoryPicker(); buildCommonForm(); buildCategoryForm();
+        }
         return 'ok';
       }
       if (r && r.auth) return r.reason === 'blocked' ? 'blocked' : 'bad';
@@ -1390,15 +1398,18 @@
         if (r && r.ok) {
           var current = r.build === EXPECTED_BUILD;
           out.className = 'diag ' + (current ? 'ok' : 'warn');
-          var slow = timings[0] > 4000;
+          var worst = Math.max.apply(null, timings);
+          var slow = worst > 4000;
           out.innerHTML = '<b>เชื่อมต่อสำเร็จ · Connection OK</b><br>' +
             'เวอร์ชันสคริปต์ / script build: <code>' + esc(r.build || 'unknown') + '</code>' +
             ' · เวอร์ชันแอป / app build: <code>' + esc(APP_BUILD) + '</code><br>' +
             'ความเร็ว 3 ครั้ง / three round trips: <b>' + timings.join(' · ') + ' ms</b><br>' +
             '<span class="en">' +
             (slow
-              ? 'The first call was slow and later ones faster — that is Google waking the ' +
-                'script up (cold start). Nothing in the app can shorten it.'
+              ? 'At least one call took ' + (worst / 1000).toFixed(1) + ' s. If the others were ' +
+                'quick, Google stalled that request — it happens at random on free Apps Script ' +
+                'hosting and no change in this app can prevent it. The app now makes as few ' +
+                'calls as possible so you are exposed to it less often.'
               : 'All three were quick, so the script is warm and the network is fine.') +
             '</span>' +
             (current ? ' &#10003;'
@@ -1507,8 +1518,6 @@
       /* Templates change once in a while, not once a session. Refreshing
          them on every open added a second cold-start-prone request that
          competed with the sign-in check. Six hours, or press Reload. */
-      var at = Date.parse(localStorage.getItem(LS.tplAt) || '') || 0;
-      if (Date.now() - at > 6 * 3600 * 1000) loadTemplatesFromSheet(true);
       flushQueue();
     });
   }
