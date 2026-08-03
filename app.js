@@ -18,7 +18,8 @@
     queue: 'opnote.queue',
     prefs: 'opnote.prefs',
     pass: 'opnote.pass',
-    me: 'opnote.me'
+    me: 'opnote.me',
+    method: 'opnote.method'
   };
 
   /* config.js ships the Sheet URL with the app so a colleague only has to
@@ -46,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02r';
+  var APP_BUILD = '2026-08-02t';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -182,7 +183,9 @@
      Sheet — and the save is then confirmed with a JSONP status check.
      --------------------------------------------------------------- */
 
-  var JSONP_TIMEOUT = 25000;
+  /* Short, because a failure now costs nothing: the other method is already
+     running alongside it. */
+  var JSONP_TIMEOUT = 12000;
 
   function qs(params) {
     return Object.keys(params).map(function (k) {
@@ -248,15 +251,46 @@
     /* A direct request works in Chrome whatever version of Code.gs is
        deployed; JSONP is the fallback that rescues Safari. Trying both
        means neither browser depends on the other's quirk. */
-    /* JSONP goes first: it works in every browser, whereas a plain fetch is
-       guaranteed to fail on Safari because of the Apps Script redirect.
-       Trying fetch first cost a wasted round trip on every read. */
+    /* Hedged request.
+
+       Neither transport works everywhere: a plain fetch is blocked on desktop
+       Safari by the Apps Script redirect, while JSONP silently fails on some
+       iPads. Running them in sequence made one device or the other wait for a
+       timeout first — 26 s a call on an iPad. Running both at once fixes that
+       but doubles the load on a script that is already rate-limited.
+
+       So: start with whichever transport last worked on this device, and only
+       start the other if the first has not answered within a second. In the
+       normal case that is one request, as before; on a device where the
+       preferred transport is broken it costs one extra second, once, and then
+       the preference flips and stays flipped. */
     if (method === 'GET') {
-      return jsonp(body).catch(function (e1) {
-        return fetchGet(body).catch(function (e2) {
-          throw new Error('ทั้งสองวิธีล้มเหลว / both methods failed — ' +
-            'script: ' + e1.message + ' · direct: ' + e2.message);
-        });
+      return new Promise(function (resolve, reject) {
+        var settled = false, failures = [], started = 1, hedge;
+        var prefer = localStorage.getItem(LS.method) === 'fetch' ? 'fetch' : 'jsonp';
+
+        function run(which) {
+          return (which === 'fetch' ? fetchGet(body) : jsonp(body)).then(function (r) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(hedge);
+            localStorage.setItem(LS.method, which);
+            resolve(r);
+          }, function (e) {
+            failures.push(which + ': ' + e.message);
+            if (started === 1) { clearTimeout(hedge); started = 2; run(other(prefer)); }
+            else if (failures.length >= 2 && !settled) {
+              reject(new Error('ทั้งสองวิธีล้มเหลว / both methods failed — ' +
+                failures.join(' · ')));
+            }
+          });
+        }
+        function other(w) { return w === 'fetch' ? 'jsonp' : 'fetch'; }
+
+        run(prefer);
+        hedge = setTimeout(function () {
+          if (!settled && started === 1) { started = 2; run(other(prefer)); }
+        }, 1200);
       });
     }
 
