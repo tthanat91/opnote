@@ -46,7 +46,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02q';
+  var APP_BUILD = '2026-08-02r';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1413,11 +1413,14 @@
               : 'All three were quick, so the script is warm and the network is fine.') +
             '</span>' +
             (current ? ' &#10003;'
-              : '<br><br><b>สคริปต์ที่ deploy ยังเป็นเวอร์ชันเก่า</b> (คาดว่าเป็น <code>' +
-              esc(EXPECTED_BUILD) + '</code>)<br><span class="en">The deployed script is an older ' +
-              'build than this app expects. Paste the current Code.gs and deploy a New version.</span>');
+              : '<br><br><b>เวอร์ชันไม่ตรงกัน</b> — แอปคาดว่าสคริปต์เป็น <code>' +
+              esc(EXPECTED_BUILD) + '</code> แต่ได้ <code>' + esc(r.build || '?') + '</code>' +
+              '<br><span class="en">The two halves are out of step. If the script build is the ' +
+              'newer of the two, upload the current index.html and app.js to GitHub; if it is ' +
+              'the older, paste the current Code.gs and deploy a New version. They work anyway ' +
+              'unless a feature needs both halves.</span>');
           toast(current ? 'เชื่อมต่อสำเร็จ / Connection OK'
-            : 'เชื่อมต่อได้ แต่สคริปต์เป็นเวอร์ชันเก่า / Connected, but the script is out of date',
+            : 'เชื่อมต่อได้ แต่เวอร์ชันแอปกับสคริปต์ไม่ตรงกัน / Connected, but the two versions differ',
             current ? 'ok' : 'warn');
         } else {
           out.className = 'diag warn';
