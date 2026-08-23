@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ag';
+  var APP_BUILD = '2026-08-02ah';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -691,6 +691,58 @@
   function buildCommonForm() { renderFields(fieldsFor('common'), $('#commonFields')); }
   function buildCategoryForm() { renderFields(fieldsFor(S.category), $('#catFields')); }
 
+  /* ---------- "Operation performed" on page 1 ----------
+     Typing the operation out again after ticking it is duplicated effort and
+     a chance to contradict yourself, so page 1 is filled from the ticks. The
+     moment anything is typed into the box by hand it is left alone; clearing
+     the box hands control back. */
+
+  var PROC_KEY = {
+    colorectal: 'cr_procedure', fistula: 'fi_procedure',
+    hemorrhoid: 'he_procedure', others: 'ot_procedure_name'
+  };
+
+  function lcOrdinary(word) {
+    var first = String(word).split(/[\s,(]/)[0];
+    return /^[A-Z][a-z]+(-[a-z][a-z-]*)*$/.test(first)
+      ? word.charAt(0).toLowerCase() + word.slice(1) : word;
+  }
+
+  function deriveOperation() {
+    var procs = valueOf(PROC_KEY[S.category] || '');
+    if (!String(procs).trim()) return '';
+    var list = String(procs).split(';').map(function (x) { return x.trim(); })
+      .filter(function (x) { return x.length; });
+    var head = list.shift();
+    var approach = S.category === 'colorectal' ? valueOf('cr_approach') : '';
+    if (approach) head = approach + ' ' + lcOrdinary(head);
+    var parts = [head].concat(list.map(lcOrdinary));
+
+    /* the anastomosis is part of how the operation is named */
+    var site = valueOf('cr_r_anast_site'), cfg = valueOf('cr_r_anast_config');
+    if (site && cfg) {
+      parts.push(lcOrdinary(site) + ' ' + lcOrdinary(cfg) + ' ileocolic anastomosis');
+    } else {
+      var m = valueOf('cr_anast_method'), c = valueOf('cr_anast_config');
+      if (m && c && m.indexOf('No anastomosis') === -1) {
+        parts.push(lcOrdinary(c) + ', ' + lcOrdinary(m) + ' anastomosis');
+      }
+    }
+    var txt = parts.join(' with ');
+    var div = valueOf('cr_diverting');
+    if (div && div.indexOf('None') === -1) txt += ' and ' + lcOrdinary(div);
+    return txt;
+  }
+
+  function autofillOperation() {
+    var node = $('[data-key="operation"]');
+    if (!node || S.data.operation_manual) return;
+    var txt = deriveOperation();
+    if (!txt) return;
+    if (node.value !== txt) node.value = txt;
+    S.data.operation = txt;
+  }
+
   /* read every visible control back into S.data */
   function harvest() {
     var lists = {};
@@ -710,6 +762,7 @@
     });
     Object.keys(lists).forEach(function (k) { S.data[k] = lists[k]; });
     recalcTotalTime();
+    autofillOperation();
     return S.data;
   }
 
@@ -789,6 +842,9 @@
      as "yoo", where "a" is correct. */
   var A_NOT_AN = /^(uni|use|usu|util|urin|ureth|ureter|uter|eu|one)/i;
 
+  /* device and suture names keep their capital wherever they fall */
+  var TRADE_NAMES = /^(Hem-o-lok|V-Loc|Endo|LigaSure|Ligasure|Signia|Echelon|Monocryl|Vicryl|Prolene|PDS|Ethibond|Stratafix|Harmonic|Thunderbeat|Enseal)$/i;
+
   function fixArticles(text) {
     return text.replace(/\b([Aa]) (?=[aeiouAEIOU])([A-Za-z-]+)/g, function (m, art, word) {
       if (A_NOT_AN.test(word)) return m;
@@ -817,7 +873,9 @@
       if (l.equals && !contains(first, l.equals)) return;
       if (l.not && contains(first, l.not)) return;
 
-      var text = String(l.text).replace(/\{(\w+)(\|lc)?\}/g, function (_, k, lc) {
+      var text = String(l.text).replace(/\{(\w+)((?:\|\w+)*)\}/g, function (_, k, mods) {
+        var lc = mods.indexOf('|lc') > -1;
+        var joinAnd = mods.indexOf('|and') > -1;
         var val = String(valueOf(k) || '').trim();
         /* nothing recorded — leave a visible blank rather than a silent gap */
         if (!val) return '\u00ab\u2026\u00bb';
@@ -834,11 +892,18 @@
             var t = part.replace(/^\s+/, '');
             var lead = part.slice(0, part.length - t.length);
             var firstWord = t.split(/[\s,(]/)[0];
-            if (/^[A-Z][a-z]+(-[a-z][a-z-]*)*$/.test(firstWord)) {
+            if (/^[A-Z][a-z]+(-[a-z][a-z-]*)*$/.test(firstWord) && !TRADE_NAMES.test(firstWord)) {
               t = t.charAt(0).toLowerCase() + t.slice(1);
             }
             return lead + t;
           }).join(';');
+        }
+        /* a checklist read aloud: "a, b and c" rather than "a; b; c" */
+        if (joinAnd) {
+          var items = val.split(';').map(function (x) { return x.trim(); })
+            .filter(function (x) { return x.length; });
+          val = items.length < 2 ? (items[0] || val)
+            : items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
         }
         return val;
       }).replace(/\s+/g, ' ').trim();
@@ -1582,7 +1647,13 @@
     };
 
     function onFieldChanged(e) {
-      if (e.target.dataset && e.target.dataset.key) { saveDraft(); applyVisibility(); }
+      var k = e.target.dataset && e.target.dataset.key;
+      if (!k) return;
+      /* only a keystroke counts as taking over — a programmatic fill does not */
+      if (k === 'operation' && e.type === 'input') {
+        S.data.operation_manual = !!e.target.value.trim();
+      }
+      saveDraft(); applyVisibility();
     }
     document.addEventListener('input', onFieldChanged);
     document.addEventListener('change', onFieldChanged);

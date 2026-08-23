@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ag';
+  global.TEMPLATES_BUILD = '2026-08-02ah';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -83,6 +83,10 @@
     f('colorectal', 'การเข้าถึง | Approach', 'cr_approach', 'วิธีการผ่าตัด', 'Surgical approach', 'radio',
       'Open; Laparoscopic; Laparoscopic converted to open; Robotic; ' +
       'Transanal (taTME / TAMIS); Combined abdominoperineal'),
+    f('colorectal', 'การเข้าถึง | Approach', 'cr_ports', 'จำนวน port', 'Port placement', 'radio',
+      'Single port (SILS); Two-port technique; Three-port technique; Four-port technique; ' +
+      'Five-port technique; Other',
+      'cr_approach = Laparoscopic'),
     f('colorectal', 'การเข้าถึง | Approach', 'cr_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
       'Supine; Modified lithotomy (Lloyd-Davies); Prone jackknife; Right lateral; Left lateral'),
     f('colorectal', 'การเข้าถึง | Approach', 'cr_incision', 'แผลผ่าตัด / ตำแหน่ง port', 'Incision / port placement', 'textarea'),
@@ -110,6 +114,9 @@
       'Medial-to-lateral (SMV first); Inferior / caudal-to-cranial; Superior / cranial-to-caudal; ' +
       'Lateral-to-medial; Combined',
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_distance_icv', 'ระยะจากลิ้นไอลีโอซีคัล (ซม.)',
+      'Distance from the ileocecal valve (cm)', 'number', '',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_cme', 'การตัด mesocolon แบบสมบูรณ์ (CME)', 'Complete mesocolic excision', 'radio',
       'Yes; No', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_cvl', 'การผูกหลอดเลือดที่ต้นทาง (CVL)', 'Central vascular ligation', 'radio',
@@ -120,6 +127,9 @@
       'Present, divided; Absent', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_vessels', 'หลอดเลือดที่ตัด', 'Vessels divided', 'checklist',
       'Ileocolic; Right colic; Middle colic — right branch; Middle colic — trunk', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_vessel_control', 'วิธีตัดหลอดเลือด', 'Vessel control', 'checklist',
+      'Energy device; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Suture ligation; Vascular stapler',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_anast_site', 'ตำแหน่งการต่อลำไส้', 'Anastomosis performed', 'radio',
       'Intracorporeal; Extracorporeal', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_anast_config', 'รูปแบบการต่อลำไส้', 'Anastomosis configuration', 'radio',
@@ -129,6 +139,12 @@
       'GIA 80; Endo GIA 60; Signia; Echelon; Tri-stapler', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_enterotomy', 'การปิดรูเย็บลำไส้', 'Enterotomy closure', 'radio',
       'Stapled; Hand-sewn two layers; Hand-sewn single layer', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_mesenteric', 'ช่องว่าง mesentery', 'Mesenteric defect', 'radio',
+      'Closed; Left open', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_mesenteric_material', 'ไหมที่ใช้ปิด', 'Mesenteric defect — suture', 'text',
+      '', 'cr_r_mesenteric = Closed'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_mesenteric_fashion', 'วิธีเย็บ', 'Mesenteric defect — technique', 'radio',
+      'Interrupted; Running; Running barbed', 'cr_r_mesenteric = Closed'),
 
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_vascular', 'การผูกหลอดเลือด', 'Vascular ligation', 'radio',
       'High tie (at origin); Low tie; Not applicable',
@@ -143,7 +159,8 @@
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'Mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
       'Yes; No; Not applicable',
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin', 'ระยะขอบตัด (ซม.)', 'Resection margin, proximal / distal (cm)', 'text'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_prox', 'ขอบตัดด้านต้น (ซม.)', 'Proximal resection margin (cm)', 'number'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_dist', 'ขอบตัดด้านปลาย (ซม.)', 'Distal resection margin (cm)', 'number'),
 
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_anast_method', 'วิธีต่อลำไส้', 'Anastomosis technique', 'radio',
       'Hand-sewn; Stapled; Double stapled; Triple stapled; No anastomosis',
@@ -161,8 +178,16 @@
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_perfusion', 'ประเมินเลือดมาเลี้ยง', 'Perfusion assessment', 'radio',
       'Clinical only; ICG fluorescence; Not assessed'),
 
-    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ท่อระบาย', 'Drain', 'text'),
-    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure', 'การปิดแผล', 'Wound closure', 'text'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'checklist',
+      'Cul-de-sac (pelvis); Right paracolic gutter; Left paracolic gutter; Subhepatic; ' +
+      'Subphrenic; Adjacent to the anastomosis; Other'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_sheath_material', 'ไหมเย็บชั้น sheath', 'Fascia / sheath — suture', 'text'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_sheath_fashion', 'วิธีเย็บ sheath', 'Fascia / sheath — technique', 'radio',
+      'Continuous; Interrupted; Continuous with interrupted reinforcement'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_skin_material', 'วัสดุปิดผิวหนัง', 'Skin — material', 'text'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_skin_fashion', 'วิธีปิดผิวหนัง', 'Skin — technique', 'radio',
+      'Subcuticular continuous; Interrupted; Staples; Skin glue'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_count', 'นับผ้าซับและเครื่องมือครบ', 'Sponge and instrument count correct', 'checkbox'),
 
     f('colorectal', 'รายละเอียดขั้นตอน | Operative steps', 'cr_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
