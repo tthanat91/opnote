@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ah';
+  var APP_BUILD = '2026-08-02ai';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -598,11 +598,12 @@
 
       /* the step-by-step box gets a draft button — pressed deliberately,
          never filled automatically, and always editable afterwards */
-      if (/_steps$/.test(f.key)) {
+      if (/_steps$/.test(f.key) || f.key === 'findings') {
+        var kind = f.key === 'findings' ? 'findings' : 'steps';
         var draft = el('button', 'btn ghost draftbtn',
-          '\u270E \u0e23\u0e48\u0e32\u0e07\u0e08\u0e32\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e14\u0e49\u0e32\u0e19\u0e1a\u0e19 \u00b7 Draft from the fields above');
+          '\u270E \u0e23\u0e48\u0e32\u0e07\u0e08\u0e32\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e17\u0e35\u0e48\u0e15\u0e34\u0e4a\u0e01 \u00b7 Draft from the fields ticked');
         draft.type = 'button';
-        draft.onclick = function () { draftInto(ta); };
+        draft.onclick = function () { draftInto(ta, kind); };
         body.appendChild(draft);
         body.appendChild(el('p', 'drafthint',
           '\u0e23\u0e48\u0e32\u0e07\u0e19\u0e35\u0e49\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e1e\u0e35\u0e22\u0e07\u0e08\u0e38\u0e14\u0e15\u0e31\u0e49\u0e07\u0e15\u0e49\u0e19 \u0e42\u0e1b\u0e23\u0e14\u0e2d\u0e48\u0e32\u0e19\u0e41\u0e25\u0e30\u0e41\u0e01\u0e49\u0e44\u0e02\u0e01\u0e48\u0e2d\u0e19\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01' +
@@ -852,18 +853,12 @@
     });
   }
 
-  function buildNarrative(cat) {
-    var N = window.NARRATIVE || {};
-    var block = matchingSteps();
-
-    /* A standard-steps block already narrates position, access, dissection
-       and closure, so it replaces the short field-based list rather than
-       being added to it. The common tail still follows. */
-    var lines = block
-      ? (block.lines || []).concat(N.common || [])
-      : (N[cat] || []).concat(N.common || []);
-    var numbered = !!block, n = 0;
-    var usedGroup = {}, out = [], used = {};
+  /* Turns a list of sentence templates into finished sentences, and reports
+     which fields each one consumed. Both the step-by-step draft and the
+     findings paragraph run through here, so the two can never drift apart
+     in how they treat |lc, «placeholders» or a missing value. */
+  function renderSentences(lines, used) {
+    var usedGroup = {}, out = [];
 
     lines.forEach(function (l) {
       if (l.group && usedGroup[l.group]) return;
@@ -916,7 +911,24 @@
          knows what has already been said */
       needs.forEach(function (k) { used[k] = true; });
       String(l.text).replace(/\{(\w+)/g, function (_, k) { used[k] = true; return _; });
-      out.push(numbered ? (++n) + '. ' + text : '- ' + text);
+      out.push(text);
+    });
+    return out;
+  }
+
+  function buildNarrative(cat) {
+    var N = window.NARRATIVE || {};
+    var block = matchingSteps();
+
+    /* A standard-steps block already narrates position, access, dissection
+       and closure, so it replaces the short field-based list rather than
+       being added to it. The common tail still follows. */
+    var lines = block
+      ? (block.lines || []).concat(N.common || [])
+      : (N[cat] || []).concat(N.common || []);
+    var numbered = !!block, used = {};
+    var out = renderSentences(lines, used).map(function (t, i) {
+      return numbered ? (i + 1) + '. ' + t : '- ' + t;
     });
     /* Anything ticked but not mentioned by a sentence is listed at the end.
        Writing a template for every field would mean guessing phrasing for
@@ -926,6 +938,7 @@
       var extras = [];
       fieldsFor(cat).forEach(function (f) {
         if (used[f.key] || /_steps$|_postop$/.test(f.key) || f.type === 'heading') return;
+        if (/^[a-z]{2}_f_/.test(f.key)) return;   /* said in the findings paragraph */
         var v = valueOf(f.key);
         if (!String(v == null ? '' : v).trim()) return;
         extras.push('- ' + (f.en || f.th) + ': ' + v);
@@ -940,9 +953,19 @@
     return out.join('\n');
   }
 
-  function draftInto(node) {
+  /* The findings box gets its own draft: a paragraph, not a numbered list,
+     because that is how it is read on the page. Its sentences live under
+     NARRATIVE.findings, one list per category. */
+  function buildFindings(cat) {
+    var N = window.NARRATIVE || {};
+    var lines = (N.findings || {})[cat] || [];
+    if (!lines.length) return '';
+    return renderSentences(lines, {}).join(' ');
+  }
+
+  function draftInto(node, kind) {
     harvest();
-    var text = buildNarrative(S.category);
+    var text = kind === 'findings' ? buildFindings(S.category) : buildNarrative(S.category);
     if (!text) {
       toast('ยังไม่มีข้อมูลพอจะร่าง กรอกช่องด้านบนก่อน / Nothing to draft yet — fill the fields above first', 'warn');
       return;

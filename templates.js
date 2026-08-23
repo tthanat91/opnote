@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ah';
+  global.TEMPLATES_BUILD = '2026-08-02ai';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -103,8 +103,8 @@
       'Adhesiolysis; Drainage of abscess; Exploratory laparotomy only'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_urgency', 'ความเร่งด่วน', 'Urgency', 'radio',
       'Elective; Urgent; Emergency'),
-    f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_site', 'ตำแหน่งรอยโรค', 'Lesion / tumor site', 'text'),
-    f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_distance', 'ระยะจากขอบทวาร (ซม.)', 'Distance from anal verge (cm)', 'number', '',
+    f('colorectal', 'หัตถการ | Procedure', 'cr_tumor_site', 'ตำแหน่งรอยโรค', 'Lesion / tumor site', 'text'),
+    f('colorectal', 'หัตถการ | Procedure', 'cr_tumor_distance', 'ระยะจากขอบทวาร (ซม.)', 'Distance from anal verge (cm)', 'number', '',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
 
 
@@ -189,6 +189,47 @@
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_skin_fashion', 'วิธีปิดผิวหนัง', 'Skin — technique', 'radio',
       'Subcuticular continuous; Interrupted; Staples; Skin glue'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_count', 'นับผ้าซับและเครื่องมือครบ', 'Sponge and instrument count correct', 'checkbox'),
+
+
+    /* ---- structured operative findings, colorectal ---- */
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_location', 'ตำแหน่งรอยโรค', 'Tumor location', 'radio',
+      'Cecum; Ascending colon; Hepatic flexure; Transverse colon — proximal; ' +
+      'Transverse colon — mid; Transverse colon — distal; Splenic flexure; Descending colon; ' +
+      'Descendosigmoid colon; Sigmoid colon; Rectosigmoid colon; Rectum — upper; ' +
+      'Rectum — mid; Rectum — lower'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_w', 'กว้าง (ซม.)', 'Width (cm)', 'number'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_l', 'ยาว (ซม.)', 'Length (cm)', 'number'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_h', 'หนา (ซม.)', 'Height (cm)', 'number'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_appearance', 'ลักษณะรอยโรค', 'Appearance', 'radio',
+      'Polypoid; Ulcerated; Ulceroproliferative; Annular; Circumferential; Other'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_annular_pct', 'สัดส่วนรอบวง (%)', 'Circumference involved (%)', 'number',
+      '', 'cr_f_appearance = Annular'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_obstruction', 'ลำไส้อุดตัน', 'Obstruction', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_perforation', 'ลำไส้ทะลุ', 'Perforation', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_serosa', 'เยื่อหุ้มลำไส้ถูกรุกล้ำ', 'Serosal involvement', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_invasion', 'รุกล้ำอวัยวะข้างเคียง', 'Adjacent organ invasion', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_invasion_detail', 'อวัยวะที่ถูกรุกล้ำ', 'Organ invaded — specify', 'text',
+      '', 'cr_f_invasion = Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_liver', 'ก้อนที่ตับ', 'Liver nodule', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_liver_detail', 'รายละเอียดก้อนที่ตับ', 'Liver nodule — specify', 'text',
+      '', 'cr_f_liver = Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_peritoneal', 'ก้อนในเยื่อบุช่องท้อง', 'Peritoneal nodule', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_peritoneal_detail', 'รายละเอียด', 'Peritoneal nodule — specify', 'text',
+      '', 'cr_f_peritoneal = Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_nodes', 'ต่อมน้ำเหลืองที่สงสัยการแพร่กระจาย', 'Suspicious metastatic lymph node', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_nodes_detail', 'ตำแหน่งต่อมน้ำเหลือง', 'Lymph node — specify', 'text',
+      '', 'cr_f_nodes = Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_synchronous', 'รอยโรคร่วม', 'Synchronous lesion', 'radio', 'No; Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_synchronous_detail', 'รายละเอียดรอยโรคร่วม', 'Synchronous lesion — specify', 'text',
+      '', 'cr_f_synchronous = Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_uterus', 'มดลูก', 'Uterus', 'radio', 'Normal; Abnormal', 'sex = หญิง / Female'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_uterus_detail', 'ความผิดปกติของมดลูก', 'Uterus — specify', 'text',
+      '', 'cr_f_uterus = Abnormal'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_ovaries', 'รังไข่', 'Ovaries', 'radio', 'Normal; Abnormal', 'sex = หญิง / Female'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_ovaries_detail', 'ความผิดปกติของรังไข่', 'Ovaries — specify', 'text',
+      '', 'cr_f_ovaries = Abnormal'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_plane_quality', 'คุณภาพระนาบ CME / TME', 'CME / TME specimen quality', 'radio',
+      'Complete; Nearly complete; Incomplete'),
 
     f('colorectal', 'รายละเอียดขั้นตอน | Operative steps', 'cr_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('colorectal', 'รายละเอียดขั้นตอน | Operative steps', 'cr_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),

@@ -35,8 +35,105 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02ah',
+    build: '2026-08-02ai',
 
+
+
+    /* =================================================================
+       OPERATIVE FINDINGS
+
+       A paragraph, not a numbered list, because that is how the box is
+       read on the printed form. One list per category: what counts as a
+       finding in a fistula case has nothing to do with a colectomy.
+
+       A "No" is written out rather than left silent. In an operative note
+       the difference between "no liver nodule was seen" and saying nothing
+       at all is the difference between a negative finding and an omission.
+       ================================================================= */
+    findings: {
+
+      colorectal: [
+        { group: 'loc', needs: ['cr_f_location', 'cr_f_size_w', 'cr_f_size_l', 'cr_f_size_h'],
+          text: 'The tumor was located at the {cr_f_location|lc}, measuring {cr_f_size_w} × {cr_f_size_l} × {cr_f_size_h} cm.' },
+        { group: 'loc', needs: ['cr_f_location'], text: 'The tumor was located at the {cr_f_location|lc}.' },
+
+        { group: 'app', needs: ['cr_f_appearance', 'cr_f_annular_pct'], equals: 'Annular',
+          text: 'It was annular, involving {cr_f_annular_pct}% of the circumference.' },
+        { group: 'app', needs: ['cr_f_appearance'], text: 'It was {cr_f_appearance|lc} in appearance.' },
+
+        { group: 'obs', needs: ['cr_f_obstruction'], equals: 'Yes', text: 'The lesion was obstructing.' },
+        { group: 'obs', needs: ['cr_f_obstruction'], equals: 'No', text: 'There was no obstruction.' },
+
+        { group: 'perf', needs: ['cr_f_perforation'], equals: 'Yes', text: 'The bowel was perforated at the tumor site.' },
+        { group: 'perf', needs: ['cr_f_perforation'], equals: 'No', text: 'There was no perforation.' },
+
+        { group: 'ser', needs: ['cr_f_serosa'], equals: 'Yes', text: 'The serosa was involved.' },
+        { group: 'ser', needs: ['cr_f_serosa'], equals: 'No', text: 'The serosa was not breached.' },
+
+        { group: 'inv', needs: ['cr_f_invasion', 'cr_f_invasion_detail'], equals: 'Yes',
+          text: 'There was direct invasion of the {cr_f_invasion_detail|lc}.' },
+        { group: 'inv', needs: ['cr_f_invasion'], equals: 'Yes', text: 'There was invasion of an adjacent organ.' },
+        { group: 'inv', needs: ['cr_f_invasion'], equals: 'No', text: 'No adjacent organ was involved.' },
+
+        { group: 'liv', needs: ['cr_f_liver', 'cr_f_liver_detail'], equals: 'Yes',
+          text: 'A liver nodule was present: {cr_f_liver_detail}.' },
+        { group: 'liv', needs: ['cr_f_liver'], equals: 'Yes', text: 'A liver nodule was present.' },
+        { group: 'liv', needs: ['cr_f_liver'], equals: 'No', text: 'The liver was smooth, with no nodule.' },
+
+        { group: 'per', needs: ['cr_f_peritoneal', 'cr_f_peritoneal_detail'], equals: 'Yes',
+          text: 'Peritoneal nodules were seen: {cr_f_peritoneal_detail}.' },
+        { group: 'per', needs: ['cr_f_peritoneal'], equals: 'Yes', text: 'Peritoneal nodules were seen.' },
+        { group: 'per', needs: ['cr_f_peritoneal'], equals: 'No', text: 'There was no peritoneal deposit.' },
+
+        { group: 'ln', needs: ['cr_f_nodes', 'cr_f_nodes_detail'], equals: 'Yes',
+          text: 'Suspicious metastatic lymph nodes were found at the {cr_f_nodes_detail|lc}.' },
+        { group: 'ln', needs: ['cr_f_nodes'], equals: 'Yes', text: 'Suspicious metastatic lymph nodes were found.' },
+        { group: 'ln', needs: ['cr_f_nodes'], equals: 'No', text: 'No suspicious lymph node was identified.' },
+
+        { group: 'syn', needs: ['cr_f_synchronous', 'cr_f_synchronous_detail'], equals: 'Yes',
+          text: 'A synchronous lesion was present: {cr_f_synchronous_detail}.' },
+        { group: 'syn', needs: ['cr_f_synchronous'], equals: 'Yes', text: 'A synchronous lesion was present.' },
+        { group: 'syn', needs: ['cr_f_synchronous'], equals: 'No', text: 'No synchronous lesion was found.' },
+
+        { group: 'ut', needs: ['cr_f_uterus', 'cr_f_uterus_detail'], equals: 'Abnormal',
+          text: 'The uterus was abnormal: {cr_f_uterus_detail}.' },
+        { group: 'ut', needs: ['cr_f_uterus'], equals: 'Normal', text: 'The uterus appeared normal.' },
+        { group: 'ov', needs: ['cr_f_ovaries', 'cr_f_ovaries_detail'], equals: 'Abnormal',
+          text: 'The ovaries were abnormal: {cr_f_ovaries_detail}.' },
+        { group: 'ov', needs: ['cr_f_ovaries'], equals: 'Normal', text: 'Both ovaries appeared normal.' },
+
+        { needs: ['cr_f_plane_quality'],
+          text: 'The specimen was assessed after removal and the mesocolic / mesorectal plane was {cr_f_plane_quality|lc}.' }
+      ],
+
+      fistula: [
+        { needs: ['fi_parks'], text: 'The tract was {fi_parks|lc}.' },
+        { group: 'io', needs: ['fi_internal_opening', 'fi_internal_height'],
+          text: 'The internal opening lay at {fi_internal_opening} o’clock, {fi_internal_height} cm from the anal verge.' },
+        { group: 'io', needs: ['fi_internal_opening'], text: 'The internal opening lay at {fi_internal_opening} o’clock.' },
+        { group: 'eo', needs: ['fi_external_opening', 'fi_external_distance'],
+          text: 'The external opening lay at {fi_external_opening} o’clock, {fi_external_distance} cm from the anal verge.' },
+        { group: 'eo', needs: ['fi_external_opening'], text: 'The external opening lay at {fi_external_opening} o’clock.' },
+        { needs: ['fi_complexity'], text: 'The fistula was classified as {fi_complexity|lc}.' },
+        { needs: ['fi_features'], text: 'Additional features were noted: {fi_features|lc|and}.' },
+        { needs: ['fi_sphincter_involved'], text: 'Approximately {fi_sphincter_involved}% of the external sphincter was involved by the tract.' },
+        { needs: ['fi_aetiology'], text: 'The etiology was {fi_aetiology|lc}.' },
+        { needs: ['fi_continence'], text: 'The pre-operative Wexner continence score was {fi_continence}.' },
+        { needs: ['fi_eua'], text: '{fi_eua}' }
+      ],
+
+      hemorrhoid: [
+        { group: 'gr', needs: ['he_grade', 'he_type'], text: 'There were {he_type|lc} hemorrhoids, {he_grade|lc}.' },
+        { group: 'gr', needs: ['he_grade'], text: 'The hemorrhoids were {he_grade|lc}.' },
+        { needs: ['he_positions'], text: 'The piles lay at {he_positions|lc|and}.' },
+        { group: 'assoc', needs: ['he_associated'], equals: 'None', text: 'No associated anorectal pathology was found.' },
+        { group: 'assoc', needs: ['he_associated'], text: 'Associated pathology was present: {he_associated|lc|and}.' }
+      ],
+
+      others: [
+        { needs: ['ot_findings'], text: '{ot_findings}' }
+      ]
+    },
 
     /* =================================================================
        STANDARD STEPS
@@ -71,7 +168,7 @@
             text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the left lower quadrant» and «5 mm in the left upper quadrant and the suprapubic position».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
           { text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { needs: ['cr_tumour_site'], text: 'The lesion was confirmed at the {cr_tumour_site}, «with no evidence of peritoneal or hepatic metastasis».' },
+          { needs: ['cr_tumor_site'], text: 'The lesion was confirmed at the {cr_tumor_site}, «with no evidence of peritoneal or hepatic metastasis».' },
           { needs: ['cr_r_distance_icv'], text: 'It lay {cr_r_distance_icv} cm from the ileocecal valve.' },
           { text: 'The patient was placed in Trendelenburg with the right side elevated, and the small bowel and omentum were retracted to the left upper quadrant to expose the ileocolic pedicle.' },
 
@@ -174,7 +271,7 @@
           { text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the right lower quadrant» and «5 mm in the right upper quadrant, left lower quadrant and left upper quadrant».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
           { text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { needs: ['cr_tumour_site'], text: 'The lesion was confirmed at the {cr_tumour_site}, «with no evidence of peritoneal or hepatic metastasis».' },
+          { needs: ['cr_tumor_site'], text: 'The lesion was confirmed at the {cr_tumor_site}, «with no evidence of peritoneal or hepatic metastasis».' },
           { text: 'The patient was placed in steep Trendelenburg with the left side elevated, and the small bowel was retracted to the right upper quadrant to expose the base of the sigmoid mesocolon.' },
           { text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
           { needs: ['cr_vascular'], not: 'Not applicable', text: 'The inferior mesenteric artery was skeletonized and divided using a {cr_vascular|lc} technique, «1 cm distal to its aortic origin so as to preserve the superior hypogastric nerve plexus», secured «with three Hem-o-lok clips, two proximal and one distal». The inferior mesenteric vein was divided «at the lower border of the pancreas».' },
@@ -236,9 +333,9 @@
       { group: 'app', needs: ['cr_incision'], text: '{cr_incision}' },
 
       { needs: ['findings'], text: 'On exploration: {findings}' },
-      { needs: ['cr_tumour_site'], text: 'The lesion was identified at the {cr_tumour_site}.' },
-      { needs: ['cr_tumour_distance'],
-        text: 'It lay {cr_tumour_distance} cm from the anal verge.' },
+      { needs: ['cr_tumor_site'], text: 'The lesion was identified at the {cr_tumor_site}.' },
+      { needs: ['cr_tumor_distance'],
+        text: 'It lay {cr_tumor_distance} cm from the anal verge.' },
 
       { needs: ['cr_plane'], text: 'Dissection was carried out in the {cr_plane|lc} plane.' },
       { needs: ['cr_splenic_flexure'], equals: 'Yes',
