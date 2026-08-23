@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ak';
+  var APP_BUILD = '2026-08-02al';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -735,6 +735,19 @@
     return txt;
   }
 
+  /* Same bargain as the operation box: composed from the ticks until you
+     type in it, and yours from then on. Without this the paragraph only
+     existed if you remembered to press Draft, and the printed findings box
+     came out blank — which is worse than no feature at all. */
+  function autofillFindings() {
+    var node = $('[data-key="findings"]');
+    if (!node || S.data.findings_manual) return;
+    var txt = buildFindings(S.category);
+    if (!txt) return;
+    if (node.value !== txt) node.value = txt;
+    S.data.findings = txt;
+  }
+
   function autofillOperation() {
     var node = $('[data-key="operation"]');
     if (!node || S.data.operation_manual) return;
@@ -764,6 +777,7 @@
     Object.keys(lists).forEach(function (k) { S.data[k] = lists[k]; });
     recalcTotalTime();
     autofillOperation();
+    autofillFindings();
     return S.data;
   }
 
@@ -1357,8 +1371,6 @@
       row('อื่น ๆ', 'Others', valueOf('others_note')) +
       '<div class="findbox"><div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
       '<div class="bbody">' +
-      (pngs.length ? '<figure class="fig"><img src="' + pngs[0] + '" alt="">' +
-        '<figcaption>' + esc(window.FIGURES[S.sheets[0].fig].en) + '</figcaption></figure>' : '') +
       nl2br(valueOf('findings')) +
       (valueOf('specimen_description')
         ? '<div class="speclab">คำอธิบายชิ้นเนื้อ <i>Specimen description</i></div>' +
@@ -1378,7 +1390,7 @@
       accessBlock() +
       /* pictures first: the reader looks at the drawing and the specimen
          before reading how it was done */
-      figureHTML(pngs, 1) +
+      figureHTML(pngs, 0) +
       photosHTML() +
       stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
@@ -1695,8 +1707,8 @@
       var k = e.target.dataset && e.target.dataset.key;
       if (!k) return;
       /* only a keystroke counts as taking over — a programmatic fill does not */
-      if (k === 'operation' && e.type === 'input') {
-        S.data.operation_manual = !!e.target.value.trim();
+      if ((k === 'operation' || k === 'findings') && e.type === 'input') {
+        S.data[k + '_manual'] = !!e.target.value.trim();
       }
       saveDraft(); applyVisibility();
     }
