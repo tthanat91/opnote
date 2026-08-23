@@ -245,7 +245,9 @@ table.idbar td.wide{width:32%}
 .findbox{border:1.5px solid #000;margin-top:6px}
 .findbox .bhead{background:#eee;border-bottom:1px solid #000;padding:2px 8px;font-weight:700;font-size:12.5px}
 .findbox .bhead i{font-weight:400;font-size:10.5px;color:#444}
-.findbox .bbody{padding:6px 8px;min-height:52mm;overflow:hidden}
+/* the box wraps its text: a three-line paragraph should not reserve
+   half a page, and the figures below move up to fill what is left */
+.findbox .bbody{padding:6px 8px;min-height:16mm}
 .findbox .bbody .speclab{font-weight:700;font-size:11.5px;margin-top:5px;
   border-top:1px dotted #999;padding-top:3px}
 .findbox .bbody .speclab i{font-weight:400;color:#555;font-size:10.5px}
@@ -264,10 +266,15 @@ figure.fig{margin:8px 0;text-align:center;break-inside:avoid}
 figure.fig img{max-width:var(--imgw,55mm);max-height:var(--imgh,38mm);
   object-fit:contain;border:1px solid #ccc}
 figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
-.figrow{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin-top:6px}
-.photogrid{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
-figure.pph{margin:0;break-inside:avoid;width:var(--imgw,55mm)}
-figure.pph img{width:100%;max-height:var(--imgh,38mm);object-fit:contain;border:1px solid #999}
+/* four to a row across the printable width; a row that will not fit on
+   the page moves whole to the next one rather than splitting */
+.figrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  align-items:start;margin-top:7px}
+.figrow figure.fig{margin:0;break-inside:avoid;page-break-inside:avoid}
+.figrow figure.fig img{width:100%;max-width:100%;max-height:44mm;object-fit:contain}
+.photogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:7px}
+figure.pph{margin:0;break-inside:avoid;page-break-inside:avoid;width:100%}
+figure.pph img{width:100%;max-height:44mm;object-fit:contain;border:1px solid #999}
 figure.pph figcaption{font-size:9.5px;color:#555}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
 .pgfoot{display:flex;justify-content:space-between;font-size:10px;margin-top:8px;color:#333}
@@ -281,6 +288,9 @@ table.flow td{padding-top:4px;vertical-align:top}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
   .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:always}
+  /* the figure block is allowed to spill onto a continuation sheet
+     rather than being squeezed or clipped */
+  .figrow,.photogrid{break-inside:auto;page-break-inside:auto}
   .pg.last{page-break-after:auto}
   figure.fig img{max-height:98mm}
 }
@@ -539,12 +549,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=an"></script>
-<script src="figures.js?v=an"></script>
-<script src="figures-original.js?v=an"></script>
-<script src="letterhead.js?v=an"></script>
-<script src="narrative.js?v=an"></script>
-<script src="templates.js?v=an"></script>
-<script src="app.js?v=an"></script>
+<script src="config.js?v=ao"></script>
+<script src="figures.js?v=ao"></script>
+<script src="figures-original.js?v=ao"></script>
+<script src="letterhead.js?v=ao"></script>
+<script src="narrative.js?v=ao"></script>
+<script src="templates.js?v=ao"></script>
+<script src="app.js?v=ao"></script>
 </body>
 </html>

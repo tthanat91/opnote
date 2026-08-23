@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02an';
+  var APP_BUILD = '2026-08-02ao';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1389,6 +1389,10 @@
         nl2br(valueOf('specimen_description'))
         : '') +
       '</div></div>' +
+      /* the drawings belong with the findings they illustrate, and they fill
+         the space the shrunken box leaves behind */
+      figureHTML(pngs, 0) +
+      photosHTML() +
       '<div class="pgfoot"><span>ต่อหน้าหลัง</span><span>' + esc(prefs.formCode) + '</span></div>' +
       '</section>';
 
@@ -1400,10 +1404,6 @@
       '<tbody><tr><td>' +
       '<div class="catline"><b>หมวด / Category:</b> ' + esc(categoryLabel()) + '</div>' +
       accessBlock() +
-      /* pictures first: the reader looks at the drawing and the specimen
-         before reading how it was done */
-      figureHTML(pngs, 0) +
-      photosHTML() +
       stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
       '<span>(' + esc(valueOf('surgeon')) + ')</span></div>' +
