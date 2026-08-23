@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ar';
+  global.TEMPLATES_BUILD = '2026-08-02as';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -185,9 +185,6 @@
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_stapler', 'ชนิด/ขนาด stapler และไหมเย็บ', 'Stapler size / suture material', 'text', '',
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
-    f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_leak_test', 'การทดสอบรอยรั่ว', 'Air-leak test', 'radio',
-      'Negative; Positive – repaired; Not performed',
-      'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_diverting', 'ทวารเทียมชั่วคราว', 'Diverting stoma', 'radio',
       'None; Loop ileostomy; Loop colostomy'),
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_perfusion', 'ประเมินเลือดมาเลี้ยง', 'Perfusion assessment', 'radio',
@@ -271,6 +268,10 @@
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_leak_method', 'วิธีทดสอบรอยรั่ว', 'Air-leak test method', 'radio',
       'Colonoscopic; Rigid proctoscope; Bulb syringe; Not performed', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_leak_test',
+      'ผลการทดสอบรอยรั่ว', 'Air-leak test result', 'radio',
+      'Negative; Positive – repaired; Not performed',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
 
     /* ---------------- RECTAL DETAIL ---------------- */
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_tme', 'ขอบเขตการเลาะ mesorectum', 'Extent of mesorectal excision', 'radio',
