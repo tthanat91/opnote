@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02al';
+  var APP_BUILD = '2026-08-02an';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -741,7 +741,10 @@
      came out blank — which is worse than no feature at all. */
   function autofillFindings() {
     var node = $('[data-key="findings"]');
-    if (!node || S.data.findings_manual) return;
+    if (!node) return;
+    /* an empty box means nothing was typed, whatever a stale flag says */
+    if (!String(node.value || '').trim()) S.data.findings_manual = false;
+    if (S.data.findings_manual) return;
     var txt = buildFindings(S.category);
     if (!txt) return;
     if (node.value !== txt) node.value = txt;
@@ -1324,6 +1327,15 @@
       '<div class="h2">' + esc(prefs.hospital2) + '</div></div></div>';
   }
 
+  /* The printed findings box must never come out blank while the ticks say
+     otherwise. Auto-fill normally puts the paragraph in the box; this is the
+     backstop for a draft restored from an older build, or a box someone
+     emptied by hand after ticking. */
+  function printableFindings() {
+    var typed = String(valueOf('findings') || '').trim();
+    return typed || buildFindings(S.category);
+  }
+
   function buildDocument(pngs) {
     var p1 =
       '<section class="pg" style="' + imgVars() + '">' +
@@ -1371,7 +1383,7 @@
       row('อื่น ๆ', 'Others', valueOf('others_note')) +
       '<div class="findbox"><div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
       '<div class="bbody">' +
-      nl2br(valueOf('findings')) +
+      nl2br(printableFindings()) +
       (valueOf('specimen_description')
         ? '<div class="speclab">คำอธิบายชิ้นเนื้อ <i>Specimen description</i></div>' +
         nl2br(valueOf('specimen_description'))
@@ -1641,7 +1653,7 @@
       (at ? ' · updated ' + esc(new Date(at).toLocaleString()) : ' · built-in defaults') +
       ' · app build <code>' + esc(APP_BUILD) + '</code>' +
       ' · ตราสัญลักษณ์ / crest ' + (window.LETTERHEAD_LOGO ? 'loaded &#10003;' : 'NOT loaded') +
-      staleFileWarning();
+      staleFileWarning() + findingsDiagnostic();
   }
 
   /* Uploading app.js but not narrative.js leaves the app running new code
@@ -1656,6 +1668,50 @@
     return '<br><b style="color:#a12f2f">ไฟล์ไม่ตรงรุ่น / out of date: ' +
       esc(stale.join(', ')) + '</b> — อัปโหลดใหม่พร้อม index.html / ' +
       're-upload these together with index.html, then reload.';
+  }
+
+  /* A diagnostic, not a feature. Three attempts at the empty findings box
+     have passed here and failed on the real form, which means the fault is
+     in something I cannot see: a stale narrative.js, an option spelled
+     differently in the Sheet, or a category mismatch. This prints the facts
+     needed to tell those apart. */
+  function findingsDiagnostic() {
+    var N = window.NARRATIVE || {};
+    var sets = N.findings;
+    if (!sets) {
+      return '<br><b style="color:#a12f2f">narrative.js has no findings lists</b>' +
+        ' — that file is older than app.js. Re-upload it with index.html.';
+    }
+    var counts = Object.keys(sets).map(function (k) {
+      return esc(k) + '(' + sets[k].length + ')';
+    }).join(' ');
+
+    var lines = sets[S.category] || [];
+    var matched = 0, ticked = [];
+    lines.forEach(function (l) {
+      var needs = l.needs || [];
+      if (!needs.length || !needs.every(fieldFilled)) return;
+      var first = valueOf(needs[0]);
+      if (l.equals && !contains(first, l.equals)) return;
+      if (l.not && contains(first, l.not)) return;
+      matched++;
+    });
+    fieldsFor(S.category).forEach(function (f) {
+      if (!/^[a-z]{2}_f_/.test(f.key)) return;
+      var v = valueOf(f.key);
+      if (String(v == null ? '' : v).trim()) ticked.push(f.key);
+    });
+
+    var draft = buildFindings(S.category);
+    return '<br><span class="muted">findings — lists ' + counts +
+      ' · category <code>' + esc(S.category) + '</code>' +
+      ' · fields answered ' + ticked.length +
+      ' · sentences matched ' + matched + '</span>' +
+      (draft ? '<br><span class="muted">draft: ' + esc(draft.slice(0, 140)) + '…</span>'
+             : '<br><b style="color:#a12f2f">draft is empty</b>' +
+               (ticked.length ? ' although ' + ticked.length +
+                 ' finding fields are answered (' + esc(ticked.slice(0, 6).join(', ')) + ')'
+                 : ' because no finding field is answered on this note'));
   }
 
   function saveSettings() {
