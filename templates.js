@@ -19,11 +19,12 @@
 (function (global) {
   'use strict';
 
-  function f(category, section, key, th, en, type, options) {
+  function f(category, section, key, th, en, type, options, showif) {
     return {
       category: category, section: section, key: key,
       th: th, en: en, type: type,
-      options: options ? options.split(';').map(function (s) { return s.trim(); }) : []
+      options: options ? options.split(';').map(function (s) { return s.trim(); }) : [],
+      showif: showif || ''
     };
   }
 
@@ -98,6 +99,33 @@
       'Elective; Urgent; Emergency'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_site', 'ตำแหน่งรอยโรค', 'Lesion / tumor site', 'text'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_distance', 'ระยะจากขอบทวาร (ซม.)', 'Distance from anal verge (cm)', 'number'),
+
+
+    /* Right-sided detail. Every row is gated on the procedure, so these
+       questions stay out of the way during a left-sided or rectal case. */
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_approach', 'แนวทางเข้าหา mesentery', 'Approach to the mesentery', 'radio',
+      'Medial-to-lateral (SMV first); Inferior / caudal-to-cranial; Superior / cranial-to-caudal; ' +
+      'Lateral-to-medial; Combined',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_cme', 'การตัด mesocolon แบบสมบูรณ์ (CME)', 'Complete mesocolic excision', 'radio',
+      'Yes; No', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_cvl', 'การผูกหลอดเลือดที่ต้นทาง (CVL)', 'Central vascular ligation', 'radio',
+      'Yes; No', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_nodes', 'ระดับการเลาะต่อมน้ำเหลือง', 'Lymphadenectomy (right-sided)', 'radio',
+      'D2; D3', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_rca', 'หลอดเลือด right colic', 'Right colic artery', 'radio',
+      'Present, divided; Absent', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_vessels', 'หลอดเลือดที่ตัด', 'Vessels divided', 'checklist',
+      'Ileocolic; Right colic; Middle colic — right branch; Middle colic — trunk', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_anast_site', 'ตำแหน่งการต่อลำไส้', 'Anastomosis performed', 'radio',
+      'Intracorporeal; Extracorporeal', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_anast_config', 'รูปแบบการต่อลำไส้', 'Anastomosis configuration', 'radio',
+      'Isoperistaltic side-to-side; Antiperistaltic side-to-side; End-to-side; Hand-sewn end-to-end',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_stapler', 'เครื่องเย็บที่ใช้', 'Linear stapler used', 'radio',
+      'GIA 80; Endo GIA 60; Signia; Echelon; Tri-stapler', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_enterotomy', 'การปิดรูเย็บลำไส้', 'Enterotomy closure', 'radio',
+      'Stapled; Hand-sewn two layers; Hand-sewn single layer', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
 
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_vascular', 'การผูกหลอดเลือด', 'Vascular ligation', 'radio',
       'High tie (at origin); Low tie; Not applicable'),

@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02g';
+  var EXPECTED_BUILD = '2026-08-02h';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ab';
+  var APP_BUILD = '2026-08-02ac';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -514,6 +514,57 @@
 
   /* =================== form building =================== */
 
+  /* =================== conditional fields ===================
+     A template row may carry a "showif" rule, written in the Sheet as
+
+         cr_procedure = Right hemicolectomy; Extended right hemicolectomy
+         cr_approach != Open
+
+     The field then appears only when that rule holds. Values are compared
+     case-insensitively and a checklist matches if ANY ticked option matches,
+     so one rule covers both a radio and a multi-select list.
+
+     A field whose rule fails is not merely hidden: valueOf() reports it as
+     empty, so it cannot reach the printout or the narrative. Its stored value
+     survives in S.data, and comes back if the trigger is ticked again. */
+
+  function parseShowIf(rule) {
+    var m = /^\s*([A-Za-z0-9_]+)\s*(!=|=)\s*([\s\S]*)$/.exec(String(rule || ''));
+    if (!m) return null;
+    var vals = m[3].split(';').map(function (x) { return x.trim().toLowerCase(); })
+      .filter(function (x) { return x.length; });
+    if (!vals.length) return null;
+    return { key: m[1], negate: m[2] === '!=', values: vals };
+  }
+
+  /* Deliberately reads S.data, not the DOM, so the printout and the draft
+     narrative apply the same rule whether or not the field is on screen. */
+  function showIfOk(f) {
+    if (!f || !f.showif) return true;
+    var rule = parseShowIf(f.showif);
+    if (!rule) return true;               /* an unreadable rule never hides a field */
+    var raw = S.data[rule.key];
+    var have = (Array.isArray(raw) ? raw : String(raw == null ? '' : raw).split(';'))
+      .map(function (x) { return String(x).trim().toLowerCase(); })
+      .filter(function (x) { return x.length; });
+    var hit = have.some(function (x) { return rule.values.indexOf(x) > -1; });
+    return rule.negate ? !hit : hit;
+  }
+
+  /* Show or hide what the current answers call for. A section whose every
+     field has gone disappears too, so no empty heading is left behind. */
+  function applyVisibility() {
+    $$('.field[data-fkey], .field-heading[data-fkey]').forEach(function (n) {
+      var f = fieldByKey(n.dataset.fkey);
+      n.classList.toggle('hidden', !showIfOk(f));
+    });
+    $$('#commonFields .fieldset, #catFields .fieldset').forEach(function (sec) {
+      var kids = $$('[data-fkey]', sec);
+      sec.classList.toggle('hidden',
+        kids.length > 0 && kids.every(function (k) { return k.classList.contains('hidden'); }));
+    });
+  }
+
   /* Every option list — radio or checklist — gets a free-text escape hatch.
      A fixed list can only record what we anticipated; this catches the rest,
      and it is stored in its own <key>_other column so the tick data stays clean. */
@@ -529,6 +580,7 @@
   function fieldControl(f) {
     var v = S.data[f.key];
     var wrap = el('div', 'field f-' + f.type);
+    wrap.dataset.fkey = f.key;
     wrap.appendChild(el('label', 'flabel', bilingual(f.th, f.en)));
     var body = el('div', 'fbody');
     var i;
@@ -633,6 +685,7 @@
       sec._grid.appendChild(fieldControl(f));
     });
     if (!list.length) container.appendChild(el('p', 'muted', 'ยังไม่มีหัวข้อในหมวดนี้ / No fields defined for this category.'));
+    applyVisibility();
   }
 
   function buildCommonForm() { renderFields(fieldsFor('common'), $('#commonFields')); }
@@ -820,11 +873,12 @@
   }
 
   function valueOf(key) {
+    var f = fieldByKey(key);
+    if (!showIfOk(f)) return '';          /* the question was never asked */
     var v = S.data[key];
     if (Array.isArray(v)) v = v.join('; ');
     if (v === true) return 'ใช่ / Yes';
     if (v === false) return '';
-    var f = fieldByKey(key);
     if (f && (f.type === 'checklist' || f.type === 'radio') && S.data[key + '_other']) {
       v = (v ? v + '; ' : '') + S.data[key + '_other'];
     }
@@ -1490,7 +1544,7 @@
     };
 
     function onFieldChanged(e) {
-      if (e.target.dataset && e.target.dataset.key) saveDraft();
+      if (e.target.dataset && e.target.dataset.key) { saveDraft(); applyVisibility(); }
     }
     document.addEventListener('input', onFieldChanged);
     document.addEventListener('change', onFieldChanged);
