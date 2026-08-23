@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ad';
+  var APP_BUILD = '2026-08-02af';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -783,6 +783,19 @@
     return null;
   }
 
+  /* "A inferior approach" reads badly, and which article is right depends on
+     the value the surgeon picked, not on the sentence I wrote. So the article
+     is corrected after substitution. The exceptions are the u- words sounded
+     as "yoo", where "a" is correct. */
+  var A_NOT_AN = /^(uni|use|usu|util|urin|ureth|ureter|uter|eu|one)/i;
+
+  function fixArticles(text) {
+    return text.replace(/\b([Aa]) (?=[aeiouAEIOU])([A-Za-z-]+)/g, function (m, art, word) {
+      if (A_NOT_AN.test(word)) return m;
+      return (art === 'A' ? 'An' : 'an') + ' ' + word;
+    });
+  }
+
   function buildNarrative(cat) {
     var N = window.NARRATIVE || {};
     var block = matchingSteps();
@@ -814,13 +827,23 @@
         /* lowercase only an ordinary first word: "End-to-end" and
            "Modified lithotomy" yes; "TME", "D3", "ICG" and proper names
            like "Milligan-Morgan" left alone */
-        var firstWord = val.split(/[\s,(]/)[0];
-        if (lc && /^[A-Z][a-z]+(-[a-z][a-z-]*)*$/.test(firstWord)) {
-          val = val.charAt(0).toLowerCase() + val.slice(1);
+        /* a checklist arrives as "Ileocolic; Right colic; …" — lowercase
+           the opening word of each item, not just the first */
+        if (lc) {
+          val = val.split(';').map(function (part) {
+            var t = part.replace(/^\s+/, '');
+            var lead = part.slice(0, part.length - t.length);
+            var firstWord = t.split(/[\s,(]/)[0];
+            if (/^[A-Z][a-z]+(-[a-z][a-z-]*)*$/.test(firstWord)) {
+              t = t.charAt(0).toLowerCase() + t.slice(1);
+            }
+            return lead + t;
+          }).join(';');
         }
         return val;
       }).replace(/\s+/g, ' ').trim();
       if (!text) return;
+      text = fixArticles(text);
       if (!/[.!?]$/.test(text)) text += '.';
 
       if (l.group) usedGroup[l.group] = true;

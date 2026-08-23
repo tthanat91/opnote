@@ -54,6 +54,82 @@
        ================================================================= */
     steps: [
       {
+        name: 'Laparoscopic right / extended right / transverse colectomy',
+        when: [
+          { key: 'cr_procedure', any: ['Right hemicolectomy', 'Extended right hemicolectomy', 'Transverse colectomy'] },
+          { key: 'cr_approach', any: ['Laparoscopic'] }
+        ],
+        lines: [
+          { text: 'Under {anaesthesia}, the patient was placed in the {cr_position|lc} position with both arms tucked. A urinary catheter was inserted. The abdomen was prepared and draped in the usual sterile fashion and the surgical safety checklist was completed.' },
+          { text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the left lower quadrant» and «5 mm in the left upper quadrant and the suprapubic position».' },
+          { needs: ['cr_incision'], text: '{cr_incision}' },
+          { text: 'Diagnostic laparoscopy was performed. {findings}' },
+          { needs: ['cr_tumour_site'], text: 'The lesion was confirmed at the {cr_tumour_site}, «with no evidence of peritoneal or hepatic metastasis».' },
+          { text: 'The patient was placed in Trendelenburg with the right side elevated, and the small bowel and omentum were retracted to the left upper quadrant to expose the ileocolic pedicle.' },
+
+          /* Each approach is a different operation, not a different word for
+             the same one, so each gets its own step. The last line of the
+             group is the fallback for a value I have not written for. */
+          { group: 'approach', needs: ['cr_r_approach'], equals: 'Medial-to-lateral',
+            text: 'A medial-to-lateral dissection was performed. The ileocolic pedicle was placed on tension and the peritoneum incised at the junction of the ileocolic vein and the superior mesenteric vein. The avascular plane anterior to the duodenum and the head of the pancreas was entered and developed laterally, lifting the mesocolon off the retroperitoneum, with the right ureter and gonadal vessels identified and preserved.' },
+          { group: 'approach', needs: ['cr_r_approach'], equals: 'Inferior',
+            text: 'An inferior, caudal-to-cranial dissection was performed. The peritoneum was incised at the base of the terminal ileal mesentery below the ileocolic pedicle, the retroperitoneal plane was entered from below and developed cranially over the duodenum and the head of the pancreas, with the right ureter and gonadal vessels identified and preserved.' },
+          { group: 'approach', needs: ['cr_r_approach'], equals: 'Superior',
+            text: 'A superior, cranial-to-caudal dissection was performed. The gastrocolic ligament was divided and the lesser sac entered, the transverse mesocolon was separated from the anterior surface of the pancreas, and the gastrocolic trunk of Henle was exposed at its origin. The dissection was then carried caudally towards the ileocolic pedicle, with the duodenum, right ureter and gonadal vessels identified and preserved.' },
+          { group: 'approach', needs: ['cr_r_approach'], equals: 'Lateral-to-medial',
+            text: 'A lateral-to-medial dissection was performed. The lateral peritoneal attachments of the right colon were divided along the white line of Toldt and the right colon with its mesentery was reflected medially off the retroperitoneum, with the duodenum, right ureter and gonadal vessels identified and preserved.' },
+          { group: 'approach', needs: ['cr_r_approach'], equals: 'Combined',
+            text: 'A combined approach was used. The medial dissection was carried as far as the plane would safely allow before the inferior and lateral attachments were released to complete the mobilization, with the duodenum, right ureter and gonadal vessels identified and preserved.' },
+          { group: 'approach', needs: ['cr_r_approach'],
+            text: 'A {cr_r_approach|lc} dissection was performed. The avascular plane between the mesocolon and the retroperitoneum was developed, exposing the duodenum and the head of the pancreas, with the right ureter and gonadal vessels identified and preserved.' },
+          { needs: ['cr_r_cme'], equals: 'Yes', text: 'A complete mesocolic excision was performed, the mesocolic fascia being kept intact throughout the dissection.' },
+          { needs: ['cr_r_cvl'], equals: 'Yes', text: 'Central vascular ligation was performed, the pedicles being taken flush with the superior mesenteric vein.' },
+          { needs: ['cr_r_vessels'], text: 'The following vessels were divided at their origin: {cr_r_vessels|lc}, secured «with Hem-o-lok clips». The gastrocolic trunk of Henle was identified and «preserved».' },
+          { group: 'rca', needs: ['cr_r_rca'], equals: 'Absent', text: 'No true right colic artery was present, which is a recognized anatomical variant.' },
+          { group: 'rca', needs: ['cr_r_rca'], text: 'The right colic artery was identified and divided at its origin.' },
+          { needs: ['cr_r_nodes'], text: 'A {cr_r_nodes} lymphadenectomy was performed with the specimen.' },
+          { needs: ['cr_procedure'], equals: 'Extended right hemicolectomy', text: 'The dissection was carried to the left of the middle colic trunk, «with the middle colic vessels divided at their origin», as appropriate for an extended right hemicolectomy.' },
+          /* what is left to mobilize depends on where the dissection started */
+          { group: 'flexure', needs: ['cr_r_approach'], equals: 'Lateral-to-medial',
+            text: 'The gastrocolic ligament was divided and the hepatic flexure was taken down, completing the mobilization of the right colon.' },
+          { group: 'flexure', needs: ['cr_r_approach'], equals: 'Superior',
+            text: 'The lateral peritoneal attachments of the right colon were divided along the white line of Toldt and the hepatic flexure was taken down, joining the plane already developed in the lesser sac.' },
+          { group: 'flexure',
+            text: 'The hepatic flexure was mobilized «using a combined inferior and lateral approach», the gastrocolic ligament was divided, and the lateral attachments of the right colon were taken along the white line of Toldt to join the medial dissection.' },
+
+          { group: 'divide', needs: ['cr_r_anast_site', 'cr_r_stapler'], equals: 'Intracorporeal',
+            text: 'The terminal ileum «15 cm proximal to the ileocecal valve» and the transverse colon at the intended distal margin were divided intracorporeally with {cr_r_stapler}.' },
+          { group: 'divide', needs: ['cr_r_anast_site', 'cr_r_stapler'], equals: 'Extracorporeal',
+            text: 'A «6 cm periumbilical midline» incision was made, a wound protector was placed and the mobilized right colon was exteriorized. The terminal ileum «15 cm proximal to the ileocecal valve» and the transverse colon at the intended distal margin were divided with {cr_r_stapler}.' },
+          { group: 'divide', needs: ['cr_r_stapler'],
+            text: 'The terminal ileum and the transverse colon were divided at the intended margins with {cr_r_stapler}.' },
+
+          { group: 'anast', needs: ['cr_r_anast_site', 'cr_r_anast_config'], equals: 'Intracorporeal',
+            text: 'An intracorporeal {cr_r_anast_config|lc} ileocolic anastomosis was fashioned, confirming correct orientation and absence of tension.' },
+          { group: 'anast', needs: ['cr_r_anast_site', 'cr_r_anast_config'], equals: 'Extracorporeal',
+            text: 'An extracorporeal {cr_r_anast_config|lc} ileocolic anastomosis was fashioned, confirming correct orientation and absence of tension.' },
+          { group: 'anast', needs: ['cr_r_anast_config'],
+            text: 'A {cr_r_anast_config|lc} ileocolic anastomosis was fashioned.' },
+          { needs: ['cr_r_enterotomy'], text: 'The common enterotomy was closed: {cr_r_enterotomy|lc}.' },
+          { text: 'The mesenteric defect was «closed with a running barbed suture».' },
+
+          { group: 'extract', needs: ['cr_r_anast_site'], equals: 'Extracorporeal',
+            text: 'The anastomosis was returned to the abdomen and the specimen was delivered through the same incision. The specimen was passed off the field: {organ_removed}' },
+          { group: 'extract', needs: ['cr_extraction'],
+            text: 'Extraction site: {cr_extraction}. A wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },
+          { group: 'extract',
+            text: 'The umbilical port site was extended as a «periumbilical midline» incision, a wound protector was placed, and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },
+
+          { needs: ['cr_margin'], text: 'Macroscopic resection margins measured {cr_margin}.' },
+          { needs: ['cr_perfusion'], not: 'Not assessed', text: 'Perfusion of the anastomosis was assessed by {cr_perfusion|lc} and was satisfactory.' },
+          { needs: ['cr_diverting'], not: 'None', text: 'A {cr_diverting|lc} was fashioned and matured at «the marked stoma site».' },
+          { text: 'Hemostasis was confirmed and the abdomen irrigated with «warm saline».' },
+          { needs: ['cr_drain'], not: 'None', text: 'A drain was placed: {cr_drain}.' },
+          { needs: ['cr_closure'], text: 'Ports were removed under direct vision. The wound and port sites were closed: {cr_closure}.' },
+          { needs: ['cr_count'], equals: 'Yes', text: 'Sponge, needle and instrument counts were correct at the end of the procedure. The patient was extubated and transferred to recovery in a stable condition.' }
+        ]
+      },
+      {
         name: 'Laparoscopic sigmoidectomy / anterior resection',
         when: [
           { key: 'cr_procedure', any: ['Sigmoidectomy', 'Anterior resection'] },
@@ -89,7 +165,7 @@
           { needs: ['cr_leak_test'], not: 'Not performed', text: 'A «colonoscopic» air-leak test was performed under saline and was {cr_leak_test|lc}.' },
           { needs: ['cr_diverting'], not: 'None', text: 'A {cr_diverting|lc} was fashioned and matured at «the marked stoma site in the right iliac fossa».' },
           { text: 'Hemostasis was confirmed and the pelvis irrigated with «warm saline».' },
-          { needs: ['cr_drain'], text: 'A drain was placed: {cr_drain}.' },
+          { needs: ['cr_drain'], not: 'None', text: 'A drain was placed: {cr_drain}.' },
           { needs: ['cr_closure'], text: 'Ports were removed under direct vision. The wound and port sites were closed: {cr_closure}.' },
           { needs: ['cr_count'], equals: 'Yes', text: 'Sponge, needle and instrument counts were correct at the end of the procedure. The patient was extubated and transferred to recovery in a stable condition.' }
         ]
@@ -138,7 +214,7 @@
       { needs: ['cr_diverting'], not: 'None',
         text: 'A {cr_diverting} was fashioned to divert the anastomosis.' },
 
-      { needs: ['cr_drain'], text: 'A drain was placed: {cr_drain}.' },
+      { needs: ['cr_drain'], not: 'None', text: 'A drain was placed: {cr_drain}.' },
       { needs: ['cr_closure'], text: 'The wound was closed: {cr_closure}.' },
       { needs: ['cr_count'], equals: 'Yes',
         text: 'Sponge and instrument counts were correct at the end of the procedure.' }
