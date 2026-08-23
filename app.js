@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02aa';
+  var APP_BUILD = '2026-08-02ab';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -514,6 +514,18 @@
 
   /* =================== form building =================== */
 
+  /* Every option list — radio or checklist — gets a free-text escape hatch.
+     A fixed list can only record what we anticipated; this catches the rest,
+     and it is stored in its own <key>_other column so the tick data stays clean. */
+  function addOtherBox(body, f) {
+    var other = el('input', 'other');
+    other.type = 'text';
+    other.placeholder = 'อื่น ๆ ระบุ / other, specify';
+    other.dataset.key = f.key + '_other';
+    other.value = S.data[f.key + '_other'] || '';
+    body.appendChild(other);
+  }
+
   function fieldControl(f) {
     var v = S.data[f.key];
     var wrap = el('div', 'field f-' + f.type);
@@ -571,6 +583,7 @@
         S.data[f.key] = ''; saveDraft();
       };
       body.appendChild(rg); body.appendChild(clr);
+      addOtherBox(body, f);
 
     } else if (f.type === 'checkbox') {
       var lab2 = el('label', 'opt single');
@@ -588,16 +601,7 @@
         cg.appendChild(lab3);
       });
       body.appendChild(cg);
-
-      /* Every checklist gets a free-text escape hatch. A list can only record
-         what we anticipated; this catches the rest, and it is stored in its own
-         <key>_other column so the tick data stays clean. */
-      var other = el('input', 'other');
-      other.type = 'text';
-      other.placeholder = 'อื่น ๆ ระบุ / other, specify';
-      other.dataset.key = f.key + '_other';
-      other.value = S.data[f.key + '_other'] || '';
-      body.appendChild(other);
+      addOtherBox(body, f);
 
     } else {
       var inp = el('input');
@@ -821,7 +825,7 @@
     if (v === true) return 'ใช่ / Yes';
     if (v === false) return '';
     var f = fieldByKey(key);
-    if (f && f.type === 'checklist' && S.data[key + '_other']) {
+    if (f && (f.type === 'checklist' || f.type === 'radio') && S.data[key + '_other']) {
       v = (v ? v + '; ' : '') + S.data[key + '_other'];
     }
     return v == null ? '' : String(v);
