@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ao';
+  global.TEMPLATES_BUILD = '2026-08-02aq';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -54,8 +54,15 @@
     f('common', IDENT, 'admit_date', 'วันที่รับไว้', 'Admission date', 'date'),
 
     f('common', DIAG, 'preop_dx', 'การวินิจฉัยก่อนผ่าตัด', 'Pre-operative diagnosis', 'textarea'),
-    f('common', DIAG, 'indication', 'ข้อบ่งชี้ในการผ่าตัด', 'Indication for operation', 'textarea'),
-    f('common', DIAG, 'aim', 'จุดมุ่งหมายในการผ่าตัด', 'Aim of operation', 'textarea'),
+    f('common', DIAG, 'indication', 'ข้อบ่งชี้ในการผ่าตัด', 'Indication for operation', 'checklist',
+      'Malignancy; Obstruction; Perforation; Bleeding; Ischemia / necrosis; Abscess or infection; ' +
+      'Inflammatory disease (IBD / diverticulitis); Fistula; Prolapse; ' +
+      'Incontinence or functional disorder; Anastomotic complication; Stoma-related; Trauma; ' +
+      'Failed medical or endoscopic treatment; Other'),
+    f('common', DIAG, 'aim', 'จุดมุ่งหมายในการผ่าตัด', 'Aim of operation', 'radio',
+      'Curative (R0 intent); Palliative; Diagnostic / staging; Prophylactic; ' +
+      'Symptom relief / decompression; Restoration of intestinal continuity; ' +
+      'Source control / damage control'),
     f('common', DIAG, 'postop_dx', 'การวินิจฉัยหลังผ่าตัด', 'Post-operative diagnosis', 'textarea'),
     f('common', DIAG, 'operation', 'ชนิดของการผ่าตัด', 'Operation performed', 'textarea'),
     f('common', DIAG, 'organ_removed', 'อวัยวะหรือสิ่งที่ถูกตัดออก', 'Organ / tissue removed', 'textarea'),
@@ -66,7 +73,8 @@
 
     f('common', TEAM, 'surgeon', 'แพทย์ผู้ผ่าตัด', 'Surgeon', 'text'),
     f('common', TEAM, 'assistant', 'ผู้ช่วย', 'Assistant', 'text'),
-    f('common', TEAM, 'consultant', 'แพทย์ที่ปรึกษา', 'Consultant', 'text'),
+    f('common', TEAM, 'consultant', 'แพทย์ที่ปรึกษา', 'Consultant', 'select',
+      'อ.กุลวัฒน์; อ.บุญชัย; อ.ณัฐพล; อ.รังสิมา; อ.ปุณวัฒน์; อ.สุรเดช; อ.ธนัท'),
     f('common', TEAM, 'recorder', 'ผู้บันทึกรายงาน', 'Recorded by', 'text'),
     f('common', TEAM, 'anaesthetist', 'วิสัญญีแพทย์', 'Anesthetist', 'text'),
     f('common', TEAM, 'anaesthesia', 'วิธีระงับความรู้สึก', 'Type of anesthesia', 'select',
@@ -183,7 +191,7 @@
       'Clinical only; ICG fluorescence; Not assessed'),
 
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text'),
-    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'checklist',
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'radio',
       'Cul-de-sac (pelvis); Right paracolic gutter; Left paracolic gutter; Subhepatic; ' +
       'Subphrenic; Adjacent to the anastomosis; Other'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_sheath_material', 'ไหมเย็บชั้น sheath', 'Fascia / sheath — suture', 'text'),
@@ -235,12 +243,121 @@
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_plane_quality', 'คุณภาพระนาบ CME / TME', 'CME / TME specimen quality', 'radio',
       'Complete; Nearly complete; Incomplete'),
 
+
+    /* ---------------- LEFT-SIDED AND RECTAL ---------------- */
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_imv', 'หลอดเลือดดำ IMV', 'Inferior mesenteric vein', 'radio',
+      'Divided at the lower border of the pancreas; Divided at the level of the IMA; Preserved',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_sra', 'หลอดเลือด superior rectal', 'Superior rectal artery', 'radio',
+      'Divided; Preserved', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_transection', 'เครื่องเย็บตัดลำไส้ส่วนปลาย', 'Distal transection stapler', 'radio',
+      'Endo GIA 45; Endo GIA 60; Signia; Echelon; Contour; Open linear stapler (TA)',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_firings', 'จำนวนครั้งที่ยิง', 'Number of stapler firings', 'number', '',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_circular', 'ขนาด circular stapler', 'Circular stapler size', 'radio',
+      '25 mm; 28 mm; 29 mm; 31 mm; 33 mm; Not used', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_doughnuts', 'Doughnuts', 'Anastomotic doughnuts', 'radio',
+      'Complete; Incomplete — reinforced; Not applicable', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout', 'ล้างลำไส้ส่วนปลายก่อนตัด', 'Rectal washout before transection', 'radio',
+      'Yes; No', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout_fluid', 'น้ำยาและปริมาณ', 'Washout fluid and volume', 'text', '',
+      'cr_l_washout = Yes'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_clamp', 'การหนีบลำไส้ส่วนปลาย', 'Distal bowel occlusion', 'radio',
+      'Endoscopic bulldog clamp; Right-angled clamp; Umbilical tape; None',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_leak_method', 'วิธีทดสอบรอยรั่ว', 'Air-leak test method', 'radio',
+      'Colonoscopic; Rigid proctoscope; Bulb syringe; Not performed', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+
+    /* ---------------- RECTAL DETAIL ---------------- */
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_tme', 'ขอบเขตการเลาะ mesorectum', 'Extent of mesorectal excision', 'radio',
+      'Total (TME); Partial (PME); Tumor-specific', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_nerve', 'การรักษาเส้นประสาทอัตโนมัติ', 'Autonomic nerve preservation', 'radio',
+      'Complete, bilateral; Partial; Sacrificed for oncological clearance; Not identified',
+      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_mobilisation', 'ระยะการเลาะใต้ก้อน (ซม.)', 'Rectal mobilization below the tumor (cm)', 'number', '',
+      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_isr', 'Intersphincteric resection', 'Intersphincteric resection', 'radio',
+      'None; Partial; Subtotal; Total', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_recon', 'รูปแบบการต่อลำไส้ใหม่', 'Reconstruction', 'radio',
+      'Straight colorectal; Straight coloanal; Colonic J-pouch; Side-to-end; Transverse coloplasty; None',
+      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_level', 'ระดับรอยต่อจากขอบทวาร (ซม.)', 'Anastomotic level from the anal verge (cm)', 'number', '',
+      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+
+    /* ---------------- PERINEAL PHASE ---------------- */
+    f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_position', 'ท่าในช่วงฝีเย็บ', 'Position for the perineal phase', 'radio',
+      'Prone jackknife; Lithotomy', 'cr_procedure = Abdominoperineal resection'),
+    f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_type', 'ชนิดของการผ่าตัด', 'Type of perineal excision', 'radio',
+      'Standard APR; Extralevator (ELAPE); Ischioanal', 'cr_procedure = Abdominoperineal resection'),
+    f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_levator', 'ระดับการตัดกล้ามเนื้อ levator', 'Level of levator division', 'radio',
+      'At the pelvic sidewall; At the insertion on the rectum', 'cr_procedure = Abdominoperineal resection'),
+    f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_closure', 'การปิดแผลฝีเย็บ', 'Perineal wound closure', 'radio',
+      'Primary, layered; Biologic mesh; Myocutaneous flap; Omentoplasty; Left open with packing',
+      'cr_procedure = Abdominoperineal resection'),
+    f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_drain', 'ท่อระบายหน้ากระดูก sacrum', 'Presacral drain', 'radio',
+      'Yes; No', 'cr_procedure = Abdominoperineal resection'),
+
+    /* ---------------- HARTMANN AND REVERSAL ---------------- */
+    f('colorectal', 'Hartmann | Hartmann & reversal', 'cr_ha_stump', 'การจัดการตอลำไส้ส่วนปลาย', 'Rectal stump', 'radio',
+      'Closed with a linear stapler; Hand-sewn closure; Brought out as a mucous fistula',
+      'cr_procedure = Hartmann procedure; Reversal of Hartmann'),
+    f('colorectal', 'Hartmann | Hartmann & reversal', 'cr_ha_stump_marked', 'การทำเครื่องหมายที่ตอลำไส้', 'Stump marked for future identification', 'radio',
+      'Long non-absorbable sutures; Metal clips; Not marked', 'cr_procedure = Hartmann procedure; Reversal of Hartmann'),
+    f('colorectal', 'Hartmann | Hartmann & reversal', 'cr_ha_adhesio', 'การเลาะพังผืด', 'Adhesiolysis required', 'radio',
+      'None; Limited; Extensive', 'cr_procedure = Hartmann procedure; Reversal of Hartmann'),
+
+    /* ---------------- STOMA FORMATION ---------------- */
+    f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_site', 'ตำแหน่งทวารเทียม', 'Stoma site', 'radio',
+      'Right iliac fossa; Left iliac fossa; Right upper quadrant; Left upper quadrant; Through the midline wound',
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+    f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_marked', 'ทำเครื่องหมายก่อนผ่าตัด', 'Site marked pre-operatively', 'radio',
+      'Yes, by a stoma nurse; Yes, by the surgeon; No', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+    f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_trephine', 'วิธีเปิดผนังหน้าท้อง', 'Trephine', 'radio',
+      'Circular skin disc; Cruciate incision', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+    f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_rod', 'ใส่แท่งรอง', 'Supporting rod', 'radio', 'Yes; No',
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+    f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_maturation', 'การเปิดปากทวารเทียม', 'Maturation', 'radio',
+      'Primary, Brooke everted; Primary, flush; Delayed', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+    f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_suture', 'ไหมเย็บ mucocutaneous', 'Mucocutaneous suture', 'text', '',
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+
+    /* ---------------- STOMA CLOSURE ---------------- */
+    f('colorectal', 'ปิดทวารเทียม | Stoma closure', 'cr_sc_type', 'ทวารเทียมที่ปิด', 'Stoma being closed', 'radio',
+      'Loop ileostomy; Loop colostomy; End colostomy (Hartmann reversal); End ileostomy',
+      'cr_procedure = Stoma closure; Reversal of Hartmann'),
+    f('colorectal', 'ปิดทวารเทียม | Stoma closure', 'cr_sc_anast', 'วิธีต่อลำไส้', 'Anastomosis at closure', 'radio',
+      'Stapled side-to-side; Hand-sewn end-to-end, single layer; Hand-sewn end-to-end, two layers; ' +
+      'Stapled end-to-end with a circular stapler', 'cr_procedure = Stoma closure; Reversal of Hartmann'),
+    f('colorectal', 'ปิดทวารเทียม | Stoma closure', 'cr_sc_wound', 'การปิดแผลตำแหน่งทวารเทียม', 'Stoma-site wound closure', 'radio',
+      'Primary; Purse-string; Left open to heal by secondary intention', 'cr_procedure = Stoma closure; Reversal of Hartmann'),
+
+    /* ---------------- LOCAL EXCISION ---------------- */
+    f('colorectal', 'ตัดเฉพาะที่ | Local excision', 'cr_le_platform', 'อุปกรณ์ที่ใช้', 'Platform', 'radio',
+      'TAMIS; TEM; Parks retractor; Rigid proctoscope', 'cr_procedure = Local excision (TAMIS / TEM)'),
+    f('colorectal', 'ตัดเฉพาะที่ | Local excision', 'cr_le_thickness', 'ความลึกของการตัด', 'Depth of excision', 'radio',
+      'Full thickness; Submucosal', 'cr_procedure = Local excision (TAMIS / TEM)'),
+    f('colorectal', 'ตัดเฉพาะที่ | Local excision', 'cr_le_defect', 'การปิดแผลผนังลำไส้', 'Defect closure', 'radio',
+      'Closed transversely; Closed longitudinally; Left open', 'cr_procedure = Local excision (TAMIS / TEM)'),
+    f('colorectal', 'ตัดเฉพาะที่ | Local excision', 'cr_le_orientation', 'การจัดวางชิ้นเนื้อ', 'Specimen pinned and oriented', 'radio',
+      'Yes; No', 'cr_procedure = Local excision (TAMIS / TEM)'),
+
+    /* ---------------- ILEAL POUCH ---------------- */
+    f('colorectal', 'ถุงลำไส้เล็ก | Ileal pouch', 'cr_ip_config', 'รูปแบบถุงลำไส้', 'Pouch configuration', 'radio',
+      'J-pouch; S-pouch; W-pouch; No pouch', 'cr_procedure = Restorative proctocolectomy with IPAA; Total proctocolectomy'),
+    f('colorectal', 'ถุงลำไส้เล็ก | Ileal pouch', 'cr_ip_limb', 'ความยาวแขนถุง (ซม.)', 'Pouch limb length (cm)', 'number', '',
+      'cr_procedure = Restorative proctocolectomy with IPAA; Total proctocolectomy'),
+    f('colorectal', 'ถุงลำไส้เล็ก | Ileal pouch', 'cr_ip_anast', 'การต่อถุงกับทวารหนัก', 'Pouch–anal anastomosis', 'radio',
+      'Stapled; Hand-sewn with mucosectomy; Not performed', 'cr_procedure = Restorative proctocolectomy with IPAA; Total proctocolectomy'),
+    f('colorectal', 'ถุงลำไส้เล็ก | Ileal pouch', 'cr_ip_divert', 'ทวารเทียมชั่วคราว', 'Diverting loop ileostomy', 'radio',
+      'Yes; No', 'cr_procedure = Restorative proctocolectomy with IPAA; Total proctocolectomy'),
+
     f('colorectal', 'รายละเอียดขั้นตอน | Operative steps', 'cr_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('colorectal', 'รายละเอียดขั้นตอน | Operative steps', 'cr_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),
 
     /* ---------------- FISTULA ---------------- */
     f('fistula', 'การประเมิน | Assessment', 'fi_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
-      'Prone jackknife; Lithotomy; Left lateral; Right lateral'),
+      'Prone jackknife; Lithotomy; Prone splitleg'),
     f('fistula', 'การประเมิน | Assessment', 'fi_eua', 'ผลตรวจใต้ยาสลบ (EUA)', 'Examination under anesthesia', 'textarea'),
     f('fistula', 'การประเมิน | Assessment', 'fi_prior', 'เคยผ่าตัดบริเวณนี้มาก่อน', 'Previous anorectal surgery', 'radio',
       'None; Previous fistula surgery; Previous abscess drainage; Previous hemorrhoid surgery; Other'),
@@ -269,6 +386,48 @@
     f('fistula', 'หัตถการ | Procedure', 'fi_seton_material', 'วัสดุ seton', 'Seton material', 'text'),
     f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialization of wound edges', 'Marsupialization', 'checkbox'),
     f('fistula', 'หัตถการ | Procedure', 'fi_specimen', 'ชิ้นเนื้อส่งตรวจ', 'Specimen sent', 'text'),
+
+
+    /* ---- how the tract was found, and what was done to it ---- */
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_identify', 'วิธีหารูเปิดภายใน', 'How the internal opening was identified', 'checklist',
+      'Malleable probe; Hydrogen peroxide; Methylene blue; Milk of the tract; ' +
+      'Correlation with pre-operative MRI; Not identified'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_probe', 'ผลการสอดโพรบ', 'Probe passed along the tract', 'radio',
+      'Yes, easily; Yes, with difficulty; No'),
+
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_lay_open', 'สัดส่วนหูรูดที่ถูกตัด (%)', 'External sphincter divided (%)', 'number', '',
+      'fi_procedure = Fistulotomy; Fistulectomy'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_curettage', 'การขูดโพรง', 'Curettage of granulation tissue', 'radio',
+      'Yes; No', 'fi_procedure = Fistulotomy; Fistulectomy'),
+
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_seton_type', 'ชนิด seton', 'Seton type', 'radio',
+      'Loose draining; Cutting, to be tightened; Chemical', 'fi_procedure = Cutting seton; Draining (loose) seton'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_seton_plan', 'แผนการปรับ seton', 'Seton plan', 'text', '',
+      'fi_procedure = Cutting seton; Draining (loose) seton'),
+
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_lift_tract', 'การจัดการ intersphincteric tract', 'Intersphincteric tract at LIFT', 'radio',
+      'Ligated and divided; Ligated only; Excised', 'fi_procedure = LIFT (ligation of intersphincteric fistula tract)'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_lift_suture', 'ไหมที่ใช้ผูก', 'Ligation suture', 'text', '',
+      'fi_procedure = LIFT (ligation of intersphincteric fistula tract)'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_lift_external', 'การจัดการรูเปิดภายนอก', 'External opening at LIFT', 'radio',
+      'Cored out and left open; Curetted and left open; Closed', 'fi_procedure = LIFT (ligation of intersphincteric fistula tract)'),
+
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_flap_type', 'ชนิดของ flap', 'Flap type', 'radio',
+      'Mucosal; Mucosa and submucosa; Full thickness rectal wall; Anodermal',
+      'fi_procedure = Mucosal advancement flap; Anodermal advancement flap'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_flap_suture', 'ไหมเย็บ flap', 'Flap suture', 'text', '',
+      'fi_procedure = Mucosal advancement flap; Anodermal advancement flap'),
+
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_abscess_site', 'ตำแหน่งฝี', 'Abscess location', 'radio',
+      'Perianal; Ischioanal; Intersphincteric; Supralevator; Horseshoe',
+      'fi_procedure = Drainage of abscess'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_abscess_pus', 'ปริมาณหนอง (มล.)', 'Volume of pus drained (mL)', 'number', '',
+      'fi_procedure = Drainage of abscess'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_abscess_drain', 'สิ่งที่ใส่คาไว้', 'Left in the cavity', 'radio',
+      'Nothing; Corrugated drain; Mushroom catheter; Packing', 'fi_procedure = Drainage of abscess'),
+
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_wound', 'การดูแลแผล', 'Wound at the end of the operation', 'radio',
+      'Left open; Marsupialized; Partially closed'),
 
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),
@@ -299,6 +458,37 @@
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_bridge', 'เหลือ mucosal bridge เพียงพอ', 'Adequate mucocutaneous bridges preserved', 'checkbox'),
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_packing', 'ใส่ anal packing', 'Anal packing inserted', 'checkbox'),
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_analgesia', 'การระงับปวดเฉพาะที่', 'Local analgesia used', 'text'),
+
+
+    /* ---- technique, shown only for the operation actually done ---- */
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pedicle_suture', 'ไหมผูกขั้ว', 'Pedicle suture', 'text', '',
+      'he_procedure = Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); Semi-closed haemorrhoidectomy; LigaSure / vessel-sealing haemorrhoidectomy'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pedicle_method', 'วิธีผูกขั้ว', 'Pedicle ligation technique', 'radio',
+      'Transfixion suture; Simple ligature; Vessel sealed, no suture', 'he_procedure = Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); Semi-closed haemorrhoidectomy; LigaSure / vessel-sealing haemorrhoidectomy'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_bridges', 'จำนวน mucocutaneous bridge ที่เหลือ', 'Mucocutaneous bridges preserved', 'number', '',
+      'he_procedure = Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); Semi-closed haemorrhoidectomy; LigaSure / vessel-sealing haemorrhoidectomy'),
+
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_size', 'ขนาด stapler', 'Circular stapler size', 'radio',
+      '32 mm; 33 mm; 34 mm', 'he_procedure = Stapled haemorrhoidopexy (PPH)'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_height', 'ระยะ purse-string เหนือ dentate line (ซม.)',
+      'Purse-string height above the dentate line (cm)', 'number', '', 'he_procedure = Stapled haemorrhoidopexy (PPH)'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_reinforce', 'การเสริมแนวเย็บ', 'Staple line reinforced', 'radio',
+      'Yes; No', 'he_procedure = Stapled haemorrhoidopexy (PPH)'),
+
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_hal_arteries', 'จำนวนหลอดเลือดที่ผูก', 'Number of arteries ligated', 'number', '',
+      'he_procedure = Doppler-guided haemorrhoidal artery ligation (HAL / RAR)'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_hal_rar', 'ทำ rectoanal repair', 'Rectoanal repair (RAR) performed', 'radio',
+      'Yes; No', 'he_procedure = Doppler-guided haemorrhoidal artery ligation (HAL / RAR)'),
+
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_side', 'ตำแหน่งที่ตัดหูรูด', 'Sphincterotomy position', 'radio',
+      'Left lateral (3 o\'clock); Right lateral (9 o\'clock)', 'he_procedure = Lateral internal sphincterotomy'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_technique', 'วิธีตัดหูรูด', 'Sphincterotomy technique', 'radio',
+      'Open; Closed', 'he_procedure = Lateral internal sphincterotomy'),
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_length', 'ความยาวที่ตัด (ซม.)', 'Length divided (cm)', 'number', '',
+      'he_procedure = Lateral internal sphincterotomy'),
+
+    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_band_number', 'จำนวนยางที่รัด', 'Number of bands or injections', 'number', '',
+      'he_procedure = Rubber band ligation; Sclerotherapy'),
 
     f('hemorrhoid', 'รายละเอียดขั้นตอน | Operative steps', 'he_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('hemorrhoid', 'รายละเอียดขั้นตอน | Operative steps', 'he_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),
