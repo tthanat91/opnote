@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02aq';
+  global.TEMPLATES_BUILD = '2026-08-02ar';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -164,13 +164,16 @@
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_lymphadenectomy', 'การเลาะต่อมน้ำเหลือง', 'Lymphadenectomy', 'radio',
       'D1; D2; D3 / CME; Not applicable',
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_plane', 'ระนาบการเลาะ', 'Dissection plane', 'checklist',
-      'CME (complete mesocolic excision); TME (total mesorectal excision); ' +
-      'PME (partial mesorectal excision); Intersphincteric dissection; En-bloc resection of adjacent organ',
-      'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_enbloc', 'ตัดอวัยวะข้างเคียงร่วม',
+      'En-bloc resection of the invaded organ', 'radio', 'Yes; No',
+      'cr_f_invasion = Yes'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'Mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
       'Yes; No; Not applicable',
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_approach', 'วิธีเลาะ splenic flexure',
+      'Splenic flexure — approach', 'radio',
+      'Inferior; Anterior; Lateral; Combined inferior, anterior and lateral',
+      'cr_splenic_flexure = Yes'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_prox', 'ขอบตัดด้านต้น (ซม.)', 'Proximal resection margin (cm)', 'number'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_dist', 'ขอบตัดด้านปลาย (ซม.)', 'Distal resection margin (cm)', 'number'),
 

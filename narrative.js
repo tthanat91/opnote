@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02aq',
+    build: '2026-08-02ar',
 
 
 
@@ -284,9 +284,12 @@
           { text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
           { needs: ['cr_vascular'], not: 'Not applicable', text: 'The inferior mesenteric artery was skeletonized and divided using a {cr_vascular|lc} technique, «1 cm distal to its aortic origin so as to preserve the superior hypogastric nerve plexus», secured «with three Hem-o-lok clips, two proximal and one distal». The inferior mesenteric vein was divided «at the lower border of the pancreas».' },
           { needs: ['cr_lymphadenectomy'], not: 'Not applicable', text: 'A {cr_lymphadenectomy} lymphadenectomy was performed with the specimen.' },
-          { needs: ['cr_plane'], text: 'Dissection was continued in the {cr_plane|lc} plane «(Toldt fascia)» under direct vision, with the hypogastric nerves identified and preserved.' },
+          { text: 'Dissection was continued in the «Toldt» plane under direct vision, with the hypogastric nerves identified and preserved.' },
           { text: 'The lateral peritoneal attachments were divided along the white line of Toldt to join the medial dissection.' },
-          { needs: ['cr_splenic_flexure'], equals: 'Yes', text: 'The splenic flexure was fully mobilized using «a combined inferior, anterior and lateral approach» to allow a tension-free anastomosis.' },
+          { group: 'flex', needs: ['cr_splenic_flexure', 'cr_splenic_approach'], equals: 'Yes',
+            text: 'The splenic flexure was fully mobilized using {cr_splenic_approach|lc} to allow a tension-free anastomosis.' },
+          { group: 'flex', needs: ['cr_splenic_flexure'], equals: 'Yes',
+            text: 'The splenic flexure was fully mobilized «using a combined inferior, anterior and lateral approach» to allow a tension-free anastomosis.' },
           { text: 'The rectum was mobilized to «10 cm below the tumor» and the mesorectum divided at the level of the intended distal margin.' },
           { text: 'The bowel distal to the tumor was occluded with «an endoscopic bulldog clamp» and a rectal washout was performed with «1 L of warm saline» before transection.' },
           { needs: ['cr_stapler'], text: 'The rectum was then divided distally with «one firing of» {cr_stapler}.' },
@@ -345,7 +348,6 @@
       { needs: ['cr_tumor_distance'],
         text: 'It lay {cr_tumor_distance} cm from the anal verge.' },
 
-      { needs: ['cr_plane'], text: 'Dissection was carried out in the {cr_plane|lc} plane.' },
       { needs: ['cr_splenic_flexure'], equals: 'Yes',
         text: 'The splenic flexure was mobilized.' },
       { needs: ['cr_vascular'], not: 'Not applicable',
