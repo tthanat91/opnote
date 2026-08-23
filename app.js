@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02t';
+  var APP_BUILD = '2026-08-02y';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -532,6 +532,20 @@
       ta.rows = 4; ta.dataset.key = f.key; ta.value = v || '';
       body.appendChild(ta);
 
+      /* the step-by-step box gets a draft button — pressed deliberately,
+         never filled automatically, and always editable afterwards */
+      if (/_steps$/.test(f.key)) {
+        var draft = el('button', 'btn ghost draftbtn',
+          '\u270E \u0e23\u0e48\u0e32\u0e07\u0e08\u0e32\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e14\u0e49\u0e32\u0e19\u0e1a\u0e19 \u00b7 Draft from the fields above');
+        draft.type = 'button';
+        draft.onclick = function () { draftInto(ta); };
+        body.appendChild(draft);
+        body.appendChild(el('p', 'drafthint',
+          '\u0e23\u0e48\u0e32\u0e07\u0e19\u0e35\u0e49\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e1e\u0e35\u0e22\u0e07\u0e08\u0e38\u0e14\u0e15\u0e31\u0e49\u0e07\u0e15\u0e49\u0e19 \u0e42\u0e1b\u0e23\u0e14\u0e2d\u0e48\u0e32\u0e19\u0e41\u0e25\u0e30\u0e41\u0e01\u0e49\u0e44\u0e02\u0e01\u0e48\u0e2d\u0e19\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01' +
+          '<span class="en">A starting point only. Read every line and correct it — this is a legal record, ' +
+          'and only what you actually did should remain.</span>'));
+      }
+
     } else if (f.type === 'select' || f.type === 'dropdown') {
       var sel = el('select');
       sel.dataset.key = f.key;
@@ -677,6 +691,124 @@
     if (!/^\d+$/.test(s)) return s;
     var n = parseInt(s, 10), h = Math.floor(n / 60), m = n % 60;
     return n + ' นาที' + (h ? ' (' + h + ' ชม. ' + m + ' น.)' : '');
+  }
+
+  /* ---------- draft narrative ----------
+     Turns the ticked boxes into prose. Deterministic: no model, no network,
+     identical output for identical input, works offline. A line is printed
+     only when every field it names has been filled, so the draft can never
+     claim something that was not recorded. */
+
+  function fieldFilled(k) {
+    var v = valueOf(k);
+    return String(v == null ? '' : v).trim() !== '';
+  }
+
+  function contains(hay, needle) {
+    return String(hay || '').toLowerCase().indexOf(String(needle).toLowerCase()) > -1;
+  }
+
+  /* Does this operation have a standard-steps block? */
+  function matchingSteps() {
+    var blocks = (window.NARRATIVE || {}).steps || [];
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      var ok = (b.when || []).every(function (c) {
+        var v = String(valueOf(c.key) || '');
+        return (c.any || []).some(function (a) { return contains(v, a); });
+      });
+      if (ok && (b.when || []).length) return b;
+    }
+    return null;
+  }
+
+  function buildNarrative(cat) {
+    var N = window.NARRATIVE || {};
+    var block = matchingSteps();
+
+    /* A standard-steps block already narrates position, access, dissection
+       and closure, so it replaces the short field-based list rather than
+       being added to it. The common tail still follows. */
+    var lines = block
+      ? (block.lines || []).concat(N.common || [])
+      : (N[cat] || []).concat(N.common || []);
+    var numbered = !!block, n = 0;
+    var usedGroup = {}, out = [], used = {};
+
+    lines.forEach(function (l) {
+      if (l.group && usedGroup[l.group]) return;
+      var needs = l.needs || [];
+      if (!needs.every(fieldFilled)) return;
+      var first = valueOf(needs[0]);
+      if (l.equals && !contains(first, l.equals)) return;
+      if (l.not && contains(first, l.not)) return;
+
+      var text = String(l.text).replace(/\{(\w+)(\|lc)?\}/g, function (_, k, lc) {
+        var val = String(valueOf(k) || '').trim();
+        /* nothing recorded — leave a visible blank rather than a silent gap */
+        if (!val) return '\u00ab\u2026\u00bb';
+        /* |lc drops the capital on an ordinary word so it reads naturally
+           mid-sentence, but leaves TME, GA, D2, LIFT and hyphenated proper
+           names such as Milligan-Morgan exactly as written */
+        /* lowercase only an ordinary first word: "End-to-end" and
+           "Modified lithotomy" yes; "TME", "D3", "ICG" and proper names
+           like "Milligan-Morgan" left alone */
+        var firstWord = val.split(/[\s,(]/)[0];
+        if (lc && /^[A-Z][a-z]+(-[a-z][a-z-]*)*$/.test(firstWord)) {
+          val = val.charAt(0).toLowerCase() + val.slice(1);
+        }
+        return val;
+      }).replace(/\s+/g, ' ').trim();
+      if (!text) return;
+      if (!/[.!?]$/.test(text)) text += '.';
+
+      if (l.group) usedGroup[l.group] = true;
+      /* remember every field this sentence consumed, so the sweep below
+         knows what has already been said */
+      needs.forEach(function (k) { used[k] = true; });
+      String(l.text).replace(/\{(\w+)/g, function (_, k) { used[k] = true; return _; });
+      out.push(numbered ? (++n) + '. ' + text : '- ' + text);
+    });
+    /* Anything ticked but not mentioned by a sentence is listed at the end.
+       Writing a template for every field would mean guessing phrasing for
+       all of them; this way a box you tick always reaches the note, and you
+       reword it if you want it in the prose. */
+    if (out.length) {
+      var extras = [];
+      fieldsFor(cat).forEach(function (f) {
+        if (used[f.key] || /_steps$|_postop$/.test(f.key) || f.type === 'heading') return;
+        var v = valueOf(f.key);
+        if (!String(v == null ? '' : v).trim()) return;
+        extras.push('- ' + (f.en || f.th) + ': ' + v);
+      });
+      if (extras.length) {
+        out.push('');
+        out.push('Additional recorded detail:');
+        out = out.concat(extras);
+      }
+    }
+
+    return out.join('\n');
+  }
+
+  function draftInto(node) {
+    harvest();
+    var text = buildNarrative(S.category);
+    if (!text) {
+      toast('ยังไม่มีข้อมูลพอจะร่าง กรอกช่องด้านบนก่อน / Nothing to draft yet — fill the fields above first', 'warn');
+      return;
+    }
+    var existing = node.value.trim();
+    if (existing) {
+      if (!window.confirm('มีข้อความอยู่แล้ว จะเพิ่มร่างต่อท้ายหรือไม่?\n\n' +
+        'There is already text here. Add the draft below it?')) return;
+      node.value = existing + '\n\n' + text;
+    } else {
+      node.value = text;
+    }
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+    node.focus();
+    toast('ร่างแล้ว โปรดอ่านและแก้ไขก่อนบันทึก / Draft inserted — please read and edit it', 'ok');
   }
 
   function valueOf(key) {
@@ -1023,8 +1155,8 @@
       row('ผู้บันทึกรายงาน', 'Recorded by', valueOf('recorder')) +
       '</div>' +
       '<div class="inline2">' +
-      row('วิสัญญีแพทย์', 'Anaesthetist', valueOf('anaesthetist')) +
-      row('วิธีระงับความรู้สึก', 'Anaesthesia', valueOf('anaesthesia')) +
+      row('วิสัญญีแพทย์', 'Anesthetist', valueOf('anaesthetist')) +
+      row('วิธีระงับความรู้สึก', 'Anesthesia', valueOf('anaesthesia')) +
       '</div>' +
       '<div class="inline2">' +
       row('พยาบาลส่งเครื่องมือ', 'Scrub nurse', valueOf('scrub_nurse')) +
@@ -1464,8 +1596,15 @@
         out.className = 'diag warn';
         out.innerHTML = '<b>เชื่อมต่อไม่ได้ · Could not reach the script</b><br>' +
           esc(e.message) + '<br><br>' +
-          '<p><b>สาเหตุที่พบบ่อยที่สุด: สิทธิ์การเข้าถึงตั้งเป็น “Anyone with Google account”</b><br>' +
-          '<span class="en">Most likely cause: the deployment’s access is set to ' +
+          '<p><b>บน iPhone / iPad: ปิด “Hide IP Address” ก่อน</b><br>' +
+          'ตั้งค่า ▸ แอป ▸ Safari ▸ Hide IP Address ▸ <b>Off</b><br>' +
+          '<span class="en">On iPhone or iPad this is the commonest cause by far. ' +
+          'iCloud Private Relay routes Safari through Apple’s servers and Google refuses the ' +
+          'relayed request — the page cannot reach the script even though the same address ' +
+          'opens fine in a tab. Settings ▸ Apps ▸ Safari ▸ Hide IP Address ▸ Off, then reload ' +
+          'this page. Only devices with a paid iCloud+ subscription have it switched on.</span></p>' +
+          '<p><b>สาเหตุถัดมา: สิทธิ์การเข้าถึงตั้งเป็น “Anyone with Google account”</b><br>' +
+          '<span class="en">Next most likely: the deployment’s access is set to ' +
           '<b>Anyone with Google account</b> instead of <b>Anyone</b>. Opening the URL yourself ' +
           'then works, because your browser is signed in — but a request made by this page ' +
           'carries no Google session, is redirected to a login screen, and fails.</span></p>' +

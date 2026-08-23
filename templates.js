@@ -65,8 +65,8 @@
     f('common', TEAM, 'assistant', 'ผู้ช่วย', 'Assistant', 'text'),
     f('common', TEAM, 'consultant', 'แพทย์ที่ปรึกษา', 'Consultant', 'text'),
     f('common', TEAM, 'recorder', 'ผู้บันทึกรายงาน', 'Recorded by', 'text'),
-    f('common', TEAM, 'anaesthetist', 'วิสัญญีแพทย์', 'Anaesthetist', 'text'),
-    f('common', TEAM, 'anaesthesia', 'วิธีระงับความรู้สึก', 'Type of anaesthesia', 'select',
+    f('common', TEAM, 'anaesthetist', 'วิสัญญีแพทย์', 'Anesthetist', 'text'),
+    f('common', TEAM, 'anaesthesia', 'วิธีระงับความรู้สึก', 'Type of anesthesia', 'select',
       'GA; GA + epidural; Spinal block; Spinal + sedation; Caudal block; ' +
       'Pudendal / perianal block; Local infiltration; MAC / sedation'),
     f('common', TEAM, 'scrub_nurse', 'พยาบาลส่งเครื่องมือ', 'Scrub nurse', 'text'),
@@ -83,6 +83,8 @@
     f('colorectal', 'การเข้าถึง | Approach', 'cr_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
       'Supine; Modified lithotomy (Lloyd-Davies); Prone jackknife; Right lateral; Left lateral'),
     f('colorectal', 'การเข้าถึง | Approach', 'cr_incision', 'แผลผ่าตัด / ตำแหน่ง port', 'Incision / port placement', 'textarea'),
+    f('colorectal', 'การเข้าถึง | Approach', 'cr_extraction', 'ตำแหน่งเอาชิ้นเนื้อออก', 'Specimen extraction site', 'radio',
+      'Midline (umbilical port site extended); Left lower quadrant; Pfannenstiel; Right lower quadrant (port site extended); Transanal (NOSE); Through the stoma site'),
 
     f('colorectal', 'หัตถการ | Procedure', 'cr_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
       'Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; ' +
@@ -94,7 +96,7 @@
       'Adhesiolysis; Drainage of abscess; Exploratory laparotomy only'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_urgency', 'ความเร่งด่วน', 'Urgency', 'radio',
       'Elective; Urgent; Emergency'),
-    f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_site', 'ตำแหน่งรอยโรค', 'Lesion / tumour site', 'text'),
+    f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_site', 'ตำแหน่งรอยโรค', 'Lesion / tumor site', 'text'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_tumour_distance', 'ระยะจากขอบทวาร (ซม.)', 'Distance from anal verge (cm)', 'number'),
 
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_vascular', 'การผูกหลอดเลือด', 'Vascular ligation', 'radio',
@@ -104,7 +106,7 @@
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_plane', 'ระนาบการเลาะ', 'Dissection plane', 'checklist',
       'CME (complete mesocolic excision); TME (total mesorectal excision); ' +
       'PME (partial mesorectal excision); Intersphincteric dissection; En-bloc resection of adjacent organ'),
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'Mobilise splenic flexure', 'Splenic flexure mobilisation', 'radio',
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'Mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
       'Yes; No; Not applicable'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin', 'ระยะขอบตัด (ซม.)', 'Resection margin, proximal / distal (cm)', 'text'),
 
@@ -130,9 +132,9 @@
     /* ---------------- FISTULA ---------------- */
     f('fistula', 'การประเมิน | Assessment', 'fi_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
       'Prone jackknife; Lithotomy; Left lateral; Right lateral'),
-    f('fistula', 'การประเมิน | Assessment', 'fi_eua', 'ผลตรวจใต้ยาสลบ (EUA)', 'Examination under anaesthesia', 'textarea'),
+    f('fistula', 'การประเมิน | Assessment', 'fi_eua', 'ผลตรวจใต้ยาสลบ (EUA)', 'Examination under anesthesia', 'textarea'),
     f('fistula', 'การประเมิน | Assessment', 'fi_prior', 'เคยผ่าตัดบริเวณนี้มาก่อน', 'Previous anorectal surgery', 'radio',
-      'None; Previous fistula surgery; Previous abscess drainage; Previous haemorrhoid surgery; Other'),
+      'None; Previous fistula surgery; Previous abscess drainage; Previous hemorrhoid surgery; Other'),
     f('fistula', 'การประเมิน | Assessment', 'fi_aetiology', 'สาเหตุ', 'Aetiology', 'radio',
       'Cryptoglandular; Crohn disease; Tuberculosis; Post-operative; Malignancy; Radiation; Other'),
 
@@ -154,9 +156,9 @@
       'LIFT (ligation of intersphincteric fistula tract); Mucosal advancement flap; ' +
       'Anodermal advancement flap; VAAFT; Fibrin glue; Fistula plug; ' +
       'Laser closure (FiLaC); Curettage of tract; Drainage of abscess; ' +
-      'Examination under anaesthesia only; Other'),
+      'Examination under anesthesia only; Other'),
     f('fistula', 'หัตถการ | Procedure', 'fi_seton_material', 'วัสดุ seton', 'Seton material', 'text'),
-    f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialisation of wound edges', 'Marsupialisation', 'checkbox'),
+    f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialization of wound edges', 'Marsupialization', 'checkbox'),
     f('fistula', 'หัตถการ | Procedure', 'fi_specimen', 'ชิ้นเนื้อส่งตรวจ', 'Specimen sent', 'text'),
 
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
@@ -176,9 +178,9 @@
       'Hypertrophied anal papilla; Anal stenosis; None'),
 
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
-      'Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); ' +
-      'Stapled haemorrhoidopexy (PPH); LigaSure / vessel-sealing haemorrhoidectomy; ' +
-      'Doppler-guided haemorrhoidal artery ligation (HAL / RAR); Rubber band ligation; ' +
+      'Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); ' +
+      'Stapled hemorrhoidopexy (PPH); LigaSure / vessel-sealing hemorrhoidectomy; ' +
+      'Doppler-guided hemorrhoidal artery ligation (HAL / RAR); Rubber band ligation; ' +
       'Sclerotherapy; Excision of thrombosed external pile; Lateral internal sphincterotomy; ' +
       'Fissurectomy; Excision of skin tag; Other'),
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_piles_excised', 'จำนวนหัวที่ตัด', 'Number of piles excised', 'number'),
@@ -205,7 +207,7 @@
   global.CATEGORIES = [
     { key: 'colorectal', th: 'ผ่าตัดลำไส้ใหญ่และทวารหนัก', en: 'Colorectal surgery' },
     { key: 'fistula', th: 'ผ่าตัดฝีคัณฑสูตร', en: 'Fistula surgery' },
-    { key: 'hemorrhoid', th: 'ผ่าตัดริดสีดวงทวาร', en: 'Haemorrhoid surgery' },
+    { key: 'hemorrhoid', th: 'ผ่าตัดริดสีดวงทวาร', en: 'Hemorrhoid surgery' },
     { key: 'others', th: 'อื่น ๆ', en: 'Others' }
   ];
 
