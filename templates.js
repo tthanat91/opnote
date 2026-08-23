@@ -33,6 +33,8 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
+  global.TEMPLATES_BUILD = '2026-08-02ag';
+
   global.DEFAULT_TEMPLATES = [
 
     /* ---------------- COMMON: mirrors the MR 08.1 blue form ---------------- */
