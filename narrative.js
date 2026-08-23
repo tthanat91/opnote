@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02ai',
+    build: '2026-08-02ak',
 
 
 
@@ -167,8 +167,9 @@
           { group: 'ports',
             text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the left lower quadrant» and «5 mm in the left upper quadrant and the suprapubic position».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
-          { text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { needs: ['cr_tumor_site'], text: 'The lesion was confirmed at the {cr_tumor_site}, «with no evidence of peritoneal or hepatic metastasis».' },
+          { group: 'explore', needs: ['findings'], text: 'Diagnostic laparoscopy was performed. {findings}' },
+          { group: 'explore', text: 'Diagnostic laparoscopy was performed.' },
+          { needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
           { needs: ['cr_r_distance_icv'], text: 'It lay {cr_r_distance_icv} cm from the ileocecal valve.' },
           { text: 'The patient was placed in Trendelenburg with the right side elevated, and the small bowel and omentum were retracted to the left upper quadrant to expose the ileocolic pedicle.' },
 
@@ -206,8 +207,12 @@
           { group: 'flexure',
             text: 'The hepatic flexure was mobilized «using a combined inferior and lateral approach», the gastrocolic ligament was divided, and the lateral attachments of the right colon were taken along the white line of Toldt to join the medial dissection.' },
 
+          { group: 'divide', needs: ['cr_r_anast_site', 'cr_r_stapler', 'cr_r_ileal_margin'], equals: 'Intracorporeal',
+            text: 'The terminal ileum {cr_r_ileal_margin} cm proximal to the ileocecal valve and the transverse colon at the intended distal margin were divided intracorporeally with {cr_r_stapler}.' },
           { group: 'divide', needs: ['cr_r_anast_site', 'cr_r_stapler'], equals: 'Intracorporeal',
             text: 'The terminal ileum «15 cm proximal to the ileocecal valve» and the transverse colon at the intended distal margin were divided intracorporeally with {cr_r_stapler}.' },
+          { group: 'divide', needs: ['cr_r_anast_site', 'cr_r_stapler', 'cr_r_extraction_length', 'cr_r_ileal_margin'], equals: 'Extracorporeal',
+            text: 'A {cr_r_extraction_length} cm {cr_extraction|lc} incision was made, a wound protector was placed and the mobilized right colon was exteriorized. The terminal ileum {cr_r_ileal_margin} cm proximal to the ileocecal valve and the transverse colon at the intended distal margin were divided with {cr_r_stapler}.' },
           { group: 'divide', needs: ['cr_r_anast_site', 'cr_r_stapler'], equals: 'Extracorporeal',
             text: 'A «6 cm periumbilical midline» incision was made, a wound protector was placed and the mobilized right colon was exteriorized. The terminal ileum «15 cm proximal to the ileocecal valve» and the transverse colon at the intended distal margin were divided with {cr_r_stapler}.' },
           { group: 'divide', needs: ['cr_r_stapler'],
@@ -230,6 +235,8 @@
 
           { group: 'extract', needs: ['cr_r_anast_site'], equals: 'Extracorporeal',
             text: 'The anastomosis was returned to the abdomen and the specimen was delivered through the same incision. The specimen was passed off the field: {organ_removed}' },
+          { group: 'extract', needs: ['cr_extraction', 'cr_r_extraction_length'],
+            text: 'A {cr_r_extraction_length} cm incision was made at the {cr_extraction|lc}, a wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },
           { group: 'extract', needs: ['cr_extraction'],
             text: 'Extraction site: {cr_extraction}. A wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },
           { group: 'extract',
@@ -270,8 +277,9 @@
           { text: 'Under {anaesthesia}, the patient was placed in the {cr_position|lc} position with both arms tucked. A urinary catheter was inserted. The abdomen was prepared and draped in the usual sterile fashion and the surgical safety checklist was completed.' },
           { text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the right lower quadrant» and «5 mm in the right upper quadrant, left lower quadrant and left upper quadrant».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
-          { text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { needs: ['cr_tumor_site'], text: 'The lesion was confirmed at the {cr_tumor_site}, «with no evidence of peritoneal or hepatic metastasis».' },
+          { group: 'explore', needs: ['findings'], text: 'Diagnostic laparoscopy was performed. {findings}' },
+          { group: 'explore', text: 'Diagnostic laparoscopy was performed.' },
+          { needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
           { text: 'The patient was placed in steep Trendelenburg with the left side elevated, and the small bowel was retracted to the right upper quadrant to expose the base of the sigmoid mesocolon.' },
           { text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
           { needs: ['cr_vascular'], not: 'Not applicable', text: 'The inferior mesenteric artery was skeletonized and divided using a {cr_vascular|lc} technique, «1 cm distal to its aortic origin so as to preserve the superior hypogastric nerve plexus», secured «with three Hem-o-lok clips, two proximal and one distal». The inferior mesenteric vein was divided «at the lower border of the pancreas».' },
@@ -333,7 +341,7 @@
       { group: 'app', needs: ['cr_incision'], text: '{cr_incision}' },
 
       { needs: ['findings'], text: 'On exploration: {findings}' },
-      { needs: ['cr_tumor_site'], text: 'The lesion was identified at the {cr_tumor_site}.' },
+      { needs: ['cr_f_location'], text: 'The lesion was identified at the {cr_f_location|lc}.' },
       { needs: ['cr_tumor_distance'],
         text: 'It lay {cr_tumor_distance} cm from the anal verge.' },
 

@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ai';
+  global.TEMPLATES_BUILD = '2026-08-02ak';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -92,6 +92,8 @@
     f('colorectal', 'การเข้าถึง | Approach', 'cr_incision', 'แผลผ่าตัด / ตำแหน่ง port', 'Incision / port placement', 'textarea'),
     f('colorectal', 'การเข้าถึง | Approach', 'cr_extraction', 'ตำแหน่งเอาชิ้นเนื้อออก', 'Specimen extraction site', 'radio',
       'Midline (umbilical port site extended); Left lower quadrant; Pfannenstiel; Right lower quadrant (port site extended); Transanal (NOSE); Through the stoma site'),
+    f('colorectal', 'การเข้าถึง | Approach', 'cr_r_extraction_length', 'ความยาวแผลเอาชิ้นเนื้อออก (ซม.)',
+      'Extraction incision length (cm)', 'number'),
 
     f('colorectal', 'หัตถการ | Procedure', 'cr_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
       'Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; ' +
@@ -103,7 +105,6 @@
       'Adhesiolysis; Drainage of abscess; Exploratory laparotomy only'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_urgency', 'ความเร่งด่วน', 'Urgency', 'radio',
       'Elective; Urgent; Emergency'),
-    f('colorectal', 'หัตถการ | Procedure', 'cr_tumor_site', 'ตำแหน่งรอยโรค', 'Lesion / tumor site', 'text'),
     f('colorectal', 'หัตถการ | Procedure', 'cr_tumor_distance', 'ระยะจากขอบทวาร (ซม.)', 'Distance from anal verge (cm)', 'number', '',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
 
@@ -116,6 +117,9 @@
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_distance_icv', 'ระยะจากลิ้นไอลีโอซีคัล (ซม.)',
       'Distance from the ileocecal valve (cm)', 'number', '',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_ileal_margin', 'ระยะตัดลำไส้เล็กจากลิ้นไอลีโอซีคัล (ซม.)',
+      'Ileal transection, distance from the ileocecal valve (cm)', 'number', '',
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_cme', 'การตัด mesocolon แบบสมบูรณ์ (CME)', 'Complete mesocolic excision', 'radio',
       'Yes; No', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),

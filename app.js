@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ai';
+  var APP_BUILD = '2026-08-02ak';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1242,21 +1242,40 @@
     return c ? (c.th === c.en ? c.th : c.th + ' / ' + c.en) : S.category;
   }
 
-  function detailBlocks() {
-    var out = '', curSec = null;
-    fieldsFor(S.category).forEach(function (f) {
-      var v = valueOf(f.key);
-      if (!v) return;
-      if (f.section !== curSec) {
-        if (curSec !== null) out += '</div>';
-        curSec = f.section;
-        var parts = String(curSec).split('|');
-        out += '<div class="dsec"><h5>' + esc((parts[0] || '').trim()) +
-          ' <i>' + esc((parts[1] || '').trim()) + '</i></h5>';
-      }
-      out += row(f.th, f.en, v);
+  /* What belongs on the printed page is not what belongs on the screen.
+     The form asks fifty questions so the narrative can be written from them;
+     the note itself should read as prose. So the printout carries the access
+     details — which cannot be inferred from a paragraph — and then the
+     narrative, and nothing else. Every answer is still saved to the Sheet. */
+  var PRINT_ACCESS = {
+    colorectal: ['cr_approach', 'cr_position', 'cr_ports', 'cr_extraction',
+      'cr_r_extraction_length', 'cr_urgency'],
+    fistula: ['fi_position'],
+    hemorrhoid: ['he_position'],
+    others: ['ot_approach', 'ot_position']
+  };
+
+  function accessBlock() {
+    var keys = PRINT_ACCESS[S.category] || [];
+    var rows = '';
+    keys.forEach(function (k) {
+      var f = fieldByKey(k), v = valueOf(k);
+      if (!f || !v) return;
+      rows += row(f.th, f.en, v);
     });
-    if (curSec !== null) out += '</div>';
+    if (!rows) return '';
+    return '<div class="dsec"><h5>การเข้าถึง <i>Approach</i></h5>' + rows + '</div>';
+  }
+
+  function stepsBlock() {
+    var pre = { colorectal: 'cr', fistula: 'fi', hemorrhoid: 'he', others: 'ot' }[S.category] || 'ot';
+    var out = '';
+    [pre + '_steps', pre + '_postop'].forEach(function (k) {
+      var f = fieldByKey(k), v = valueOf(k);
+      if (!f || !v) return;
+      out += '<div class="dsec"><h5>' + esc(f.th) + ' <i>' + esc(f.en) + '</i></h5>' +
+        '<div class="ptext">' + nl2br(v) + '</div></div>';
+    });
     return out || '<p class="muted">—</p>';
   }
 
@@ -1356,9 +1375,12 @@
       '<span class="pgtag">หน้าหลัง</span></div></th></tr></thead>' +
       '<tbody><tr><td>' +
       '<div class="catline"><b>หมวด / Category:</b> ' + esc(categoryLabel()) + '</div>' +
-      detailBlocks() +
+      accessBlock() +
+      /* pictures first: the reader looks at the drawing and the specimen
+         before reading how it was done */
       figureHTML(pngs, 1) +
       photosHTML() +
+      stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
       '<span>(' + esc(valueOf('surgeon')) + ')</span></div>' +
       '<div class="pgfoot"><span></span><span>' + esc(prefs.formCode) + '</span></div>' +
