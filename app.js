@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02z';
+  var APP_BUILD = '2026-08-02aa';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -589,21 +589,15 @@
       });
       body.appendChild(cg);
 
-      /* The free-text escape hatch appears only when the list itself offers
-         an "Other" option. That keeps control in the Sheet: add Other to a
-         checklist's options and the box appears; leave it out and the list
-         is treated as complete. */
-      var offersOther = f.options.some(function (o) {
-        return /(^|\s)other(\s|$|,)/i.test(o) || o.indexOf('อื่น') > -1;
-      });
-      if (offersOther) {
-        var other = el('input', 'other');
-        other.type = 'text';
-        other.placeholder = 'อื่น ๆ ระบุ / other, specify';
-        other.dataset.key = f.key + '_other';
-        other.value = S.data[f.key + '_other'] || '';
-        body.appendChild(other);
-      }
+      /* Every checklist gets a free-text escape hatch. A list can only record
+         what we anticipated; this catches the rest, and it is stored in its own
+         <key>_other column so the tick data stays clean. */
+      var other = el('input', 'other');
+      other.type = 'text';
+      other.placeholder = 'อื่น ๆ ระบุ / other, specify';
+      other.dataset.key = f.key + '_other';
+      other.value = S.data[f.key + '_other'] || '';
+      body.appendChild(other);
 
     } else {
       var inp = el('input');
