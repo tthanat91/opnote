@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02au';
+  var APP_BUILD = '2026-08-02ax';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -861,7 +861,8 @@
   var A_NOT_AN = /^(uni|use|usu|util|urin|ureth|ureter|uter|eu|one)/i;
 
   /* device and suture names keep their capital wherever they fall */
-  var TRADE_NAMES = /^(Hem-o-lok|V-Loc|Endo|LigaSure|Ligasure|Signia|Echelon|Monocryl|Vicryl|Prolene|PDS|Ethibond|Stratafix|Harmonic|Thunderbeat|Enseal)$/i;
+  /* device, suture and eponym names keep their capital wherever they fall */
+  var TRADE_NAMES = /^(Hem-o-lok|V-Loc|Endo|LigaSure|Ligasure|Signia|Echelon|Monocryl|Vicryl|Prolene|PDS|Ethibond|Stratafix|Harmonic|Thunderbeat|Enseal|Pfannenstiel|Denonvilliers|Toldt|Henle|Hartmann|Brooke|Baker|Waldeyer|Lloyd-Davies|Trendelenburg)$/i;
 
   function fixArticles(text) {
     return text.replace(/\b([Aa]) (?=[aeiouAEIOU])([A-Za-z-]+)/g, function (m, art, word) {

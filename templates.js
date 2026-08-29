@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02au';
+  global.TEMPLATES_BUILD = '2026-08-02ax';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -256,6 +256,12 @@
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_transection', 'เครื่องเย็บตัดลำไส้ส่วนปลาย', 'Distal transection stapler', 'radio',
       'Endo GIA 45; Endo GIA 60; Signia; Echelon; Contour; Open linear stapler (TA)',
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_transection_size', 'ขนาดเครื่องเย็บ', 'Stapler cartridge length', 'radio',
+      '30 mm; 45 mm; 60 mm; Curved (Contour)', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_transection_color', 'สีของ cartridge', 'Cartridge colour (staple height)', 'radio',
+      'White (2.5 mm); Blue (3.5 mm); Gold (3.8 mm); Green (4.1 mm); Black (4.2 mm); ' +
+      'Purple (tri-staple); Tan (tri-staple); Black (tri-staple)',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_firings', 'จำนวนครั้งที่ยิง', 'Number of stapler firings', 'number', '',
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_circular', 'ขนาด circular stapler', 'Circular stapler size', 'radio',
@@ -264,7 +270,10 @@
       'Complete; Incomplete — reinforced; Not applicable', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout', 'ล้างลำไส้ส่วนปลายก่อนตัด', 'Rectal washout before transection', 'radio',
       'Yes; No', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
-    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout_fluid', 'น้ำยาและปริมาณ', 'Washout fluid and volume', 'text', '',
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout_solution', 'น้ำยาที่ใช้ล้าง', 'Washout solution', 'radio',
+      'Normal saline; Povidone-iodine; Normal saline with povidone-iodine; Sterile water; Other',
+      'cr_l_washout = Yes'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout_volume', 'ปริมาณ (มล.)', 'Washout volume (mL)', 'number', '',
       'cr_l_washout = Yes'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_clamp', 'การหนีบลำไส้ส่วนปลาย', 'Distal bowel occlusion', 'radio',
       'Endoscopic bulldog clamp; Right-angled clamp; Umbilical tape; None',
@@ -278,12 +287,13 @@
 
     /* ---------------- RECTAL DETAIL ---------------- */
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_tme', 'ขอบเขตการเลาะ mesorectum', 'Extent of mesorectal excision', 'radio',
-      'Total (TME); Partial (PME); Tumor-specific', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+      'Total (TME); Tumor-specific (TSME)', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_nerve', 'การรักษาเส้นประสาทอัตโนมัติ', 'Autonomic nerve preservation', 'radio',
       'Complete, bilateral; Partial; Sacrificed for oncological clearance; Not identified',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
-    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_mobilisation', 'ระยะการเลาะใต้ก้อน (ซม.)', 'Rectal mobilization below the tumor (cm)', 'number', '',
-      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_mobilisation', 'ระยะเลาะใต้ก้อน (ซม.)',
+      'Mesorectal division below the tumor (cm)', 'number', '',
+      'cr_rect_tme = Tumor-specific (TSME)'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_isr', 'Intersphincteric resection', 'Intersphincteric resection', 'radio',
       'None; Partial; Subtotal; Total', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_recon', 'รูปแบบการต่อลำไส้ใหม่', 'Reconstruction', 'radio',
