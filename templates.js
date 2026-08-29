@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02as';
+  global.TEMPLATES_BUILD = '2026-08-02au';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -176,6 +176,9 @@
       'cr_splenic_flexure = Yes'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_prox', 'ขอบตัดด้านต้น (ซม.)', 'Proximal resection margin (cm)', 'number'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_dist', 'ขอบตัดด้านปลาย (ซม.)', 'Distal resection margin (cm)', 'number'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_mesenteric_margin', 'ขอบ mesentery (ซม.)',
+      'Mesenteric resection margin (cm)', 'number', '',
+      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
 
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_anast_method', 'วิธีต่อลำไส้', 'Anastomosis technique', 'radio',
       'Hand-sewn; Stapled; Double stapled; Triple stapled; No anastomosis',

@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02as',
+    build: '2026-08-02au',
 
 
 
@@ -103,7 +103,32 @@
         { group: 'ov', needs: ['cr_f_ovaries'], equals: 'Normal', text: 'Both ovaries appeared normal.' },
 
         { needs: ['cr_f_plane_quality'],
-          text: 'The specimen was assessed after removal and the mesocolic / mesorectal plane was {cr_f_plane_quality|lc}.' }
+          text: 'The specimen was assessed after removal and the mesocolic / mesorectal plane was {cr_f_plane_quality|lc}.' },
+
+        /* ---- from มะเร็งวิทยา | Oncological detail ----
+           What the resection achieved is a finding about the specimen, so it
+           belongs in this paragraph as well as in the step-by-step account.
+           The purely technical rows of that section — how the pedicle was
+           taken, how the flexure was mobilized — stay in the steps only. */
+        /* whichever nodal field the procedure exposes — never both */
+        { group: 'fnodes', needs: ['cr_lymphadenectomy'], not: 'Not applicable',
+          text: 'The specimen included a {cr_lymphadenectomy} lymphadenectomy.' },
+        { group: 'fnodes', needs: ['cr_r_nodes'],
+          text: 'The specimen included a {cr_r_nodes} lymphadenectomy.' },
+        { group: 'fmarg', needs: ['cr_margin_prox', 'cr_margin_dist'],
+          text: 'Resection margins measured {cr_margin_prox} cm proximally and {cr_margin_dist} cm distally.' },
+        { group: 'fmarg', needs: ['cr_margin_prox'],
+          text: 'The proximal resection margin measured {cr_margin_prox} cm.' },
+        { group: 'fmarg', needs: ['cr_margin_dist'],
+          text: 'The distal resection margin measured {cr_margin_dist} cm.' },
+        /* its own sentence rather than a third clause — the radial margin is
+           read on its own in a rectal specimen */
+        { needs: ['cr_mesenteric_margin'],
+          text: 'The mesenteric resection margin measured {cr_mesenteric_margin} cm.' },
+        { group: 'fenb', needs: ['cr_enbloc'], equals: 'Yes',
+          text: 'The involved organ was taken en bloc with the specimen.' },
+        { group: 'fenb', needs: ['cr_enbloc'], equals: 'No',
+          text: 'The adjacent organ was dissected free and no en-bloc resection was required.' }
       ],
 
       fistula: [
