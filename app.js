@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02i';
+  var EXPECTED_BUILD = '2026-08-02j';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ax';
+  var APP_BUILD = '2026-08-02az';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -598,8 +598,18 @@
 
       /* the step-by-step box gets a draft button — pressed deliberately,
          never filled automatically, and always editable afterwards */
-      if (/_steps$/.test(f.key) || f.key === 'findings') {
-        var kind = f.key === 'findings' ? 'findings' : 'steps';
+      /* The findings box writes itself from the boxes above it, so it needs a
+         note rather than a button — a button would imply it had not happened. */
+      if (f.key === 'findings') {
+        body.appendChild(el('p', 'drafthint',
+          '\u0e02\u0e49\u0e2d\u0e04\u0e27\u0e32\u0e21\u0e19\u0e35\u0e49\u0e2a\u0e23\u0e49\u0e32\u0e07\u0e08\u0e32\u0e01\u0e2a\u0e34\u0e48\u0e07\u0e15\u0e23\u0e27\u0e08\u0e1e\u0e1a\u0e17\u0e35\u0e48\u0e15\u0e34\u0e4a\u0e01\u0e14\u0e49\u0e32\u0e19\u0e1a\u0e19 \u0e41\u0e01\u0e49\u0e44\u0e02\u0e44\u0e14\u0e49' +
+          '<span class="en">Written automatically from the findings ticked above. ' +
+          'Edit it freely — once you type here it is yours and stops updating; ' +
+          'clear the box to let it write itself again.</span>'));
+      }
+
+      if (/_steps$/.test(f.key)) {
+        var kind = 'steps';
         var draft = el('button', 'btn ghost draftbtn',
           '\u270E \u0e23\u0e48\u0e32\u0e07\u0e08\u0e32\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e17\u0e35\u0e48\u0e15\u0e34\u0e4a\u0e01 \u00b7 Draft from the fields ticked');
         draft.type = 'button';
@@ -689,8 +699,23 @@
     applyVisibility();
   }
 
-  function buildCommonForm() { renderFields(fieldsFor('common'), $('#commonFields')); }
-  function buildCategoryForm() { renderFields(fieldsFor(S.category), $('#catFields')); }
+  /* The findings box is a common field, but it is written from the boxes
+     ticked on the procedure page. Leaving it on page 1 meant reading it
+     before the answers it summarizes had been given, and walking back a page
+     to check. It renders at the foot of page 2 instead — directly under the
+     ticks that produce it — while remaining the same `findings` column. */
+  var FINDINGS_SECTION = 'สิ่งตรวจพบ | Findings';
+
+  function commonOnPageOne(f) { return f.section !== FINDINGS_SECTION; }
+  function commonOnPageTwo(f) { return f.section === FINDINGS_SECTION; }
+
+  function buildCommonForm() {
+    renderFields(fieldsFor('common').filter(commonOnPageOne), $('#commonFields'));
+  }
+  function buildCategoryForm() {
+    renderFields(fieldsFor(S.category).concat(fieldsFor('common').filter(commonOnPageTwo)),
+      $('#catFields'));
+  }
 
   /* ---------- "Operation performed" on page 1 ----------
      Typing the operation out again after ticking it is duplicated effort and
@@ -751,6 +776,14 @@
     S.data.findings = txt;
   }
 
+  /* A field that is the same on every note in the department is a field the
+     surgeon should not have to type. Settings can override it. */
+  function seedDefaults() {
+    if (!S.data.department) S.data.department = prefs.department || 'ศัลยศาสตร์';
+    var n = $('[data-key="department"]');
+    if (n && !n.value) n.value = S.data.department;
+  }
+
   function autofillOperation() {
     var node = $('[data-key="operation"]');
     if (!node || S.data.operation_manual) return;
@@ -779,6 +812,7 @@
     });
     Object.keys(lists).forEach(function (k) { S.data[k] = lists[k]; });
     recalcTotalTime();
+    seedDefaults();
     autofillOperation();
     autofillFindings();
     return S.data;
@@ -1247,7 +1281,9 @@
     return '<table class="idbar"><tr>' +
       '<td><b>AN</b> ' + esc(valueOf('an')) + '</td>' +
       '<td><b>HN</b> ' + esc(valueOf('hn')) + '</td>' +
-      '<td class="wide"><b>ชื่อ</b> ' + esc(valueOf('patient_name')) + '</td>' +
+      '<td class="wide"><b>ชื่อ</b> ' +
+        esc([valueOf('patient_name'), valueOf('patient_surname')]
+          .filter(function (x) { return x; }).join(' ')) + '</td>' +
       '<td><b>เพศ</b> ' + esc(valueOf('sex')) + '</td>' +
       '<td><b>อายุ</b> ' + esc(valueOf('age')) + '</td>' +
       '<td><b>ADMIT</b> ' + esc(thaiDate(valueOf('admit_date'))) + '</td>' +
@@ -1403,7 +1439,6 @@
       '<div class="formtitle small"><span></span><b>รายละเอียดขั้นตอนการผ่าตัด</b>' +
       '<span class="pgtag">หน้าหลัง</span></div></th></tr></thead>' +
       '<tbody><tr><td>' +
-      '<div class="catline"><b>หมวด / Category:</b> ' + esc(categoryLabel()) + '</div>' +
       accessBlock() +
       stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +

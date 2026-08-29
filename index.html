@@ -221,7 +221,7 @@ table.results td.act{white-space:nowrap}
 .hosphead .crest img{width:100%;display:block}
 .hosphead .txt{flex:1;text-align:center;min-width:0}
 .hosphead .h1{font-size:16px;font-weight:700}
-.hosphead .h2{font-size:10.5px}
+.hosphead .h2{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .formtitle{display:flex;justify-content:space-between;align-items:center;
   border:1.5px solid #000;padding:3px 8px;font-size:14px;margin-bottom:5px}
 .formtitle.small{font-size:12.5px;margin-top:4px}
@@ -283,14 +283,20 @@ table.flow th{text-align:left;font-weight:400}
 table.flow td{padding-top:4px;vertical-align:top}
 
 @media print{
-  @page{size:A4;margin:11mm}
+  @page{size:A4;margin:8mm 9mm}
   body{background:#fff;font-size:12.5px}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
   .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:always}
-  /* the figure block is allowed to spill onto a continuation sheet
-     rather than being squeezed or clipped */
-  .figrow,.photogrid{break-inside:auto;page-break-inside:auto}
+  /* A row of figures moves whole to the next sheet rather than being sliced,
+     and the narrative follows it immediately instead of being pushed to a
+     fresh page and leaving the rest of this one blank. */
+  .figrow,.photogrid{break-inside:auto;page-break-inside:auto;
+    orphans:1;widows:1;margin-bottom:4px}
+  .figrow figure.fig,.photogrid figure.pph{break-inside:avoid;page-break-inside:avoid}
+  .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
+  .dsec h5{break-after:avoid;page-break-after:avoid}
+  .ptext{orphans:2;widows:2}
   .pg.last{page-break-after:auto}
   figure.fig img{max-height:98mm}
 }
@@ -299,6 +305,20 @@ table.flow td{padding-top:4px;vertical-align:top}
   .plab{flex:0 0 46%}
   .pg{width:100%;padding:8px}
   .brand small{display:none}
+  /* the bars were eating a third of a phone screen before a single field
+     was visible */
+  .topbar{gap:8px;padding:5px 10px;padding-top:calc(5px + env(safe-area-inset-top))}
+  .brand{font-size:.95rem}
+  .mainnav button{padding:3px 10px;font-size:.8rem}
+  .userbox{padding:3px 3px 3px 9px;border-radius:11px}
+  .ub-lab{display:none}
+  .ub-txt b{font-size:.8rem}
+  #ubMeta{font-size:.62rem}
+  .ub-out{padding:4px 8px;font-size:.62rem}
+  .badge{font-size:.65rem;padding:2px 7px}
+  .stepnav{padding:5px 10px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+  .stepnav button{padding:7px 12px;font-size:.88rem}
+  main{padding:10px 10px 84px}
 }
 </style>
 </head>
@@ -549,12 +569,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=ax"></script>
-<script src="figures.js?v=ax"></script>
-<script src="figures-original.js?v=ax"></script>
-<script src="letterhead.js?v=ax"></script>
-<script src="narrative.js?v=ax"></script>
-<script src="templates.js?v=ax"></script>
-<script src="app.js?v=ax"></script>
+<script src="config.js?v=az"></script>
+<script src="figures.js?v=az"></script>
+<script src="figures-original.js?v=az"></script>
+<script src="letterhead.js?v=az"></script>
+<script src="narrative.js?v=az"></script>
+<script src="templates.js?v=az"></script>
+<script src="app.js?v=az"></script>
 </body>
 </html>

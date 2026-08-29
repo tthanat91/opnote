@@ -28,7 +28,9 @@
   /* originals open first for each category; the drawn vector versions
      stay available in the “Add figure” picker */
   global.FIGURE_DEFAULTS = {
-    colorectal: ['orig_colon', 'abdomen'],
+    /* the abdominal wall sheet is still in the Add figure picker, it just
+       no longer opens by default on every colorectal case */
+    colorectal: ['orig_colon'],
     fistula: ['orig_anal_clock', 'orig_anal_coronal'],
     hemorrhoid: ['orig_anal_clock'],
     others: ['blank']
