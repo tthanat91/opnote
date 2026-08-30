@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bg';
+  var APP_BUILD = '2026-08-02bh';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1036,9 +1036,13 @@
     }
     var existing = node.value.trim();
     if (existing) {
-      if (!window.confirm('มีข้อความอยู่แล้ว จะเพิ่มร่างต่อท้ายหรือไม่?\n\n' +
-        'There is already text here. Add the draft below it?')) return;
-      node.value = existing + '\n\n' + text;
+      /* Appending made the box grow a second copy every time the button was
+         pressed. Redrafting after correcting a field is the common case, so
+         the draft replaces what is there — and says so before it does. */
+      if (!window.confirm('เขียนร่างใหม่ทับข้อความเดิมทั้งหมด?\n\n' +
+        'Replace the text here with a new draft?\n' +
+        'ข้อความที่แก้ไขเองจะหายไป / Any edits you made by hand will be lost.')) return;
+      node.value = text;
     } else {
       node.value = text;
     }
@@ -1474,20 +1478,20 @@
     return '<table class="imgtab ' + cls + '"><tbody>' + rows + '</tbody></table>';
   }
 
-  function figureHTML(pngs, from) {
+  /* Drawings and photographs fill one grid between them. Two tables left a
+     half-empty row wherever the drawings ended, and the photographs started
+     again on a fresh line. */
+  function imagesHTML(pngs, from) {
     var cells = [];
     for (var i = from; i < pngs.length; i++) {
       cells.push('<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
         '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>');
     }
+    S.photos.forEach(function (p) {
+      cells.push('<figure class="pph"><img src="' + (p.dataUrl || p.url) + '" alt="">' +
+        '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>');
+    });
     return imageTable(cells, 'figs');
-  }
-
-  function photosHTML() {
-    return imageTable(S.photos.map(function (p) {
-      return '<figure class="pph"><img src="' + (p.dataUrl || p.url) + '" alt="">' +
-        '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>';
-    }), 'photos');
   }
 
   function imgVars() {
@@ -1585,8 +1589,7 @@
          section, so anything overflowing it lands on a sheet of its own and
          the narrative — which belongs to this section — could never follow on
          from it. Here the figures and the narrative are one flow. */
-      figureHTML(pngs, 1) +
-      photosHTML() +
+      imagesHTML(pngs, 1) +
       accessBlock() +
       stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
@@ -1597,12 +1600,29 @@
     return p1 + p2;
   }
 
+  /* The findings box is a fixed height on the form, so the paragraph is
+     shrunk to fit rather than the box being stretched to hold it. A box that
+     grows pushes the page 1 footer onto a sheet of its own — the blank second
+     page — and the printed form should look the same whatever was written. */
+  function fitFindings(root) {
+    var box = root.querySelector('.findbox .bbody');
+    if (!box) return;
+    var size = 12.5;
+    box.style.fontSize = size + 'px';
+    while (box.scrollHeight > box.clientHeight + 1 && size > 7.5) {
+      size -= 0.25;
+      box.style.fontSize = size + 'px';
+    }
+  }
+
   function refreshPreview() {
     harvest();
     return exportAllSheets().then(function (pngs) {
       var html = buildDocument(pngs);
       $('#printRoot').innerHTML = html;
       $('#previewBox').innerHTML = html;
+      fitFindings($('#printRoot'));
+      fitFindings($('#previewBox'));
       return pngs;
     });
   }

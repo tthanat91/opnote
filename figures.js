@@ -243,15 +243,6 @@
      ================================================================= */
 
   global.FIGURES = {
-    colon: {
-      th: 'ลำไส้ใหญ่ (Colon)', en: 'Colon', w: 700, h: 660, svg: colon
-    },
-    anal_clock: {
-      th: 'ทวารหนัก มุมมองตามเข็มนาฬิกา', en: 'Anal clock (axial)', w: 540, h: 520, svg: analClock
-    },
-    anal_coronal: {
-      th: 'หูรูดทวารหนัก ภาพตัดขวางแนวหน้า', en: 'Anal canal (coronal)', w: 600, h: 440, svg: analCoronal
-    },
     abdomen: {
       th: 'ผนังหน้าท้อง', en: 'Abdominal wall', w: 480, h: 540, svg: abdomen
     },
