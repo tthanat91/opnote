@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02be';
+  var APP_BUILD = '2026-08-02bf';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1079,23 +1079,72 @@
   function addSheet(figKey) {
     S.sheets.push({ fig: figKey, strokes: [], texts: [] });
     S.active = S.sheets.length - 1;
-    renderSheetTabs(); mountCanvas(); saveDraft();
+    renderSheetTabs(); saveDraft();
+    openDraw(S.active);
   }
 
+  /* The page shows what has been drawn; the canvas lives in a window you open
+     deliberately. A figure sitting live on a scrolling page collects marks
+     from the scroll itself, which is what made drawing feel unreliable. */
   function renderSheetTabs() {
-    var box = $('#sheetTabs');
+    var box = $('#sheetCards');
+    if (!box) return;
     box.innerHTML = '';
     S.sheets.forEach(function (sh, i) {
-      var b = el('button', 'chip' + (i === S.active ? ' on' : ''),
-        (i + 1) + '. ' + esc(window.FIGURES[sh.fig].en));
-      b.type = 'button';
-      b.onclick = function () { S.active = i; renderSheetTabs(); mountCanvas(); };
-      box.appendChild(b);
+      var fig = window.FIGURES[sh.fig];
+      var card = el('div', 'sheetcard');
+      card.setAttribute('role', 'button');
+      card.tabIndex = 0;
+
+      var thumb = el('div', 'thumb');
+      thumb.style.aspectRatio = fig.w + ' / ' + fig.h;
+      thumb.style.backgroundImage = 'url("' + figSvgUrl(sh.fig) + '")';
+      var pc = el('canvas');
+      thumb.appendChild(pc);
+      card.appendChild(thumb);
+
+      var marks = (sh.strokes || []).length + (sh.texts || []).length;
+      card.appendChild(el('div', 'cap', esc((i + 1) + '. ' + fig.en) +
+        '<div class="marks">' + (marks
+          ? marks + ' \u0e23\u0e2d\u0e22 / marks'
+          : '\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e27\u0e32\u0e14 / not drawn on') + '</div>'));
+
+      card.onclick = function () { openDraw(i); };
+      card.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') openDraw(i); };
+      box.appendChild(card);
+
+      /* paint the preview once the card has a width to measure */
+      setTimeout(function () { paintPreview(pc, sh, fig); }, 0);
     });
-    var add = el('button', 'chip add', '＋ เพิ่มรูป / Add figure');
-    add.type = 'button';
+
+    var add = el('div', 'sheetcard add', '\uFF0B \u0e40\u0e1e\u0e34\u0e48\u0e21\u0e23\u0e39\u0e1b / Add figure');
     add.onclick = function () { $('#figPicker').classList.toggle('hidden'); };
     box.appendChild(add);
+  }
+
+  function paintPreview(canvas, sh, fig) {
+    var w = canvas.clientWidth || 200;
+    var h = Math.round(w * fig.h / fig.w);
+    canvas.width = w; canvas.height = h;
+    var c = canvas.getContext('2d');
+    if (!c) return;
+    c.clearRect(0, 0, w, h);
+    (sh.strokes || []).forEach(function (st) { drawStroke(c, st, w, h); });
+    (sh.texts || []).forEach(function (t) { drawTextItem(c, t, w, h); });
+  }
+
+  function openDraw(i) {
+    S.active = i;
+    var fig = window.FIGURES[S.sheets[i].fig];
+    $('#drawTitle').textContent = (i + 1) + '. ' + fig.en;
+    $('#drawModal').classList.remove('hidden');
+    mountCanvas();
+  }
+
+  function closeDraw() {
+    $('#drawModal').classList.add('hidden');
+    saveDraft();
+    renderSheetTabs();          /* the previews pick up what was just drawn */
   }
 
   function renderFigPicker() {
@@ -1649,7 +1698,7 @@
     S.active = 0;
     syncCategoryUI();
     buildCommonForm(); buildCategoryForm();
-    renderSheetTabs(); mountCanvas(); renderPhotos();
+    renderSheetTabs(); renderPhotos();
   }
 
   /* =================== search & reopen =================== */
@@ -1703,7 +1752,7 @@
       S.mode = editable ? 'edit' : 'view';
       syncCategoryUI();
       buildCommonForm(); buildCategoryForm();
-      renderSheetTabs(); mountCanvas(); renderPhotos();
+      renderSheetTabs(); renderPhotos();
       showView('new');
       gotoStep(editable ? 1 : 4);
       $('#btnSave').style.display = editable ? '' : 'none';
@@ -1733,7 +1782,7 @@
       });
       S.active = 0; renderSheetTabs();
     }
-    if (n === 3) { renderSheetTabs(); mountCanvas(); renderPhotos(); }
+    if (n === 3) { renderSheetTabs(); renderPhotos(); }
     if (n === 4) refreshPreview();
     window.scrollTo(0, 0);
   }
@@ -1940,8 +1989,15 @@
       if (!window.confirm('ลบแผ่นรูปนี้? / Remove this figure sheet?')) return;
       S.sheets.splice(S.active, 1);
       S.active = Math.max(0, S.active - 1);
-      renderSheetTabs(); mountCanvas(); saveDraft();
+      saveDraft();
+      if (S.sheets.length) { openDraw(S.active); } else { closeDraw(); }
+      renderSheetTabs();
     };
+    $('#drawDone').onclick = closeDraw;
+    $('#drawModal').onclick = function (e) { if (e.target === this) closeDraw(); };
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('#drawModal').classList.contains('hidden')) closeDraw();
+    });
     $('#photoInput').onchange = function () { addPhotos(this.files); this.value = ''; };
 
     /* review actions */
@@ -1965,7 +2021,7 @@
       S.data.recorder = (me && me.name) || prefs.recorder;
       S.data.department = prefs.department;
       syncCategoryUI(); buildCommonForm(); buildCategoryForm();
-      renderSheetTabs(); mountCanvas(); renderPhotos();
+      renderSheetTabs(); renderPhotos();
       $('#btnSave').style.display = ''; $('#lockNote').style.display = 'none';
       gotoStep(1);
     };
