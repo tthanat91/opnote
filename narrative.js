@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bi',
+    build: '2026-08-02bk',
 
 
 
@@ -207,7 +207,16 @@
           { group: 'site', needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
           { text: 'The patient was placed in steep Trendelenburg with the right side down, and the small bowel was retracted to the right upper quadrant to expose the base of the sigmoid mesocolon and the sacral promontory.' },
 
-          { text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
+          { group: 'lapp', needs: ['cr_l_approach'], equals: 'Medial-to-lateral',
+            text: 'A medial-to-lateral dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
+          { group: 'lapp', needs: ['cr_l_approach'], equals: 'Lateral-to-medial',
+            text: 'A lateral-to-medial dissection was begun by dividing the peritoneum along the white line of Toldt and reflecting the left colon medially off the retroperitoneum, with the left ureter and gonadal vessels identified and preserved throughout.' },
+          { group: 'lapp', needs: ['cr_l_approach'], equals: 'Retroperitoneal-first',
+            text: 'The retroperitoneal plane was entered first and developed towards the midline, with the left ureter and gonadal vessels identified and preserved throughout.' },
+          { group: 'lapp', needs: ['cr_l_approach'], equals: 'Combined',
+            text: 'A combined approach was used: the medial dissection was carried as far as the plane allowed before the lateral attachments were released, with the left ureter and gonadal vessels identified and preserved throughout.' },
+          { group: 'lapp',
+            text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
           { group: 'ima', needs: ['cr_ima'], equals: 'High tie',
             text: 'The inferior mesenteric artery was skeletonized and divided at its origin, «1 cm distal to the aorta so as to preserve the superior hypogastric nerve plexus», secured «with three Hem-o-lok clips, two proximal and one distal».' },
           { group: 'ima', needs: ['cr_ima'], equals: 'Low tie',
@@ -218,6 +227,8 @@
             text: 'The inferior mesenteric vein was divided at the lower border of the pancreas.' },
           { group: 'imv', needs: ['cr_imv'], equals: 'Low tie',
             text: 'The inferior mesenteric vein was divided at the level of the inferior mesenteric artery.' },
+          { needs: ['cr_l_vessel_control'],
+            text: 'The pedicles were secured with {cr_l_vessel_control|lc|and}.' },
           { needs: ['cr_l_imv_preserve'], equals: 'Yes',
             text: 'The inferior mesenteric vein was preserved.' },
           { needs: ['cr_l_sra'], equals: 'Divided',
@@ -263,6 +274,12 @@
             text: 'The rectum was divided distally with a {cr_l_transection_size} stapler, {cr_l_transection_color|lc} cartridge.' },
           { group: 'trans', needs: ['cr_l_transection_size'],
             text: 'The rectum was divided distally with a {cr_l_transection_size} stapler.' },
+          /* a sigmoidectomy that records no stapler still divided the bowel;
+             the distal margin is the fact that must not go missing */
+          { group: 'trans', needs: ['cr_margin_dist'],
+            text: 'The bowel was divided distally at the intended margin, {cr_margin_dist} cm beyond the lesion.' },
+          { group: 'trans',
+            text: 'The bowel was divided distally at the intended margin.' },
 
           { group: 'extract', needs: ['cr_extraction', 'cr_r_extraction_length'],
             text: 'A {cr_r_extraction_length} cm {cr_extraction|lc} incision was made, a wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },

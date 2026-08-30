@@ -321,16 +321,15 @@ table.flow td{padding-top:4px;vertical-align:top}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
   .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:auto}
-  /* Page 1 is held to one sheet, with its footer pinned to the bottom of it.
-     Otherwise a findings box ending near the bottom margin pushes the footer
-     — and nothing else — onto a sheet of its own: the blank page 2.
+  /* No forced height on page 1.
 
-     The height is stated in millimetres, not vh. Safari does not map vh to
-     the page box when printing, so the vh version of this rule did nothing
-     and the blank page came back. A4 is 297 mm; 275 leaves room for the
-     browser's own margin if the print dialog adds one. */
-  .pg:not(.last){position:relative;height:275mm;overflow:hidden}
-  .pg:not(.last) .pgfoot{position:absolute;left:0;right:0;bottom:0;margin:0}
+     Forcing 275 mm was itself the cause of the blank second page: if the
+     print dialog is using the browser's default margins (~19 mm each) rather
+     than the 5 mm asked for here, only ~259 mm of the sheet is usable, and a
+     275 mm block overflows by 16 mm — carrying its footer to a page of its
+     own. The findings box is a fixed 62 mm now, so page 1 has a fixed and
+     modest natural height and needs no help to fit. */
+  .pg:not(.last) .pgfoot{margin-top:5px}
   /* break BEFORE the continuation sheet rather than after page 1: a
      trailing break sends page 1's own footer to a sheet of its own
      whenever the content lands close to the bottom margin */
@@ -644,12 +643,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bi"></script>
-<script src="figures.js?v=bi"></script>
-<script src="figures-original.js?v=bi"></script>
-<script src="letterhead.js?v=bi"></script>
-<script src="narrative.js?v=bi"></script>
-<script src="templates.js?v=bi"></script>
-<script src="app.js?v=bi"></script>
+<script src="config.js?v=bk"></script>
+<script src="figures.js?v=bk"></script>
+<script src="figures-original.js?v=bk"></script>
+<script src="letterhead.js?v=bk"></script>
+<script src="narrative.js?v=bk"></script>
+<script src="templates.js?v=bk"></script>
+<script src="app.js?v=bk"></script>
 </body>
 </html>

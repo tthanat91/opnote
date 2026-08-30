@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bi';
+  global.TEMPLATES_BUILD = '2026-08-02bk';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -172,7 +172,9 @@
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_enbloc', 'ตัดอวัยวะข้างเคียงร่วม',
       'En-bloc resection of the invaded organ', 'radio', 'Yes; No',
-      'cr_f_invasion = Yes'),
+      'cr_f_invasion = Yes || cr_f_uterus = Abnormal || cr_f_ovaries = Abnormal'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_enbloc_detail', 'อวัยวะที่ตัดร่วม',
+      'En-bloc resection — specify', 'text', '', 'cr_enbloc = Yes'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
       'Yes; No; Not applicable',
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
@@ -186,7 +188,7 @@
       '', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_mesenteric_margin', 'ขอบ mesentery (ซม.)',
       'Mesenteric resection margin (cm)', 'number', '',
-      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+      'cr_procedure = Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
 
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_anast_config', 'รูปแบบการต่อ', 'Anastomosis configuration', 'radio',
       'End-to-end; Side-to-side; End-to-side; Side-to-end; Colonic J-pouch',
@@ -224,8 +226,7 @@
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_h', 'หนา (ซม.)', 'Height (cm)', 'number'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_appearance', 'ลักษณะรอยโรค', 'Appearance', 'radio',
       'Polypoid; Ulcerated; Ulceroproliferative; Annular; Circumferential; Other'),
-    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_annular_pct', 'สัดส่วนรอบวง (%)', 'Circumference involved (%)', 'number',
-      '', 'cr_f_appearance = Annular'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_annular_pct', 'สัดส่วนรอบวง (%)', 'Circumference involved (%)', 'number'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_tumor_distance', 'ระยะจากขอบทวาร (ซม.)',
       'Distance of the tumor from the anal verge (cm)', 'number', '',
       'cr_f_location = Transverse colon — proximal; Transverse colon — mid; Transverse colon — distal; Splenic flexure; Descending colon; Descendosigmoid colon; Sigmoid colon; Rectosigmoid colon; Rectum — upper; Rectum — mid; Rectum — lower'),
@@ -258,6 +259,12 @@
 
 
     /* ---------------- LEFT-SIDED AND RECTAL ---------------- */
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_approach', 'แนวทางเข้าหา mesentery', 'Approach to the mesentery', 'radio',
+      'Medial-to-lateral; Lateral-to-medial; Combined; Retroperitoneal-first',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+    f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_vessel_control', 'วิธีตัดหลอดเลือด', 'Vessel control', 'checklist',
+      'Energy device; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Suture ligation; Vascular stapler',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_sra', 'หลอดเลือด superior rectal', 'Superior rectal artery', 'radio',
       'Divided; Preserved', 'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_imv_preserve', 'เก็บ IMV ไว้', 'Inferior mesenteric vein preserved', 'radio',
@@ -481,23 +488,23 @@
 
     /* ---- technique, shown only for the operation actually done ---- */
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pedicle_suture', 'ไหมผูกขั้ว', 'Pedicle suture', 'text', '',
-      'he_procedure = Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); Semi-closed haemorrhoidectomy; LigaSure / vessel-sealing haemorrhoidectomy'),
+      'he_procedure = Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); LigaSure / vessel-sealing hemorrhoidectomy'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pedicle_method', 'วิธีผูกขั้ว', 'Pedicle ligation technique', 'radio',
-      'Transfixion suture; Simple ligature; Vessel sealed, no suture', 'he_procedure = Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); Semi-closed haemorrhoidectomy; LigaSure / vessel-sealing haemorrhoidectomy'),
+      'Transfixion suture; Simple ligature; Vessel sealed, no suture', 'he_procedure = Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); LigaSure / vessel-sealing hemorrhoidectomy'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_bridges', 'จำนวน mucocutaneous bridge ที่เหลือ', 'Mucocutaneous bridges preserved', 'number', '',
-      'he_procedure = Open haemorrhoidectomy (Milligan-Morgan); Closed haemorrhoidectomy (Ferguson); Semi-closed haemorrhoidectomy; LigaSure / vessel-sealing haemorrhoidectomy'),
+      'he_procedure = Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); LigaSure / vessel-sealing hemorrhoidectomy'),
 
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_size', 'ขนาด stapler', 'Circular stapler size', 'radio',
-      '32 mm; 33 mm; 34 mm', 'he_procedure = Stapled haemorrhoidopexy (PPH)'),
+      '32 mm; 33 mm; 34 mm', 'he_procedure = Stapled hemorrhoidopexy (PPH)'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_height', 'ระยะ purse-string เหนือ dentate line (ซม.)',
-      'Purse-string height above the dentate line (cm)', 'number', '', 'he_procedure = Stapled haemorrhoidopexy (PPH)'),
+      'Purse-string height above the dentate line (cm)', 'number', '', 'he_procedure = Stapled hemorrhoidopexy (PPH)'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_reinforce', 'การเสริมแนวเย็บ', 'Staple line reinforced', 'radio',
-      'Yes; No', 'he_procedure = Stapled haemorrhoidopexy (PPH)'),
+      'Yes; No', 'he_procedure = Stapled hemorrhoidopexy (PPH)'),
 
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_hal_arteries', 'จำนวนหลอดเลือดที่ผูก', 'Number of arteries ligated', 'number', '',
-      'he_procedure = Doppler-guided haemorrhoidal artery ligation (HAL / RAR)'),
+      'he_procedure = Doppler-guided hemorrhoidal artery ligation (HAL / RAR)'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_hal_rar', 'ทำ rectoanal repair', 'Rectoanal repair (RAR) performed', 'radio',
-      'Yes; No', 'he_procedure = Doppler-guided haemorrhoidal artery ligation (HAL / RAR)'),
+      'Yes; No', 'he_procedure = Doppler-guided hemorrhoidal artery ligation (HAL / RAR)'),
 
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_side', 'ตำแหน่งที่ตัดหูรูด', 'Sphincterotomy position', 'radio',
       'Left lateral (3 o\'clock); Right lateral (9 o\'clock)', 'he_procedure = Lateral internal sphincterotomy'),
