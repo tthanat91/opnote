@@ -319,11 +319,15 @@ table.flow td{padding-top:4px;vertical-align:top}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
   .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:auto}
-  /* Page 1 is given exactly one page box and its footer is pinned to the
-     bottom of it. Otherwise a findings box that ends near the bottom margin
-     pushes the footer — and nothing else — onto a sheet of its own, which is
-     the blank page 2 that kept coming back. */
-  .pg:not(.last){position:relative;height:100vh;overflow:hidden}
+  /* Page 1 is held to one sheet, with its footer pinned to the bottom of it.
+     Otherwise a findings box ending near the bottom margin pushes the footer
+     — and nothing else — onto a sheet of its own: the blank page 2.
+
+     The height is stated in millimetres, not vh. Safari does not map vh to
+     the page box when printing, so the vh version of this rule did nothing
+     and the blank page came back. A4 is 297 mm; 275 leaves room for the
+     browser's own margin if the print dialog adds one. */
+  .pg:not(.last){position:relative;height:275mm;overflow:hidden}
   .pg:not(.last) .pgfoot{position:absolute;left:0;right:0;bottom:0;margin:0}
   /* break BEFORE the continuation sheet rather than after page 1: a
      trailing break sends page 1's own footer to a sheet of its own
@@ -638,12 +642,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bf"></script>
-<script src="figures.js?v=bf"></script>
-<script src="figures-original.js?v=bf"></script>
-<script src="letterhead.js?v=bf"></script>
-<script src="narrative.js?v=bf"></script>
-<script src="templates.js?v=bf"></script>
-<script src="app.js?v=bf"></script>
+<script src="config.js?v=bg"></script>
+<script src="figures.js?v=bg"></script>
+<script src="figures-original.js?v=bg"></script>
+<script src="letterhead.js?v=bg"></script>
+<script src="narrative.js?v=bg"></script>
+<script src="templates.js?v=bg"></script>
+<script src="app.js?v=bg"></script>
 </body>
 </html>

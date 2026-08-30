@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bf',
+    build: '2026-08-02bg',
 
 
 
@@ -195,8 +195,7 @@
           { group: 'ports',
             text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the right lower quadrant» and «5 mm in the right upper quadrant, left lower quadrant and left upper quadrant».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
-          { group: 'explore', needs: ['findings'], text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { group: 'explore', text: 'Diagnostic laparoscopy was performed.' },
+          { text: 'Diagnostic laparoscopy was performed.' },
           { group: 'site', needs: ['cr_f_location', 'cr_tumor_distance'],
             text: 'The lesion was confirmed at the {cr_f_location|lc}, {cr_tumor_distance} cm from the anal verge.' },
           { group: 'site', needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
@@ -319,8 +318,7 @@
           { group: 'ports',
             text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the left lower quadrant» and «5 mm in the left upper quadrant and the suprapubic position».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
-          { group: 'explore', needs: ['findings'], text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { group: 'explore', text: 'Diagnostic laparoscopy was performed.' },
+          { text: 'Diagnostic laparoscopy was performed.' },
           { needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
           { needs: ['cr_r_distance_icv'], text: 'It lay {cr_r_distance_icv} cm from the ileocecal valve.' },
           { text: 'The patient was placed in Trendelenburg with the right side elevated, and the small bowel and omentum were retracted to the left upper quadrant to expose the ileocolic pedicle.' },
@@ -429,8 +427,7 @@
           { text: 'Under {anaesthesia}, the patient was placed in the {cr_position|lc} position with both arms tucked. A urinary catheter was inserted. The abdomen was prepared and draped in the usual sterile fashion and the surgical safety checklist was completed.' },
           { text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the right lower quadrant» and «5 mm in the right upper quadrant, left lower quadrant and left upper quadrant».' },
           { needs: ['cr_incision'], text: '{cr_incision}' },
-          { group: 'explore', needs: ['findings'], text: 'Diagnostic laparoscopy was performed. {findings}' },
-          { group: 'explore', text: 'Diagnostic laparoscopy was performed.' },
+          { text: 'Diagnostic laparoscopy was performed.' },
           { needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
           { text: 'The patient was placed in steep Trendelenburg with the left side elevated, and the small bowel was retracted to the right upper quadrant to expose the base of the sigmoid mesocolon.' },
           { text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
