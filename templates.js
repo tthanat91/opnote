@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02az';
+  global.TEMPLATES_BUILD = '2026-08-02bb';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -186,9 +186,6 @@
       'Mesenteric resection margin (cm)', 'number', '',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
 
-    f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_anast_method', 'วิธีต่อลำไส้', 'Anastomosis technique', 'radio',
-      'Hand-sewn; Stapled; Double stapled; Triple stapled; No anastomosis',
-      'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_anast_config', 'รูปแบบการต่อ', 'Anastomosis configuration', 'radio',
       'End-to-end; Side-to-side; End-to-side; Side-to-end; Colonic J-pouch',
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
@@ -227,8 +224,9 @@
       'Polypoid; Ulcerated; Ulceroproliferative; Annular; Circumferential; Other'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_annular_pct', 'สัดส่วนรอบวง (%)', 'Circumference involved (%)', 'number',
       '', 'cr_f_appearance = Annular'),
-    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_tumor_distance', 'ระยะจากขอบทวาร (ซม.)', 'Distance from anal verge (cm)', 'number', '',
-      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_tumor_distance',
+      'ระยะจากขอบทวาร (ซม.)', 'Distance of tumor from the anal verge (cm)', 'number', '',
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Abdominoperineal resection'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_obstruction', 'ลำไส้อุดตัน', 'Obstruction', 'radio', 'No; Yes'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_perforation', 'ลำไส้ทะลุ', 'Perforation', 'radio', 'No; Yes'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_serosa', 'เยื่อหุ้มลำไส้ถูกรุกล้ำ', 'Serosal involvement', 'radio', 'No; Yes'),
@@ -303,9 +301,6 @@
       'cr_rect_tme = Tumor-specific (TSME)'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_isr', 'Intersphincteric resection', 'Intersphincteric resection', 'radio',
       'None; Partial; Subtotal; Total', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
-    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_recon', 'รูปแบบการต่อลำไส้ใหม่', 'Reconstruction', 'radio',
-      'Straight colorectal; Straight coloanal; Colonic J-pouch; Side-to-end; Transverse coloplasty; None',
-      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_level', 'ระดับรอยต่อจากขอบทวาร (ซม.)', 'Anastomotic level from the anal verge (cm)', 'number', '',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
 
@@ -334,15 +329,15 @@
     /* ---------------- STOMA FORMATION ---------------- */
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_site', 'ตำแหน่งทวารเทียม', 'Stoma site', 'radio',
       'Right iliac fossa; Left iliac fossa; Right upper quadrant; Left upper quadrant; Through the midline wound',
-      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting != None'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_marked', 'ทำเครื่องหมายก่อนผ่าตัด', 'Site marked pre-operatively', 'radio',
-      'Yes, by a stoma nurse; Yes, by the surgeon; No', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+      'Yes, by a stoma nurse; Yes, by the surgeon; No', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting != None'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_trephine', 'วิธีเปิดผนังหน้าท้อง', 'Trephine', 'radio',
-      'Circular skin disc; Transverse incision', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+      'Circular skin disc; Transverse incision', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting != None'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_rod', 'ใส่แท่งรอง', 'Supporting rod', 'radio', 'Yes; No',
-      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting != None'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_suture', 'ไหมเย็บ mucocutaneous', 'Mucocutaneous suture', 'text', '',
-      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy'),
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting != None'),
 
     /* ---------------- STOMA CLOSURE ---------------- */
     f('colorectal', 'ปิดทวารเทียม | Stoma closure', 'cr_sc_type', 'ทวารเทียมที่ปิด', 'Stoma being closed', 'radio',

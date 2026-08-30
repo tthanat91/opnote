@@ -110,6 +110,9 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .draftbtn{margin-top:8px;align-self:flex-start;font-size:.85rem;padding:8px 14px}
 .drafthint{margin:6px 0 0;font-size:.76rem;color:var(--muted);line-height:1.4}
 .drafthint .en{display:block;font-size:.95em}
+/* a field the note cannot be filed without, left empty */
+.field.missing{outline:2px solid #c62828;outline-offset:4px;border-radius:10px}
+.field.missing .flabel{color:#c62828}
 .other{margin-top:8px;width:100%;padding:8px 11px;border:1px dashed var(--line);border-radius:9px}
 .linkbtn{background:none;border:none;color:var(--brand-2);cursor:pointer;font-size:.8rem;
   padding:2px 0;text-decoration:underline}
@@ -252,8 +255,11 @@ table.idbar td.wide{width:32%}
   border-top:1px dotted #999;padding-top:3px}
 .findbox .bbody .speclab i{font-weight:400;color:#555;font-size:10.5px}
 /* images inside the findings box float so text still runs beside them */
-.findbox figure.fig{float:right;margin:0 0 4px 8px;width:var(--imgw,55mm);text-align:center}
-.findbox figure.fig img{max-width:var(--imgw,55mm);max-height:var(--imgh,38mm)}
+/* the first drawing sits in the lower right of the findings box, with the
+   paragraph flowing around it */
+.findbox figure.fig{float:right;margin:0 0 4px 10px;width:var(--imgw,52mm);text-align:center}
+.findbox figure.fig img{max-width:var(--imgw,52mm);max-height:var(--imgh,38mm)}
+.findbox .bbody::after{content:'';display:block;clear:both}
 .dsec{margin-bottom:8px;break-inside:avoid}
 .dsec h5{background:#eee;border-left:3px solid #000;padding:2px 7px;font-size:12px;margin:8px 0 3px}
 .dsec h5 i{font-weight:400;color:#555;font-size:10.5px}
@@ -266,16 +272,17 @@ figure.fig{margin:8px 0;text-align:center;break-inside:avoid}
 figure.fig img{max-width:var(--imgw,55mm);max-height:var(--imgh,38mm);
   object-fit:contain;border:1px solid #ccc}
 figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
-/* four to a row across the printable width; a row that will not fit on
-   the page moves whole to the next one rather than splitting */
-.figrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
-  align-items:start;margin-top:7px}
-.figrow figure.fig{margin:0;break-inside:avoid;page-break-inside:avoid}
-.figrow figure.fig img{width:100%;max-width:100%;max-height:44mm;object-fit:contain}
-.photogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:7px}
-figure.pph{margin:0;break-inside:avoid;page-break-inside:avoid;width:100%}
-figure.pph img{width:100%;max-height:44mm;object-fit:contain;border:1px solid #999}
-figure.pph figcaption{font-size:9.5px;color:#555}
+/* A table, not a grid. A browser will slice a grid item across a page break;
+   a table row it moves whole. Four fixed-width cells to a row, so a wide
+   drawing cannot stretch its column and squeeze the others. */
+.imgtab{width:100%;table-layout:fixed;border-collapse:separate;
+  border-spacing:5px 6px;margin-top:6px}
+.imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
+.imgtab td{width:25%;vertical-align:top;padding:0}
+.imgtab figure{margin:0;text-align:center}
+.imgtab figure img{width:100%;max-width:100%;max-height:42mm;object-fit:contain}
+.imgtab figcaption{font-size:9.5px;color:#555;margin-top:2px}
+.imgtab.photos figure img{border:1px solid #999}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
 .pgfoot{display:flex;justify-content:space-between;font-size:10px;margin-top:8px;color:#333}
 table.flow{width:100%;border-collapse:collapse}
@@ -283,22 +290,27 @@ table.flow th{text-align:left;font-weight:400}
 table.flow td{padding-top:4px;vertical-align:top}
 
 @media print{
-  @page{size:A4;margin:8mm 9mm}
+  @page{size:A4;margin:6mm 7mm}
   body{background:#fff;font-size:12.5px}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
   .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:always}
-  /* A row of figures moves whole to the next sheet rather than being sliced,
-     and the narrative follows it immediately instead of being pushed to a
-     fresh page and leaving the rest of this one blank. */
-  .figrow,.photogrid{break-inside:auto;page-break-inside:auto;
-    orphans:1;widows:1;margin-bottom:4px}
-  .figrow figure.fig,.photogrid figure.pph{break-inside:avoid;page-break-inside:avoid}
+  /* The table may break between rows; a row may not break inside. */
+  .imgtab{break-inside:auto;page-break-inside:auto;margin-bottom:3px}
+  .imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
+  /* the continuation page is a table so the patient bar can repeat; its row
+     and cell must still be allowed to split, or everything after a figure is
+     pushed to a fresh sheet and this one ends in white space */
+  table.flow,table.flow tbody,table.flow tr,table.flow td{
+    break-inside:auto;page-break-inside:auto}
+  table.flow td{vertical-align:top}
+  /* smaller figures fit more per sheet and break less often */
+  .imgtab figure img{max-height:34mm}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
   .pg.last{page-break-after:auto}
-  figure.fig img{max-height:98mm}
+  figure.fig img{max-height:60mm}
 }
 
 @media (max-width:640px){
@@ -569,12 +581,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=az"></script>
-<script src="figures.js?v=az"></script>
-<script src="figures-original.js?v=az"></script>
-<script src="letterhead.js?v=az"></script>
-<script src="narrative.js?v=az"></script>
-<script src="templates.js?v=az"></script>
-<script src="app.js?v=az"></script>
+<script src="config.js?v=bb"></script>
+<script src="figures.js?v=bb"></script>
+<script src="figures-original.js?v=bb"></script>
+<script src="letterhead.js?v=bb"></script>
+<script src="narrative.js?v=bb"></script>
+<script src="templates.js?v=bb"></script>
+<script src="app.js?v=bb"></script>
 </body>
 </html>

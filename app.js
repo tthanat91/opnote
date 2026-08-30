@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02az';
+  var APP_BUILD = '2026-08-02bb';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -528,7 +528,7 @@
      empty, so it cannot reach the printout or the narrative. Its stored value
      survives in S.data, and comes back if the trigger is ticked again. */
 
-  function parseShowIf(rule) {
+  function parseOneRule(rule) {
     var m = /^\s*([A-Za-z0-9_]+)\s*(!=|=)\s*([\s\S]*)$/.exec(String(rule || ''));
     if (!m) return null;
     var vals = m[3].split(';').map(function (x) { return x.trim().toLowerCase(); })
@@ -537,18 +537,30 @@
     return { key: m[1], negate: m[2] === '!=', values: vals };
   }
 
+  /* Two rules joined by || show the field when EITHER holds. A defunctioning
+     stoma is the case that needs it: the stoma questions belong on the note
+     whether the stoma is the operation or an addition to a resection. */
+  function parseShowIf(rule) {
+    return String(rule || '').split('||').map(parseOneRule)
+      .filter(function (r) { return r; });
+  }
+
   /* Deliberately reads S.data, not the DOM, so the printout and the draft
      narrative apply the same rule whether or not the field is on screen. */
-  function showIfOk(f) {
-    if (!f || !f.showif) return true;
-    var rule = parseShowIf(f.showif);
-    if (!rule) return true;               /* an unreadable rule never hides a field */
+  function ruleHolds(rule) {
     var raw = S.data[rule.key];
     var have = (Array.isArray(raw) ? raw : String(raw == null ? '' : raw).split(';'))
       .map(function (x) { return String(x).trim().toLowerCase(); })
       .filter(function (x) { return x.length; });
     var hit = have.some(function (x) { return rule.values.indexOf(x) > -1; });
     return rule.negate ? !hit : hit;
+  }
+
+  function showIfOk(f) {
+    if (!f || !f.showif) return true;
+    var rules = parseShowIf(f.showif);
+    if (!rules.length) return true;       /* an unreadable rule never hides a field */
+    return rules.some(ruleHolds);
   }
 
   /* Show or hide what the current answers call for. A section whose every
@@ -1268,6 +1280,71 @@
     if (!S.photos.length) box.appendChild(el('p', 'muted', 'ยังไม่มีรูปถ่าย / No photos attached.'));
   }
 
+  /* =================== required fields ===================
+     An operative note with no surgeon, no date or no narrative is not a
+     record, and the moment to catch that is before it is filed — not weeks
+     later when someone needs it. Only fields actually on screen are checked,
+     so a question hidden by its showif rule is never demanded.
+
+     Category rows use the prefix, so `_procedure` covers cr_, fi_ and he_. */
+  var REQUIRED_COMMON = ['hn', 'an', 'patient_name', 'op_date', 'time_start',
+    'time_end', 'preop_dx', 'postop_dx', 'operation', 'surgeon', 'recorder',
+    'anaesthesia', 'findings'];
+
+  /* Page 1 keeps a short list of essentials — it is administrative and often
+     filled by someone else. The procedure page is different: every question
+     it shows is a question this operation raised, so leaving one blank means
+     the note does not say what was done. Hidden fields are never demanded. */
+  function requiredKeys() {
+    var keys = REQUIRED_COMMON.slice();
+    fieldsFor(S.category).forEach(function (f) {
+      if (f.type === 'heading' || f.type === 'checkbox') return;
+      if (/_other$/.test(f.key)) return;
+      keys.push(f.key);
+    });
+    return keys;
+  }
+
+  function missingRequired() {
+    var out = [];
+    requiredKeys().forEach(function (k) {
+      var f = fieldByKey(k);
+      if (!f || !showIfOk(f)) return;          /* never demand a hidden answer */
+      if (String(valueOf(k) || '').trim()) return;
+      out.push(f);
+    });
+    return out;
+  }
+
+  /* Marks the empty fields and scrolls to the first, so "incomplete" is
+     actionable rather than an accusation. */
+  function flagMissing(list) {
+    $$('.field.missing').forEach(function (n) { n.classList.remove('missing'); });
+    list.forEach(function (f) {
+      var n = $('.field[data-fkey="' + f.key + '"]');
+      if (n) n.classList.add('missing');
+    });
+    if (list.length) {
+      var first = $('.field[data-fkey="' + list[0].key + '"]');
+      if (first && first.scrollIntoView) first.scrollIntoView({ block: 'center' });
+    }
+  }
+
+  /* Returns true when it is safe to go ahead. */
+  function requireComplete(what) {
+    var miss = missingRequired();
+    if (!miss.length) { $$('.field.missing').forEach(function (n) { n.classList.remove('missing'); }); return true; }
+    var names = miss.map(function (f) { return '• ' + (f.th || '') + '  ' + (f.en || ''); }).join('\n');
+    flagMissing(miss);
+    window.alert('\u0e01\u0e23\u0e2d\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e44\u0e21\u0e48\u0e04\u0e23\u0e1a — ' +
+      'The note is not complete.\n\n' +
+      (what === 'print' ? 'ยังพิมพ์ไม่ได้ / Cannot print yet.' : 'ยังบันทึกไม่ได้ / Cannot save yet.') +
+      '\n\n\u0e02\u0e32\u0e14 / Missing (' + miss.length + '):\n' + names +
+      '\n\n\u0e0a\u0e48\u0e2d\u0e07\u0e17\u0e35\u0e48\u0e02\u0e32\u0e14\u0e16\u0e39\u0e01\u0e17\u0e33\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e2b\u0e21\u0e32\u0e22\u0e2a\u0e35\u0e41\u0e14\u0e07\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 / ' +
+      'The missing fields are outlined in red.');
+    return false;
+  }
+
   /* =================== printable document =================== */
 
   function row(th, en, val, cls) {
@@ -1333,21 +1410,33 @@
     return out || '<p class="muted">—</p>';
   }
 
-  function figureHTML(pngs, from) {
-    var out = '';
-    for (var i = from; i < pngs.length; i++) {
-      out += '<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
-        '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>';
+  /* A real table, not a grid. Browsers split a grid item down the middle at a
+     page boundary; a table row they move whole. Four cells to a row. */
+  function imageTable(cells, cls) {
+    if (!cells.length) return '';
+    var rows = '', i;
+    for (i = 0; i < cells.length; i += 4) {
+      var row = cells.slice(i, i + 4);
+      while (row.length < 4) row.push('');
+      rows += '<tr>' + row.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
     }
-    return out ? '<div class="figrow">' + out + '</div>' : '';
+    return '<table class="imgtab ' + cls + '"><tbody>' + rows + '</tbody></table>';
+  }
+
+  function figureHTML(pngs, from) {
+    var cells = [];
+    for (var i = from; i < pngs.length; i++) {
+      cells.push('<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
+        '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>');
+    }
+    return imageTable(cells, 'figs');
   }
 
   function photosHTML() {
-    if (!S.photos.length) return '';
-    return '<div class="photogrid">' + S.photos.map(function (p) {
+    return imageTable(S.photos.map(function (p) {
       return '<figure class="pph"><img src="' + (p.dataUrl || p.url) + '" alt="">' +
         '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>';
-    }).join('') + '</div>';
+    }), 'photos');
   }
 
   function imgVars() {
@@ -1420,16 +1509,18 @@
       row('อื่น ๆ', 'Others', valueOf('others_note')) +
       '<div class="findbox"><div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
       '<div class="bbody">' +
+      /* The first drawing sits inside the box, floated right, wrapped by the
+         findings text. One small figure cannot overflow the page, so page 1
+         stays whole; the rest go to page 2 where the narrative can follow
+         straight on from them. */
+      (pngs.length ? '<figure class="fig"><img src="' + pngs[0] + '" alt="">' +
+        '<figcaption>' + esc(window.FIGURES[S.sheets[0].fig].en) + '</figcaption></figure>' : '') +
       nl2br(printableFindings()) +
       (valueOf('specimen_description')
         ? '<div class="speclab">คำอธิบายชิ้นเนื้อ <i>Specimen description</i></div>' +
         nl2br(valueOf('specimen_description'))
         : '') +
       '</div></div>' +
-      /* the drawings belong with the findings they illustrate, and they fill
-         the space the shrunken box leaves behind */
-      figureHTML(pngs, 0) +
-      photosHTML() +
       '<div class="pgfoot"><span>ต่อหน้าหลัง</span><span>' + esc(prefs.formCode) + '</span></div>' +
       '</section>';
 
@@ -1439,6 +1530,12 @@
       '<div class="formtitle small"><span></span><b>รายละเอียดขั้นตอนการผ่าตัด</b>' +
       '<span class="pgtag">หน้าหลัง</span></div></th></tr></thead>' +
       '<tbody><tr><td>' +
+      /* Pictures live on this page, not the first one. Page 1 is a fixed
+         section, so anything overflowing it lands on a sheet of its own and
+         the narrative — which belongs to this section — could never follow on
+         from it. Here the figures and the narrative are one flow. */
+      figureHTML(pngs, 1) +
+      photosHTML() +
       accessBlock() +
       stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
@@ -1842,8 +1939,16 @@
     $('#photoInput').onchange = function () { addPhotos(this.files); this.value = ''; };
 
     /* review actions */
-    $('#btnPrint').onclick = function () { refreshPreview().then(function () { window.print(); }); };
-    $('#btnSave').onclick = doSave;
+    $('#btnPrint').onclick = function () {
+      harvest();
+      if (!requireComplete('print')) return;
+      refreshPreview().then(function () { window.print(); });
+    };
+    $('#btnSave').onclick = function () {
+      harvest();
+      if (!requireComplete('save')) return;
+      doSave();
+    };
     $('#btnRefresh').onclick = function () { refreshPreview(); };
     $('#btnNew').onclick = function () {
       if (!window.confirm('เริ่มบันทึกใหม่? ข้อมูลที่ยังไม่บันทึกจะหายไป / Start a new note? Unsaved data will be lost.')) return;

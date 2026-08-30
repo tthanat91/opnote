@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02az',
+    build: '2026-08-02bb',
 
 
 
@@ -272,20 +272,10 @@
           { needs: ['cr_mesenteric_margin'],
             text: 'The mesenteric margin measured {cr_mesenteric_margin} cm.' },
 
-          { group: 'recon', needs: ['cr_rect_recon'], equals: 'Straight colorectal',
-            text: 'Reconstruction was by a straight colorectal anastomosis.' },
-          { group: 'recon', needs: ['cr_rect_recon'], equals: 'Straight coloanal',
-            text: 'Reconstruction was by a straight coloanal anastomosis.' },
-          { group: 'recon', needs: ['cr_rect_recon'], equals: 'Side-to-end',
-            text: 'Reconstruction was by a side-to-end (Baker) anastomosis.' },
-          { group: 'recon', needs: ['cr_rect_recon'], equals: 'Colonic J-pouch',
-            text: 'A «5 cm» colonic J-pouch was fashioned with «one firing of a linear stapler» and the apex prepared for the anastomosis.' },
-          { group: 'recon', needs: ['cr_rect_recon'], equals: 'Transverse coloplasty',
-            text: 'A transverse coloplasty was fashioned «8 cm from the cut end» and closed transversely.' },
-          { group: 'anast', needs: ['cr_l_circular', 'cr_anast_config', 'cr_anast_method'], not: 'Not used',
-            text: 'The anvil of a {cr_l_circular} circular stapler was secured in the proximal colon with a purse-string suture and returned to the abdomen. Pneumoperitoneum was re-established and the anastomosis was completed under direct vision — {cr_anast_config|lc}, {cr_anast_method|lc} — confirming correct orientation and absence of tension.' },
-          { group: 'anast', needs: ['cr_anast_config', 'cr_anast_method'], not: 'No anastomosis',
-            text: 'A {cr_anast_config|lc}, {cr_anast_method|lc} anastomosis was fashioned, confirming correct orientation and absence of tension.' },
+          { group: 'anast', needs: ['cr_l_circular', 'cr_anast_config'], not: 'Not used',
+            text: 'The anvil of a {cr_l_circular} circular stapler was secured in the proximal colon with a purse-string suture and returned to the abdomen. Pneumoperitoneum was re-established and a double-stapled {cr_anast_config|lc} anastomosis was completed under direct vision, confirming correct orientation and absence of tension.' },
+          { group: 'anast', needs: ['cr_anast_config'],
+            text: 'A {cr_anast_config|lc} anastomosis was fashioned, confirming correct orientation and absence of tension.' },
           { needs: ['cr_l_doughnuts'], not: 'Not applicable',
             text: 'The doughnuts were inspected and were {cr_l_doughnuts|lc}.' },
           { needs: ['cr_rect_level'],
@@ -476,7 +466,7 @@
             text: 'Macroscopic resection margins measured {cr_margin_prox} cm proximally and {cr_margin_dist} cm distally.' },
           { group: 'margins', needs: ['cr_margin_prox'], text: 'The proximal resection margin measured {cr_margin_prox} cm.' },
           { group: 'margins', needs: ['cr_margin_dist'], text: 'The distal resection margin measured {cr_margin_dist} cm.' },
-          { needs: ['cr_anast_method'], not: 'No anastomosis', text: 'The anvil of «an EEA 28 mm circular stapler» was secured in the proximal colon with a purse-string suture and returned to the abdomen. Pneumoperitoneum was re-established and the anastomosis was completed under direct vision \u2014 {cr_anast_config|lc}, {cr_anast_method|lc} \u2014 confirming correct orientation and absence of tension. The doughnuts were inspected and were complete.' },
+          { needs: ['cr_anast_config'], text: 'The anvil of «an EEA 28 mm circular stapler» was secured in the proximal colon with a purse-string suture and returned to the abdomen. Pneumoperitoneum was re-established and a {cr_anast_config|lc} anastomosis was completed under direct vision, confirming correct orientation and absence of tension. The doughnuts were inspected and were complete.' },
           { needs: ['cr_perfusion'], not: 'Not assessed', text: 'Perfusion of the anastomosis was assessed by {cr_perfusion|lc} and was satisfactory.' },
           { needs: ['cr_leak_test'], not: 'Not performed', text: 'A «colonoscopic» air-leak test was performed under saline and was {cr_leak_test|lc}.' },
           { needs: ['cr_diverting'], not: 'None', text: 'A {cr_diverting|lc} was fashioned and matured at «the marked stoma site in the right iliac fossa».' },
@@ -537,10 +527,7 @@
       { group: 'gmargins', needs: ['cr_margin_prox'], text: 'The proximal margin measured {cr_margin_prox} cm.' },
       { group: 'gmargins', needs: ['cr_margin_dist'], text: 'The distal margin measured {cr_margin_dist} cm.' },
 
-      { group: 'anast', needs: ['cr_anast_config', 'cr_anast_method'], not: 'No anastomosis',
-        text: 'A {cr_anast_config}, {cr_anast_method} anastomosis was fashioned.' },
-      { group: 'anast', needs: ['cr_anast_method'], not: 'No anastomosis',
-        text: 'The anastomosis was {cr_anast_method}.' },
+      { needs: ['cr_anast_config'], text: 'A {cr_anast_config|lc} anastomosis was fashioned.' },
       { needs: ['cr_stapler'], text: 'Stapler and suture material used: {cr_stapler}.' },
       { needs: ['cr_leak_test'], not: 'Not performed',
         text: 'An air-leak test was performed and was {cr_leak_test}.' },
