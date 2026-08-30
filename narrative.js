@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bh',
+    build: '2026-08-02bi',
 
 
 
@@ -183,9 +183,15 @@
         /* Listed first because the block that matches first wins, and a low
            or ultra-low anterior resection would otherwise be caught by the
            sigmoidectomy / anterior resection block below. */
-        name: 'Laparoscopic low / ultra-low anterior resection',
+        /* One block for every left-sided and rectal resection. The rectal
+           sentences quote fields that only a rectal case is asked for, so a
+           sigmoidectomy simply skips them — which is safer than keeping a
+           second, older block that had to be corrected separately and was
+           still claiming «10 cm below the tumor» from a hard-coded default. */
+        name: 'Laparoscopic left-sided / rectal resection',
         when: [
-          { key: 'cr_procedure', any: ['Low anterior resection', 'Ultra-low anterior resection'] },
+          { key: 'cr_procedure', any: ['Left hemicolectomy', 'Sigmoidectomy', 'Anterior resection',
+            'Low anterior resection', 'Ultra-low anterior resection'] },
           { key: 'cr_approach', any: ['Laparoscopic'] }
         ],
         lines: [
@@ -399,75 +405,6 @@
           { needs: ['cr_perfusion'], not: 'Not assessed', text: 'Perfusion of the anastomosis was assessed by {cr_perfusion|lc} and was satisfactory.' },
           { needs: ['cr_diverting'], not: 'None', text: 'A {cr_diverting|lc} was fashioned and matured at «the marked stoma site».' },
           { text: 'Hemostasis was confirmed and the abdomen irrigated with «warm saline».' },
-          { group: 'drain', needs: ['cr_drain', 'cr_drain_site'], not: 'None',
-            text: 'A {cr_drain|lc} was placed in the {cr_drain_site|lc|and}, brought out through the {cr_drain_exit|lc}.' },
-          { group: 'drain', needs: ['cr_drain'], not: 'None', text: 'A drain was placed: {cr_drain}.' },
-          { group: 'drain', needs: ['cr_drain_site'], text: 'A drain was placed in the {cr_drain_site|lc|and}.' },
-          { text: 'Ports were removed under direct vision.' },
-          { group: 'sheath', needs: ['cr_closure_sheath_material', 'cr_closure_sheath_fashion'],
-            text: 'The fascia was closed with {cr_closure_sheath_material}, {cr_closure_sheath_fashion|lc}.' },
-          { group: 'sheath', needs: ['cr_closure_sheath_material'],
-            text: 'The fascia was closed with {cr_closure_sheath_material}.' },
-          { group: 'skin', needs: ['cr_closure_skin_material', 'cr_closure_skin_fashion'],
-            text: 'The skin was closed with {cr_closure_skin_material}, {cr_closure_skin_fashion|lc}.' },
-          { group: 'skin', needs: ['cr_closure_skin_fashion'],
-            text: 'The skin was closed {cr_closure_skin_fashion|lc}.' },
-          { group: 'skin', needs: ['cr_closure_skin_material'],
-            text: 'The skin was closed with {cr_closure_skin_material}.' },
-          { needs: ['cr_count'], equals: 'Yes', text: 'Sponge, needle and instrument counts were correct at the end of the procedure. The patient was extubated and transferred to recovery in a stable condition.' }
-        ]
-      },
-      {
-        name: 'Laparoscopic sigmoidectomy / anterior resection',
-        when: [
-          { key: 'cr_procedure', any: ['Sigmoidectomy', 'Anterior resection'] },
-          { key: 'cr_approach', any: ['Laparoscopic'] }
-        ],
-        lines: [
-          { text: 'Under {anaesthesia}, the patient was placed in the {cr_position|lc} position with both arms tucked. A urinary catheter was inserted. The abdomen was prepared and draped in the usual sterile fashion and the surgical safety checklist was completed.' },
-          { text: 'Pneumoperitoneum was established to «12 mmHg». A «12 mm balloon blunt-tip» camera port was placed at the umbilicus, with working ports of «12 mm in the right lower quadrant» and «5 mm in the right upper quadrant, left lower quadrant and left upper quadrant».' },
-          { needs: ['cr_incision'], text: '{cr_incision}' },
-          { text: 'Diagnostic laparoscopy was performed.' },
-          { needs: ['cr_f_location'], text: 'The lesion was confirmed at the {cr_f_location|lc}.' },
-          { text: 'The patient was placed in steep Trendelenburg with the left side elevated, and the small bowel was retracted to the right upper quadrant to expose the base of the sigmoid mesocolon.' },
-          { text: 'A «medial-to-lateral» dissection was begun at the sacral promontory. The avascular plane between the mesocolon and the retroperitoneum was developed, and the left ureter and gonadal vessels were identified and preserved throughout.' },
-          { group: 'ima2', needs: ['cr_ima'], equals: 'High tie',
-            text: 'The inferior mesenteric artery was skeletonized and divided at its origin, «1 cm distal to the aorta so as to preserve the superior hypogastric nerve plexus», secured «with three Hem-o-lok clips, two proximal and one distal».' },
-          { group: 'ima2', needs: ['cr_ima'], equals: 'Low tie',
-            text: 'The inferior mesenteric artery was divided distal to the origin of the left colic artery, which was preserved, «secured with three Hem-o-lok clips».' },
-          { group: 'ima2', needs: ['cr_vascular'], not: 'Not applicable',
-            text: 'The inferior mesenteric artery was divided using a {cr_vascular|lc} technique.' },
-          { group: 'imv2', needs: ['cr_imv'], equals: 'High tie',
-            text: 'The inferior mesenteric vein was divided at the lower border of the pancreas.' },
-          { group: 'imv2', needs: ['cr_imv'], equals: 'Low tie',
-            text: 'The inferior mesenteric vein was divided at the level of the inferior mesenteric artery.' },
-          { needs: ['cr_lymphadenectomy'], not: 'Not applicable', text: 'A {cr_lymphadenectomy} lymphadenectomy was performed with the specimen.' },
-          { text: 'Dissection was continued in the «Toldt» plane under direct vision, with the hypogastric nerves identified and preserved.' },
-          { text: 'The lateral peritoneal attachments were divided along the white line of Toldt to join the medial dissection.' },
-          { group: 'flex', needs: ['cr_splenic_flexure', 'cr_splenic_approach'], equals: 'Yes',
-            text: 'The splenic flexure was fully mobilized using a {cr_splenic_approach|lc} approach to allow a tension-free anastomosis.' },
-          { group: 'flex', needs: ['cr_splenic_flexure'], equals: 'Yes',
-            text: 'The splenic flexure was fully mobilized «using a combined inferior, anterior and lateral approach» to allow a tension-free anastomosis.' },
-          { text: 'The rectum was mobilized to «10 cm below the tumor» and the mesorectum divided at the level of the intended distal margin.' },
-          { text: 'The bowel distal to the tumor was occluded with «an endoscopic bulldog clamp» and a rectal washout was performed with «1 L of warm saline» before transection.' },
-          { needs: ['cr_stapler'], text: 'The rectum was then divided distally with «one firing of» {cr_stapler}.' },
-          { needs: ['cr_procedure'], equals: 'Anterior resection', text: 'A distal margin of «at least 5 cm» was obtained, appropriate for a tumor at the rectosigmoid junction or upper rectum.' },
-          { group: 'extract', needs: ['cr_extraction'], equals: 'Transanal',
-            text: 'The specimen was extracted transanally through a wound protector, avoiding an abdominal extraction incision.' },
-          { group: 'extract', needs: ['cr_extraction'],
-            text: 'Extraction site: {cr_extraction}. A wound protector was placed and the specimen delivered.' },
-          { group: 'extract',
-            text: 'The umbilical port site was extended as a «midline» incision, a wound protector was placed, and the specimen was delivered.' },
-          { text: 'The proximal margin was selected «10 cm proximal to the tumor» and the bowel divided. The specimen was passed off the field: {organ_removed}' },
-          { group: 'margins', needs: ['cr_margin_prox', 'cr_margin_dist'],
-            text: 'Macroscopic resection margins measured {cr_margin_prox} cm proximally and {cr_margin_dist} cm distally.' },
-          { group: 'margins', needs: ['cr_margin_prox'], text: 'The proximal resection margin measured {cr_margin_prox} cm.' },
-          { group: 'margins', needs: ['cr_margin_dist'], text: 'The distal resection margin measured {cr_margin_dist} cm.' },
-          { needs: ['cr_anast_config'], text: 'The anvil of «an EEA 28 mm circular stapler» was secured in the proximal colon with a purse-string suture and returned to the abdomen. Pneumoperitoneum was re-established and a {cr_anast_config|lc} anastomosis was completed under direct vision, confirming correct orientation and absence of tension. The doughnuts were inspected and were complete.' },
-          { needs: ['cr_perfusion'], not: 'Not assessed', text: 'Perfusion of the anastomosis was assessed by {cr_perfusion|lc} and was satisfactory.' },
-          { needs: ['cr_leak_test'], not: 'Not performed', text: 'A «colonoscopic» air-leak test was performed under saline and was {cr_leak_test|lc}.' },
-          { needs: ['cr_diverting'], not: 'None', text: 'A {cr_diverting|lc} was fashioned and matured at «the marked stoma site in the right iliac fossa».' },
-          { text: 'Hemostasis was confirmed and the pelvis irrigated with «warm saline».' },
           { group: 'drain', needs: ['cr_drain', 'cr_drain_site'], not: 'None',
             text: 'A {cr_drain|lc} was placed in the {cr_drain_site|lc|and}, brought out through the {cr_drain_exit|lc}.' },
           { group: 'drain', needs: ['cr_drain'], not: 'None', text: 'A drain was placed: {cr_drain}.' },
