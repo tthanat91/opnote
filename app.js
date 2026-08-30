@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02j';
+  var EXPECTED_BUILD = '2026-08-02k';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bb';
+  var APP_BUILD = '2026-08-02bd';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1338,7 +1338,9 @@
     flagMissing(miss);
     window.alert('\u0e01\u0e23\u0e2d\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e44\u0e21\u0e48\u0e04\u0e23\u0e1a — ' +
       'The note is not complete.\n\n' +
-      (what === 'print' ? 'ยังพิมพ์ไม่ได้ / Cannot print yet.' : 'ยังบันทึกไม่ได้ / Cannot save yet.') +
+      (what === 'print' ? 'ยังพิมพ์ไม่ได้ / Cannot print yet.'
+        : what === 'next' ? 'ยังไปหน้าถัดไปไม่ได้ / Cannot move on yet.'
+        : 'ยังบันทึกไม่ได้ / Cannot save yet.') +
       '\n\n\u0e02\u0e32\u0e14 / Missing (' + miss.length + '):\n' + names +
       '\n\n\u0e0a\u0e48\u0e2d\u0e07\u0e17\u0e35\u0e48\u0e02\u0e32\u0e14\u0e16\u0e39\u0e01\u0e17\u0e33\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e2b\u0e21\u0e32\u0e22\u0e2a\u0e35\u0e41\u0e14\u0e07\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 / ' +
       'The missing fields are outlined in red.');
@@ -1889,7 +1891,11 @@
     };
     $('#btnNext').onclick = function () {
       var curStep = +$$('.stepbtn.on')[0].dataset.step;
-      harvest(); saveDraft(); gotoStep(Math.min(4, curStep + 1));
+      harvest(); saveDraft();
+      /* Catch the blanks while the surgeon is still on the page that has
+         them, not three steps later at the printer. */
+      if (curStep === 2 && !requireComplete('next')) return;
+      gotoStep(Math.min(4, curStep + 1));
     };
 
     function onFieldChanged(e) {

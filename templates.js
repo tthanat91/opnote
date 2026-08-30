@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bb';
+  global.TEMPLATES_BUILD = '2026-08-02bd';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -160,7 +160,7 @@
 
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_vascular', 'การผูกหลอดเลือด', 'Vascular ligation', 'radio',
       'High tie (at origin); Low tie; Not applicable',
-      'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Abdominoperineal resection; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_ima', 'การผูกหลอดเลือด IMA', 'Inferior mesenteric artery', 'radio',
       'High tie (at origin); Low tie; Not applicable',
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
@@ -169,19 +169,21 @@
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_lymphadenectomy', 'การเลาะต่อมน้ำเหลือง', 'Lymphadenectomy', 'radio',
       'D1; D2; D3 / CME; Not applicable',
-      'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_enbloc', 'ตัดอวัยวะข้างเคียงร่วม',
       'En-bloc resection of the invaded organ', 'radio', 'Yes; No',
       'cr_f_invasion = Yes'),
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'Mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
       'Yes; No; Not applicable',
-      'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_approach', 'วิธีเลาะ splenic flexure',
       'Splenic flexure — approach', 'radio',
       'Inferior; Anterior; Lateral; Combined inferior, anterior and lateral',
       'cr_splenic_flexure = Yes'),
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_prox', 'ขอบตัดด้านต้น (ซม.)', 'Proximal resection margin (cm)', 'number'),
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_dist', 'ขอบตัดด้านปลาย (ซม.)', 'Distal resection margin (cm)', 'number'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_prox', 'ขอบตัดด้านต้น (ซม.)', 'Proximal resection margin (cm)', 'number',
+      '', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_margin_dist', 'ขอบตัดด้านปลาย (ซม.)', 'Distal resection margin (cm)', 'number',
+      '', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_mesenteric_margin', 'ขอบ mesentery (ซม.)',
       'Mesenteric resection margin (cm)', 'number', '',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),

@@ -36,6 +36,7 @@ h3,h4,h5{margin:0}
 /* ============================ chrome ============================ */
 .topbar{
   position:sticky;top:0;z-index:30;background:var(--brand);color:#fff;
+  box-shadow:0 1px 0 rgba(0,0,0,.18);
   display:flex;align-items:center;gap:14px;padding:10px 16px;
   padding-top:calc(10px + env(safe-area-inset-top));flex-wrap:wrap;
 }
@@ -78,8 +79,8 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .stepbtn.on{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand);background:#eef6f4}
 
 .stepnav{
-  position:fixed;left:0;right:0;bottom:0;z-index:25;background:#fff;
-  border-top:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;
+  position:fixed;left:0;right:0;bottom:0;z-index:25;background:#fbfcfc;
+  border-top:1px solid var(--line);box-shadow:0 -1px 0 rgba(0,0,0,.04);display:flex;gap:10px;justify-content:space-between;
   padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));
 }
 .stepnav .grow{flex:1}
@@ -290,11 +291,17 @@ table.flow th{text-align:left;font-weight:400}
 table.flow td{padding-top:4px;vertical-align:top}
 
 @media print{
-  @page{size:A4;margin:6mm 7mm}
+  @page{size:A4;margin:5mm}
   body{background:#fff;font-size:12.5px}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
-  .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:always}
+  .pg{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;page-break-after:auto}
+  /* break BEFORE the continuation sheet rather than after page 1: a
+     trailing break sends page 1's own footer to a sheet of its own
+     whenever the content lands close to the bottom margin */
+  .pg.last{page-break-before:always}
+  .pgfoot{break-inside:avoid;page-break-inside:avoid;break-before:avoid;page-break-before:avoid}
+  .findbox{break-inside:avoid;page-break-inside:avoid}
   /* The table may break between rows; a row may not break inside. */
   .imgtab{break-inside:auto;page-break-inside:auto;margin-bottom:3px}
   .imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
@@ -309,7 +316,6 @@ table.flow td{padding-top:4px;vertical-align:top}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
-  .pg.last{page-break-after:auto}
   figure.fig img{max-height:60mm}
 }
 
@@ -317,20 +323,29 @@ table.flow td{padding-top:4px;vertical-align:top}
   .plab{flex:0 0 46%}
   .pg{width:100%;padding:8px}
   .brand small{display:none}
-  /* the bars were eating a third of a phone screen before a single field
-     was visible */
-  .topbar{gap:8px;padding:5px 10px;padding-top:calc(5px + env(safe-area-inset-top))}
-  .brand{font-size:.95rem}
-  .mainnav button{padding:3px 10px;font-size:.8rem}
-  .userbox{padding:3px 3px 3px 9px;border-radius:11px}
+  /* On a phone the bars were taking a third of the screen before a single
+     field appeared. They are chrome, not content: quiet, thin, and clearly
+     not part of the form. */
+  .topbar{gap:6px;padding:4px 9px;padding-top:calc(4px + env(safe-area-inset-top))}
+  .brand{font-size:.82rem;line-height:1.1}
+  .brand small{display:none}
+  .mainnav{gap:4px;width:100%;margin-left:0}
+  .mainnav button{flex:1;padding:4px 6px;font-size:.74rem}
+  .userbox{padding:2px 2px 2px 7px;border-radius:9px;gap:6px}
   .ub-lab{display:none}
-  .ub-txt b{font-size:.8rem}
-  #ubMeta{font-size:.62rem}
-  .ub-out{padding:4px 8px;font-size:.62rem}
-  .badge{font-size:.65rem;padding:2px 7px}
-  .stepnav{padding:5px 10px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
-  .stepnav button{padding:7px 12px;font-size:.88rem}
-  main{padding:10px 10px 84px}
+  .ub-txt b{font-size:.72rem}
+  #ubMeta{font-size:.58rem}
+  .ub-out{padding:3px 6px;font-size:.56rem;line-height:1.05}
+  .badge{font-size:.58rem;padding:1px 6px}
+  #connBadge{order:9}
+  .stepnav{padding:4px 9px;padding-bottom:calc(4px + env(safe-area-inset-bottom))}
+  .stepnav button{padding:6px 10px;font-size:.8rem}
+  /* the step cards are navigation too — one line each, no descriptions */
+  .steps{gap:5px;padding-bottom:6px;margin-bottom:4px}
+  .stepbtn{min-width:0;padding:5px 7px}
+  .stepbtn b{font-size:.76rem}
+  .stepbtn small{display:none}
+  main{padding:9px 9px 76px}
 }
 </style>
 </head>
@@ -581,12 +596,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bb"></script>
-<script src="figures.js?v=bb"></script>
-<script src="figures-original.js?v=bb"></script>
-<script src="letterhead.js?v=bb"></script>
-<script src="narrative.js?v=bb"></script>
-<script src="templates.js?v=bb"></script>
-<script src="app.js?v=bb"></script>
+<script src="config.js?v=bd"></script>
+<script src="figures.js?v=bd"></script>
+<script src="figures-original.js?v=bd"></script>
+<script src="letterhead.js?v=bd"></script>
+<script src="narrative.js?v=bd"></script>
+<script src="templates.js?v=bd"></script>
+<script src="app.js?v=bd"></script>
 </body>
 </html>
