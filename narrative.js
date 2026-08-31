@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bt',
+    build: '2026-08-02bu',
 
 
 

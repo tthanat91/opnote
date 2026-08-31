@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bt';
+  var APP_BUILD = '2026-08-02bu';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1732,6 +1732,10 @@
     /* no caption under the set: three labelled views sitting together in
        one frame already say they belong together, and the line cost a row
        of height that the figures themselves can use */
+    /* At 1.7x the three views are 56 mm across — together they span the full
+       width of the box, so there is no column left for the paragraph to wrap
+       into. The set therefore stops floating and sits as a band across the
+       top, with the findings written underneath it. */
     if (n === 1) return figs;
     return '<div class="figset">' + figs + '</div>';
   }
@@ -1781,7 +1785,8 @@
       row('พยาบาลช่วยรอบนอก', 'Circulating nurse', valueOf('circulating_nurse')) +
       '</div>' +
       row('อื่น ๆ', 'Others', valueOf('others_note')) +
-      '<div class="findbox"><div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
+      '<div class="findbox' + (inBoxCount(pngs) > 1 ? ' tall' : '') + '">' +
+      '<div class="bhead">สิ่งตรวจพบ <i>Operative findings</i></div>' +
       '<div class="bbody">' +
       /* The first drawing sits inside the box, floated right, wrapped by the
          findings text. One small figure cannot overflow the page, so page 1
