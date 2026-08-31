@@ -300,6 +300,9 @@ table.idbar td.wide{width:32%}
 .printhint{border-left:3px solid var(--brand);padding:6px 10px;background:#f4f8f7;
   border-radius:0 8px 8px 0;font-size:.8rem;line-height:1.45;margin:0 0 6px}
 @media print{.printhint{display:none}}
+/* while a page is being photographed for the PDF it must look like paper,
+   not like a card floating on the preview background */
+.pdfshot{box-shadow:none !important;margin:0 !important}
 .findbox .figset{float:right;margin:0 0 4px 10px;width:102mm;text-align:center}
 .findbox .figset figure.fig{float:none;display:inline-block;width:33mm;margin:0 .5mm}
 .findbox .figset figure.fig img{max-width:33mm;max-height:33mm}
@@ -507,6 +510,7 @@ table.flow td{padding-top:4px;vertical-align:top}
           </p>
           <p>
             <button class="btn" id="btnPrint">🖨 พิมพ์ / บันทึกเป็น PDF · Print / Save as PDF</button>
+            <button class="btn" id="btnPdf">📄 บันทึกไฟล์ PDF · Save PDF file</button>
             <button class="btn ghost" id="btnRefresh">รีเฟรชตัวอย่าง · Refresh preview</button>
             <button class="btn alt" id="btnSave">บันทึก / Save</button>
           </p>
@@ -515,13 +519,17 @@ table.flow td{padding-top:4px;vertical-align:top}
                no stylesheet here can remove it. It is a checkbox in the print
                dialog, and this note is the only way to reach it. -->
           <p class="muted printhint">
-            ในหน้าต่างพิมพ์ ให้เอาเครื่องหมายถูกออกจาก <b>Print headers and footers</b>
-            (Safari) หรือ <b>Headers and footers</b> (Chrome) เพื่อไม่ให้มีที่อยู่เว็บและวันที่ติดมาบนกระดาษ
-            และตั้ง <b>Margins</b> เป็น <b>None</b> กับ <b>Scale 100%</b><br>
-            <span class="en">In the print dialog, untick <b>Print headers and footers</b>
-            (Safari) or <b>Headers and footers</b> (Chrome) — that strip is added by the
-            browser, not by this form, so it cannot be removed from here. Set
-            <b>Margins</b> to <b>None</b> and <b>Scale</b> to <b>100%</b>.</span>
+            <b>บนคอมพิวเตอร์</b> ในหน้าต่างพิมพ์ ให้เอาเครื่องหมายถูกออกจาก
+            <b>Print headers and footers</b> (Safari) หรือ <b>Headers and footers</b> (Chrome)
+            แล้วตั้ง <b>Margins</b> เป็น <b>None</b> และ <b>Scale 100%</b><br>
+            <b>บน iPad / iPhone</b> ระบบ iOS ไม่มีปุ่มปิดแถบนี้ ที่อยู่เว็บและวันที่จะติดมาเสมอ
+            ให้กด <b>บันทึกไฟล์ PDF</b> แล้วสั่งพิมพ์จากไฟล์ PDF นั้นแทน จะไม่มีแถบนี้<br>
+            <span class="en"><b>On a computer:</b> in the print dialog untick
+            <b>Print headers and footers</b> (Safari) or <b>Headers and footers</b> (Chrome),
+            then set <b>Margins</b> to <b>None</b> and <b>Scale</b> to <b>100%</b>.
+            <b>On iPad or iPhone</b> iOS has no such setting — the address and date are added
+            by the system to any web page it prints. Press <b>Save PDF file</b> instead and
+            print that file: iOS adds nothing to a PDF.</span>
           </p>
         </div>
         <div id="previewBox"></div>
@@ -677,12 +685,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=br"></script>
-<script src="figures.js?v=br"></script>
-<script src="figures-original.js?v=br"></script>
-<script src="letterhead.js?v=br"></script>
-<script src="narrative.js?v=br"></script>
-<script src="templates.js?v=br"></script>
-<script src="app.js?v=br"></script>
+<script src="config.js?v=bt"></script>
+<script src="figures.js?v=bt"></script>
+<script src="figures-original.js?v=bt"></script>
+<script src="letterhead.js?v=bt"></script>
+<script src="narrative.js?v=bt"></script>
+<script src="templates.js?v=bt"></script>
+<script src="app.js?v=bt"></script>
 </body>
 </html>

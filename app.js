@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02br';
+  var APP_BUILD = '2026-08-02bt';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1833,6 +1833,110 @@
     }
   }
 
+  /* =================== PDF file ===================
+
+     iOS stamps the address and the date onto any WEB PAGE it prints, and
+     Apple removed the setting that used to turn it off — so on an iPad the
+     printed form can never come out clean. It adds nothing to a PDF file.
+     So the app photographs each A4 page and assembles a real PDF, which the
+     surgeon prints from Files instead.
+
+     The pages go in as images rather than as text. That is a deliberate
+     trade: the file is larger and the text cannot be selected, but what
+     comes out is pixel-for-pixel the form that was reviewed on screen —
+     no font substitution, no reflow, no Thai shaping surprises on a device
+     I cannot test. For a document that is signed and filed, looking exactly
+     right matters more than being searchable.
+
+     The two libraries load from the CDN on first use only, so opening the
+     app costs nothing and everything else still works without a network. */
+
+  var PDF_LIBS = [
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  ];
+  var pdfLibs = null;
+
+  function loadScript(src) {
+    return new Promise(function (res, rej) {
+      var t = document.createElement('script');
+      t.src = src;
+      t.onload = function () { res(); };
+      t.onerror = function () { rej(new Error('cannot load ' + src)); };
+      document.head.appendChild(t);
+    });
+  }
+
+  function ensurePdfLibs() {
+    if (window.html2canvas && window.jspdf) return Promise.resolve();
+    if (!pdfLibs) {
+      pdfLibs = PDF_LIBS.reduce(function (chain, u) {
+        return chain.then(function () { return loadScript(u); });
+      }, Promise.resolve()).catch(function (e) {
+        pdfLibs = null;              /* let the next press try again */
+        throw e;
+      });
+    }
+    return pdfLibs;
+  }
+
+  function pdfFileName() {
+    var bits = [valueOf('hn'), valueOf('an'), valueOf('patient_name')]
+      .map(function (x) { return String(x || '').trim(); })
+      .filter(function (x) { return x; })
+      .join(' ');
+    var safe = bits.replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_').slice(0, 60);
+    return (safe || 'operative-note') + '.pdf';
+  }
+
+  /* One page at a time. An iPad will run out of memory if three A4 canvases
+     at this resolution are alive at once. */
+  function pagesToPdf(pages, doc, scale) {
+    return pages.reduce(function (chain, pg, i) {
+      return chain.then(function () {
+        pg.classList.add('pdfshot');
+        return window.html2canvas(pg, {
+          scale: scale, backgroundColor: '#ffffff', useCORS: true, logging: false
+        }).then(function (canvas) {
+          pg.classList.remove('pdfshot');
+          var img = canvas.toDataURL('image/jpeg', 0.92);
+          /* the page is drawn 200 mm wide on screen, which is A4 less the
+             5 mm margins the form is designed for */
+          var w = 200, h = w * canvas.height / canvas.width;
+          if (h > 287) { h = 287; w = h * canvas.width / canvas.height; }
+          if (i) doc.addPage();
+          doc.addImage(img, 'JPEG', (210 - w) / 2, 5, w, h, undefined, 'FAST');
+        }, function (e) {
+          pg.classList.remove('pdfshot');
+          throw e;
+        });
+      });
+    }, Promise.resolve());
+  }
+
+  function savePdf() {
+    harvest();
+    if (!requireComplete('print')) return;
+    toast('กำลังสร้าง PDF … / Building the PDF …');
+    ensurePdfLibs().then(function () {
+      return refreshPreview();
+    }).then(function () {
+      var pages = $$('#previewBox .pg');
+      if (!pages.length) throw new Error('nothing to print');
+      var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      /* a lower factor on a phone, where memory is tightest */
+      var scale = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.5));
+      return pagesToPdf(pages, doc, scale).then(function () {
+        doc.save(pdfFileName());
+        toast('บันทึกไฟล์ PDF แล้ว / PDF saved', 'ok');
+      });
+    }).catch(function (e) {
+      toast('สร้าง PDF ไม่สำเร็จ ต้องต่ออินเทอร์เน็ตครั้งแรก / ' +
+        'Could not build the PDF — the first time needs a network connection. ' +
+        (e && e.message ? '(' + e.message + ')' : ''), 'warn');
+    });
+  }
+
   function refreshPreview() {
     harvest();
     return exportAllSheets().then(function (pngs) {
@@ -2261,6 +2365,7 @@
       if (!requireComplete('print')) return;
       refreshPreview().then(function () { window.print(); });
     };
+    $('#btnPdf').onclick = savePdf;
     $('#btnSave').onclick = function () {
       harvest();
       if (!requireComplete('save')) return;
