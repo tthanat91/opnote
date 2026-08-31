@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bn',
+    build: '2026-08-02bo',
 
 
 
@@ -140,10 +140,14 @@
           text: 'The external opening lay at {fi_external_opening} o’clock, {fi_external_distance} cm from the anal verge.' },
         { group: 'eo', needs: ['fi_external_opening'], text: 'The external opening lay at {fi_external_opening} o’clock.' },
         { needs: ['fi_complexity'], text: 'The fistula was classified as {fi_complexity|lc}.' },
-        { needs: ['fi_features'], text: 'Additional features were noted: {fi_features|lc|and}.' },
+        { group: 'fifeat', needs: ['fi_features'], equals: 'None',
+          text: 'There was no secondary tract, horseshoe extension or other complicating feature.' },
+        { group: 'fifeat', needs: ['fi_features'],
+          text: 'Additional features were noted: {fi_features|lc|and}.' },
+        /* the repeating block renders itself as finished sentences */
+        { needs: ['fi_tracts'], text: '{fi_tracts}' },
         { needs: ['fi_sphincter_involved'], text: 'Approximately {fi_sphincter_involved}% of the external sphincter was involved by the tract.' },
-        { needs: ['fi_aetiology'], text: 'The etiology was {fi_aetiology|lc}.' },
-        { needs: ['fi_continence'], text: 'The pre-operative Wexner continence score was {fi_continence}.' }
+        { needs: ['fi_aetiology'], text: 'The etiology was {fi_aetiology|lc}.' }
       ],
 
       hemorrhoid: [
@@ -730,7 +734,8 @@
         { group: 'fiprobe', needs: ['fi_probe'], equals: 'with difficulty',
           text: 'A malleable probe passed along the tract with difficulty, the tract being narrow and tortuous; no false passage was created.' },
         { group: 'fiprobe', needs: ['fi_probe'], equals: 'No',
-          text: 'A probe could not be passed along the tract, so no attempt was made to force it.' }
+          text: 'A probe could not be passed along the tract, so no attempt was made to force it.' },
+        { needs: ['fi_tracts'], text: '{fi_tracts}' }
       ],
 
       /* --- drainage and assessment only --- */
@@ -756,21 +761,53 @@
 
       /* --- laying the tract open --- */
       fi_fistulotomy: [
-        { group: 'filo', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulotomy',
+        { group: 'filo', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulotomy', not: 'immediate sphincteroplasty',
           text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin, subcutaneous tissue and the {fi_lay_open}% of the external sphincter that the tract encircled. The remaining sphincter was left intact and the anorectal ring was preserved.' },
-        { group: 'filo', needs: ['fi_procedure'], equals: 'Fistulotomy',
+        { group: 'filo', needs: ['fi_procedure'], equals: 'Fistulotomy', not: 'immediate sphincteroplasty',
           text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin and subcutaneous tissue and only that part of the external sphincter encircled by the tract. The anorectal ring was preserved.' },
-        { needs: ['fi_procedure'], equals: 'Fistulotomy',
+        { needs: ['fi_procedure'], equals: 'Fistulotomy', not: 'immediate sphincteroplasty',
           text: 'The laid-open tract was saucerized, its edges trimmed so that the wound was wider at the skin than at its base and would heal from the base upwards.' }
       ],
 
       fi_fistulectomy: [
-        { group: 'file', needs: ['fi_procedure'], equals: 'Fistulectomy',
+        { group: 'file', needs: ['fi_procedure'], equals: 'Fistulectomy', not: 'immediate sphincteroplasty',
           text: 'The tract was cored out in its entirety by sharp dissection immediately outside its fibrous wall, from the external opening through to the internal opening, and removed intact as a single specimen.' },
-        { group: 'filedivide', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulectomy',
+        { group: 'filedivide', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulectomy', not: 'immediate sphincteroplasty',
           text: 'In the course of the excision {fi_lay_open}% of the external sphincter was divided; the remainder and the anorectal ring were left intact.' },
-        { needs: ['fi_procedure'], equals: 'Fistulectomy',
+        { needs: ['fi_procedure'], equals: 'Fistulectomy', not: 'immediate sphincteroplasty',
           text: 'The resulting defect was left open to granulate.' }
+      ],
+
+      /* FIPS — the tract is dealt with as usual and the divided sphincter
+         is then repaired at the same sitting, which is the whole point of
+         the operation and must be narrated as its own act. */
+      fi_fips: [
+        { group: 'fipsopen', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulotomy with immediate sphincteroplasty',
+          text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin, subcutaneous tissue and the {fi_lay_open}% of the external sphincter that the tract encircled.' },
+        { group: 'fipsopen', needs: ['fi_procedure'], equals: 'Fistulotomy with immediate sphincteroplasty',
+          text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin, subcutaneous tissue and that part of the external sphincter encircled by the tract.' },
+        { group: 'fipsopen', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulectomy with immediate sphincteroplasty',
+          text: 'The tract was cored out in its entirety by sharp dissection immediately outside its fibrous wall and removed intact as a single specimen, dividing the {fi_lay_open}% of the external sphincter that it encircled.' },
+        { group: 'fipsopen', needs: ['fi_procedure'], equals: 'Fistulectomy with immediate sphincteroplasty',
+          text: 'The tract was cored out in its entirety by sharp dissection immediately outside its fibrous wall and removed intact as a single specimen, dividing that part of the external sphincter which it encircled.' },
+        { needs: ['fi_procedure'], equals: 'immediate sphincteroplasty',
+          text: 'The granulation tissue was curetted away and the internal opening was excised together with the adjacent crypt-bearing tissue, so that the repair would lie on healthy tissue.' },
+        { needs: ['fi_procedure'], equals: 'immediate sphincteroplasty',
+          text: 'The cut ends of the sphincter were identified, held on stay sutures and mobilized laterally for «1 cm» in each direction, keeping the dissection close to the muscle so that the nerve supply entering posterolaterally was not disturbed.' },
+        { group: 'fipsrep', needs: ['fi_fips_repair', 'fi_fips_suture'], equals: 'Overlapping',
+          text: 'An immediate sphincteroplasty was performed, the divided ends being overlapped and repaired with {fi_fips_suture}.' },
+        { group: 'fipsrep', needs: ['fi_fips_repair', 'fi_fips_suture'], equals: 'End-to-end',
+          text: 'An immediate sphincteroplasty was performed, the divided ends being repaired by direct end-to-end apposition with {fi_fips_suture}.' },
+        { group: 'fipsrep', needs: ['fi_fips_repair'], equals: 'Overlapping',
+          text: 'An immediate sphincteroplasty was performed, the divided ends being overlapped and repaired «with interrupted 3-0 PDS».' },
+        { group: 'fipsrep', needs: ['fi_fips_repair'],
+          text: 'An immediate sphincteroplasty was performed, the divided ends being repaired by direct end-to-end apposition «with interrupted 3-0 PDS».' },
+        { group: 'fipsrep', needs: ['fi_procedure'], equals: 'immediate sphincteroplasty',
+          text: 'An immediate sphincteroplasty was performed, the divided ends being repaired «by direct end-to-end apposition with interrupted 3-0 PDS».' },
+        { needs: ['fi_procedure'], equals: 'immediate sphincteroplasty',
+          text: 'The repair was tested digitally and gripped the finger evenly, with no palpable gap.' },
+        { needs: ['fi_procedure'], equals: 'immediate sphincteroplasty',
+          text: 'The anoderm and skin were closed over the repair «with interrupted 3-0 Vicryl», the most dependent part of the wound being left open so that any collection could drain away from the suture line.' }
       ],
 
       fi_curettage: [
@@ -1053,7 +1090,9 @@
            two accounts rather than the first one only. */
         name: 'Perianal fistula and anorectal abscess',
         when: [
-          { key: 'fi_procedure', any: ['Fistulotomy', 'Fistulectomy', 'Cutting seton',
+          { key: 'fi_procedure', any: ['Fistulotomy', 'Fistulectomy',
+            'Fistulotomy with immediate sphincteroplasty (FIPS)',
+            'Fistulectomy with immediate sphincteroplasty (FIPS)', 'Cutting seton',
             'Draining (loose) seton', 'LIFT', 'Mucosal advancement flap',
             'Anodermal advancement flap', 'VAAFT', 'Fibrin glue', 'Fistula plug',
             'Laser closure', 'Curettage of tract', 'Drainage of abscess',
@@ -1062,7 +1101,8 @@
         lines: [
           { use: 'fi_setup' }, { use: 'fi_assess' },
           { use: 'fi_eua_only' }, { use: 'fi_abscess' },
-          { use: 'fi_fistulotomy' }, { use: 'fi_fistulectomy' }, { use: 'fi_curettage' },
+          { use: 'fi_fistulotomy' }, { use: 'fi_fistulectomy' }, { use: 'fi_fips' },
+          { use: 'fi_curettage' },
           { use: 'fi_lift' }, { use: 'fi_flap' }, { use: 'fi_vaaft' },
           { use: 'fi_filac' }, { use: 'fi_plug' }, { use: 'fi_glue' },
           { use: 'fi_seton' }, { use: 'fi_other' },

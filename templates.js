@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bn';
+  global.TEMPLATES_BUILD = '2026-08-02bo';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -397,22 +397,28 @@
     f('fistula', 'กายวิภาค | Anatomy', 'fi_internal_height', 'ความสูงรูเปิดภายในจากขอบทวาร (ซม.)', 'Height of internal opening from anal verge (cm)', 'number'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_external_opening', 'ตำแหน่งรูเปิดภายนอก (นาฬิกา)', 'External opening (o\'clock)', 'text'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_external_distance', 'ระยะรูเปิดภายนอกจากขอบทวาร (ซม.)', 'Distance of external opening from anal verge (cm)', 'number'),
+    /* type 'repeat' renders a block the surgeon can add to; the sub-fields
+       live in REPEAT_FIELDS below and the answers are stored in this one
+       column as JSON, so the Sheet gains no columns as tracts are added */
+    f('fistula', 'กายวิภาค | Anatomy', 'fi_tracts',
+      'ทางเดินเพิ่มเติม', 'Additional tracts', 'repeat'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_parks', 'Parks classification', 'Parks classification', 'radio',
       'Superficial / submucosal; Intersphincteric; Transsphincteric; Suprasphincteric; Extrasphincteric'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_complexity', 'ความซับซ้อน', 'Complexity', 'radio', 'Simple; Complex'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_features', 'ลักษณะเพิ่มเติม', 'Additional features', 'checklist',
-      'Secondary tract; Horseshoe extension; Abscess cavity; Supralevator extension; ' +
+      'None; Secondary tract; Horseshoe extension; Abscess cavity; Supralevator extension; ' +
       'Multiple external openings; Anterior fistula in female; Recurrent fistula'),
-    f('fistula', 'กายวิภาค | Anatomy', 'fi_sphincter_involved', 'สัดส่วนหูรูดที่เกี่ยวข้อง (%)', 'Proportion of external sphincter involved (%)', 'number'),
-    f('fistula', 'กายวิภาค | Anatomy', 'fi_continence', 'การกลั้นอุจจาระก่อนผ่าตัด (Wexner)', 'Pre-operative continence (Wexner score)', 'number'),
+    f('fistula', 'กายวิภาค | Anatomy', 'fi_sphincter_involved', 'สัดส่วนหูรูดที่เกี่ยวข้อง (%)', 'Proportion of external sphincter involved (%)', 'number', '',
+      'fi_parks != Superficial / submucosal; Intersphincteric'),
 
     f('fistula', 'หัตถการ | Procedure', 'fi_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
-      'Fistulotomy; Fistulectomy; Cutting seton; Draining (loose) seton; ' +
+      'Fistulotomy; Fistulectomy; Fistulotomy with immediate sphincteroplasty (FIPS); Fistulectomy with immediate sphincteroplasty (FIPS); Cutting seton; Draining (loose) seton; ' +
       'LIFT (ligation of intersphincteric fistula tract); Mucosal advancement flap; ' +
       'Anodermal advancement flap; VAAFT; Fibrin glue; Fistula plug; ' +
       'Laser closure (FiLaC); Curettage of tract; Drainage of abscess; ' +
       'Examination under anesthesia only; Other'),
-    f('fistula', 'หัตถการ | Procedure', 'fi_seton_material', 'วัสดุ seton', 'Seton material', 'text'),
+    f('fistula', 'หัตถการ | Procedure', 'fi_seton_material', 'วัสดุ seton', 'Seton material', 'text', '',
+      'fi_procedure = Cutting seton; Draining (loose) seton'),
     f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialization of wound edges', 'Marsupialization', 'checkbox'),
     f('fistula', 'หัตถการ | Procedure', 'fi_specimen', 'ชิ้นเนื้อส่งตรวจ', 'Specimen sent', 'text'),
 
@@ -420,15 +426,22 @@
     /* ---- how the tract was found, and what was done to it ---- */
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_identify', 'วิธีหารูเปิดภายใน', 'How the internal opening was identified', 'checklist',
       'Malleable probe; Hydrogen peroxide; Methylene blue; Milk of the tract; ' +
-      'Correlation with pre-operative MRI; Not identified'),
+      'Correlation with pre-operative MRI; Normal saline injection; Core-out of the tract; Not identified'),
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_probe', 'ผลการสอดโพรบ', 'Probe passed along the tract', 'radio',
       'Yes, easily; Yes, with difficulty; No'),
 
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_lay_open', 'สัดส่วนหูรูดที่ถูกตัด (%)', 'External sphincter divided (%)', 'number', '',
-      'fi_procedure = Fistulotomy; Fistulectomy'),
+      'fi_procedure = Fistulotomy; Fistulotomy with immediate sphincteroplasty (FIPS); Fistulectomy with immediate sphincteroplasty (FIPS) && fi_parks != Superficial / submucosal; Intersphincteric'),
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_curettage', 'การขูดโพรง', 'Curettage of granulation tissue', 'radio',
       'Yes; No', 'fi_procedure = Fistulotomy; Fistulectomy'),
 
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_fips_repair',
+      'วิธีซ่อมหูรูด', 'Sphincter repair', 'radio',
+      'End-to-end apposition; Overlapping repair',
+      'fi_procedure = Fistulotomy with immediate sphincteroplasty (FIPS); Fistulectomy with immediate sphincteroplasty (FIPS)'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_fips_suture',
+      'ไหมเย็บซ่อมหูรูด', 'Sphincter repair suture', 'text', '',
+      'fi_procedure = Fistulotomy with immediate sphincteroplasty (FIPS); Fistulectomy with immediate sphincteroplasty (FIPS)'),
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_seton_type', 'ชนิด seton', 'Seton type', 'radio',
       'Loose draining; Cutting, to be tightened; Chemical', 'fi_procedure = Cutting seton; Draining (loose) seton'),
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_seton_plan', 'แผนการปรับ seton', 'Seton plan', 'text', '',
@@ -537,5 +550,33 @@
     { key: 'hemorrhoid', th: 'ผ่าตัดริดสีดวงทวาร', en: 'Hemorrhoid surgery' },
     { key: 'others', th: 'อื่น ๆ', en: 'Others' }
   ];
+
+  /* -------------------------------------------------------------------
+     Sub-fields of a repeating block. The block itself is an ordinary row
+     in the Templates tab with type "repeat"; what each entry contains is
+     defined here, because a spreadsheet cell is the wrong place to keep a
+     nested structure.
+     ------------------------------------------------------------------- */
+  global.REPEAT_FIELDS = {
+    fi_tracts: {
+      /* the word used when the block is empty and on the add button */
+      th: 'ทางเดิน', en: 'tract',
+      fields: [
+        { key: 'ext', th: 'รูเปิดภายนอก (นาฬิกา)', en: "External opening (o'clock)", type: 'text' },
+        { key: 'dist', th: 'ระยะจากขอบทวาร (ซม.)', en: 'Distance from the anal verge (cm)', type: 'number' },
+        { key: 'course', th: 'แนวทางเดิน', en: 'Course', type: 'select',
+          options: ['Superficial / submucosal', 'Intersphincteric', 'Transsphincteric',
+            'Suprasphincteric', 'Extrasphincteric'] },
+        { key: 'into', th: 'เปิดเข้าสู่', en: 'Joins', type: 'select',
+          options: ['The same internal opening', 'A separate internal opening',
+            'No internal opening found'] },
+        { key: 'into_pos', th: 'รูเปิดภายในของทางเดินนี้ (นาฬิกา)',
+          en: "Its own internal opening (o'clock)", type: 'text' },
+        { key: 'treat', th: 'การจัดการ', en: 'How it was dealt with', type: 'select',
+          options: ['Laid open', 'Cored out', 'Curetted', 'Draining seton',
+            'Cutting seton', 'Left alone'] }
+      ]
+    }
+  };
 
 })(window);

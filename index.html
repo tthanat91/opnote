@@ -120,6 +120,15 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .linkbtn.danger{color:#a12f2f}
 
 /* category picker */
+.repeatbox{display:flex;flex-direction:column;gap:8px}
+.repeatrow{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fbfcfc}
+.repeathead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.repeathead b{font-size:.85rem}
+.repeatgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.repeatcell{display:flex;flex-direction:column;gap:3px}
+.repeatcell .flabel{font-size:.72rem}
+.linkbtn.danger{color:#b3261e}
+@media(max-width:640px){.repeatgrid{grid-template-columns:1fr 1fr}}
 #catPick{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px}
 .catcard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:14px;cursor:pointer;text-align:left;font-weight:600}
@@ -646,12 +655,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bn"></script>
-<script src="figures.js?v=bn"></script>
-<script src="figures-original.js?v=bn"></script>
-<script src="letterhead.js?v=bn"></script>
-<script src="narrative.js?v=bn"></script>
-<script src="templates.js?v=bn"></script>
-<script src="app.js?v=bn"></script>
+<script src="config.js?v=bo"></script>
+<script src="figures.js?v=bo"></script>
+<script src="figures-original.js?v=bo"></script>
+<script src="letterhead.js?v=bo"></script>
+<script src="narrative.js?v=bo"></script>
+<script src="templates.js?v=bo"></script>
+<script src="app.js?v=bo"></script>
 </body>
 </html>

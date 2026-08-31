@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bn';
+  var APP_BUILD = '2026-08-02bo';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -593,6 +593,144 @@
     body.appendChild(other);
   }
 
+  /* =================== repeating blocks ===================
+     A fistula may have one tract or five. Rather than freezing a guess into
+     the Templates tab, a field of type "repeat" renders a block the surgeon
+     adds to. The answers are held in ONE column as JSON, so adding a tract
+     never adds a column to the Sheet, and R can read the column back as a
+     list. Everything downstream — the printout, the narrative, the required
+     check — sees ordinary prose, because valueOf turns the JSON into it. */
+
+  function repeatSpec(key) {
+    return (window.REPEAT_FIELDS || {})[key] || null;
+  }
+
+  function repeatRows(key) {
+    var raw = S.data[key];
+    if (Array.isArray(raw)) return raw;
+    if (!raw) return [];
+    try { var a = JSON.parse(raw); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+
+  function repeatStore(key, rows) {
+    S.data[key] = rows.length ? JSON.stringify(rows) : '';
+  }
+
+  var ORDINAL = ['', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
+
+  /* One sentence per entry, so the block reads as prose wherever it lands
+     rather than as a row of raw values. */
+  function repeatText(key) {
+    var spec = repeatSpec(key);
+    if (!spec) return '';
+    /* an entry the surgeon added and then left blank says nothing */
+    var rows = repeatRows(key).filter(function (r) {
+      return Object.keys(r || {}).some(function (k) {
+        return String(r[k] == null ? '' : r[k]).trim();
+      });
+    });
+    return rows.map(function (r, i) {
+      var word = ORDINAL[i + 1] || 'further';
+      var t = 'A ' + word + ' ' + (spec.en || 'entry');
+      var bits = [];
+      if (r.ext) bits.push('an external opening at ' + r.ext + ' o\u2019clock' +
+        (r.dist ? ', ' + r.dist + ' cm from the anal verge' : ''));
+      else if (r.dist) bits.push('an external opening ' + r.dist + ' cm from the anal verge');
+      if (bits.length) t += ' ran from ' + bits.join('');
+      if (r.course) t += (bits.length ? ', taking' : ' took') + ' ' +
+        (/^[AEIOU]/i.test(r.course) ? 'an' : 'a') + ' ' +
+        r.course.charAt(0).toLowerCase() + r.course.slice(1) + ' course';
+      if (r.into === 'A separate internal opening') {
+        t += ' to a separate internal opening' + (r.into_pos ? ' at ' + r.into_pos + ' o\u2019clock' : '');
+      } else if (r.into === 'The same internal opening') {
+        t += ' to the same internal opening';
+      } else if (r.into) {
+        t += ', with no internal opening found';
+      }
+      t += '.';
+      /* "It was draining seton" is not English — a seton is placed in a
+         tract, the tract is not the seton */
+      if (/seton/i.test(r.treat || '')) {
+        t += ' A ' + r.treat.charAt(0).toLowerCase() + r.treat.slice(1) + ' was placed in it.';
+      } else if (r.treat) {
+        t += ' It was ' + r.treat.charAt(0).toLowerCase() + r.treat.slice(1) + '.';
+      }
+      return t;
+    }).join(' ');
+  }
+
+  function repeatControl(f) {
+    var spec = repeatSpec(f.key);
+    var box = el('div', 'repeatbox');
+
+    function redraw() {
+      box.innerHTML = '';
+      var rows = repeatRows(f.key);
+      rows.forEach(function (row, ix) {
+        var card = el('div', 'repeatrow');
+        var head = el('div', 'repeathead');
+        head.appendChild(el('b', '', (spec.th || '') + ' ' + (ix + 2) +
+          ' <span class="en">' + (spec.en || 'entry') + ' ' + (ix + 2) + '</span>'));
+        var del = el('button', 'linkbtn danger',
+          '\u0e25\u0e1a / remove');
+        del.type = 'button';
+        del.onclick = function () {
+          if (!window.confirm('\u0e25\u0e1a' + (spec.th || '') + ' ' + (ix + 2) +
+            '? / Remove ' + (spec.en || 'entry') + ' ' + (ix + 2) + '?')) return;
+          rows.splice(ix, 1); repeatStore(f.key, rows); redraw(); saveDraft(); applyVisibility();
+        };
+        head.appendChild(del);
+        card.appendChild(head);
+
+        var grid = el('div', 'repeatgrid');
+        spec.fields.forEach(function (sf) {
+          var cell = el('div', 'repeatcell');
+          cell.appendChild(el('label', 'flabel', bilingual(sf.th, sf.en)));
+          var node;
+          if (sf.type === 'select') {
+            node = el('select');
+            node.appendChild(new Option('\u2014 \u0e40\u0e25\u0e37\u0e2d\u0e01 / select \u2014', ''));
+            (sf.options || []).forEach(function (o) { node.appendChild(new Option(o, o)); });
+          } else {
+            node = el('input');
+            node.type = sf.type === 'number' ? 'number' : 'text';
+            if (sf.type === 'number') node.inputMode = 'decimal';
+          }
+          node.value = row[sf.key] == null ? '' : row[sf.key];
+          node.oninput = node.onchange = function () {
+            row[sf.key] = node.value;
+            repeatStore(f.key, rows);
+            saveDraft();
+          };
+          cell.appendChild(node);
+          grid.appendChild(cell);
+        });
+        card.appendChild(grid);
+        box.appendChild(card);
+      });
+
+      var add = el('button', 'btn ghost',
+        '\uff0b \u0e40\u0e1e\u0e34\u0e48\u0e21' + (spec.th || '') + ' \u00b7 Add ' + (spec.en || 'entry'));
+      add.type = 'button';
+      add.onclick = function () {
+        rows.push({}); repeatStore(f.key, rows); redraw(); saveDraft();
+      };
+      box.appendChild(add);
+
+      if (!rows.length) {
+        box.appendChild(el('p', 'drafthint',
+          '\u0e16\u0e49\u0e32\u0e21\u0e35\u0e17\u0e32\u0e07\u0e40\u0e14\u0e34\u0e19\u0e40\u0e14\u0e35\u0e22\u0e27 \u0e44\u0e21\u0e48\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e23\u0e2d\u0e01\u0e2a\u0e48\u0e27\u0e19\u0e19\u0e35\u0e49' +
+          '<span class="en">Leave this empty for a single tract. Add one entry per extra tract; ' +
+          'several external openings joining one internal opening are recorded by giving each ' +
+          'its own entry and choosing \u201cthe same internal opening\u201d.</span>'));
+      }
+    }
+
+    redraw();
+    return box;
+  }
+
   function fieldControl(f) {
     var v = S.data[f.key];
     var wrap = el('div', 'field f-' + f.type);
@@ -604,6 +742,12 @@
     if (f.type === 'heading') {
       wrap.className = 'field-heading';
       wrap.innerHTML = '<h4>' + bilingual(f.th, f.en) + '</h4>';
+      return wrap;
+    }
+
+    if (f.type === 'repeat') {
+      body.appendChild(repeatControl(f));
+      wrap.appendChild(body);
       return wrap;
     }
 
@@ -1084,6 +1228,7 @@
   function valueOf(key) {
     var f = fieldByKey(key);
     if (!showIfOk(f)) return '';          /* the question was never asked */
+    if (f && f.type === 'repeat') return repeatText(key);
     var v = S.data[key];
     if (Array.isArray(v)) v = v.join('; ');
     if (v === true) return 'ใช่ / Yes';
@@ -1381,7 +1526,7 @@
   function requiredKeys() {
     var keys = REQUIRED_COMMON.slice();
     fieldsFor(S.category).forEach(function (f) {
-      if (f.type === 'heading' || f.type === 'checkbox') return;
+      if (f.type === 'heading' || f.type === 'checkbox' || f.type === 'repeat') return;
       if (/_other$/.test(f.key)) return;
       keys.push(f.key);
     });
