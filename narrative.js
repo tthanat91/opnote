@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bl',
+    build: '2026-08-02bm',
 
 
 
@@ -155,9 +155,9 @@
         { group: 'assoc', needs: ['he_associated'], text: 'Associated pathology was present: {he_associated|lc|and}.' }
       ],
 
-      others: [
-        { needs: ['ot_findings'], text: '{ot_findings}' }
-      ]
+      /* "Others" has no checklist to summarize, so the findings box is
+         typed by hand. An empty list here is what leaves it alone. */
+      others: []
     },
 
     /* =================================================================
@@ -979,10 +979,8 @@
         text: 'Under {anaesthesia}, the patient was placed in the {ot_position|lc} position and prepared and draped.' },
       { group: 'pos', needs: ['ot_position'],
         text: 'The patient was placed in the {ot_position|lc} position and prepared and draped.' },
-      { needs: ['ot_approach'], text: 'A {ot_approach|lc} approach was used.' },
       { needs: ['ot_procedure_name'], text: 'The procedure performed was {ot_procedure_name}.' },
-      { needs: ['findings'], text: 'On exploration: {findings}' },
-      { needs: ['ot_findings'], text: 'Additional findings: {ot_findings}' }
+      { needs: ['findings'], text: 'On exploration: {findings}' }
     ],
 
     /* appended to every category ------------------------------------- */

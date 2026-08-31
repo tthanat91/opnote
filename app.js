@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bl';
+  var APP_BUILD = '2026-08-02bm';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -616,7 +616,9 @@
          never filled automatically, and always editable afterwards */
       /* The findings box writes itself from the boxes above it, so it needs a
          note rather than a button — a button would imply it had not happened. */
-      if (f.key === 'findings') {
+      /* "Others" has no checklist behind the findings box, so the note
+         promising that it writes itself would be a lie there. */
+      if (f.key === 'findings' && (((window.NARRATIVE || {}).findings || {})[S.category] || []).length) {
         body.appendChild(el('p', 'drafthint',
           '\u0e02\u0e49\u0e2d\u0e04\u0e27\u0e32\u0e21\u0e19\u0e35\u0e49\u0e2a\u0e23\u0e49\u0e32\u0e07\u0e08\u0e32\u0e01\u0e2a\u0e34\u0e48\u0e07\u0e15\u0e23\u0e27\u0e08\u0e1e\u0e1a\u0e17\u0e35\u0e48\u0e15\u0e34\u0e4a\u0e01\u0e14\u0e49\u0e32\u0e19\u0e1a\u0e19 \u0e41\u0e01\u0e49\u0e44\u0e02\u0e44\u0e14\u0e49' +
           '<span class="en">Written automatically from the findings ticked above. ' +
@@ -624,7 +626,9 @@
           'clear the box to let it write itself again.</span>'));
       }
 
-      if (/_steps$/.test(f.key)) {
+      /* An "Others" case is whatever it is — there is no field set to draft
+         from, so the box is simply typed. */
+      if (/_steps$/.test(f.key) && S.category !== 'others') {
         var kind = 'steps';
         var draft = el('button', 'btn ghost draftbtn',
           '\u270E \u0e23\u0e48\u0e32\u0e07\u0e08\u0e32\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e17\u0e35\u0e48\u0e15\u0e34\u0e4a\u0e01 \u00b7 Draft from the fields ticked');
@@ -1848,6 +1852,23 @@
       b.innerHTML = bilingual(c.th, c.en);
       b.onclick = function () {
         if (S.category === c.key) return;
+        /* the picker is now visible on every step, so a mis-tap on step 3
+           could throw away drawings without warning */
+        var loss = [];
+        /* a blank sheet is not a loss — only sheets that carry marks */
+        if ((S.sheets || []).some(function (sh) {
+          return (sh.strokes || []).length || (sh.texts || []).length;
+        })) loss.push('\u0e23\u0e39\u0e1b\u0e27\u0e32\u0e14 / the drawings on the figure sheets');
+        /* an unticked checkbox is stored as false, which is not an answer */
+        if (fieldsFor(S.category).some(function (f) {
+          var v = S.data[f.key];
+          if (v == null || v === false) return false;
+          if (Array.isArray(v)) return v.length > 0;
+          return v === true || String(v).trim() !== '';
+        })) loss.push('\u0e04\u0e33\u0e15\u0e2d\u0e1a\u0e43\u0e19\u0e2b\u0e19\u0e49\u0e32 2 / the answers on the procedure page');
+        if (loss.length && !window.confirm(
+          '\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e0a\u0e19\u0e34\u0e14\u0e01\u0e32\u0e23\u0e1c\u0e48\u0e32\u0e15\u0e31\u0e14? / Change the kind of operation?\n\n' +
+          '\u0e08\u0e30\u0e25\u0e1a: / This will discard:\n\u2022 ' + loss.join('\n\u2022 '))) return;
         S.category = c.key;
         S.sheets = [];
         syncCategoryUI(); buildCategoryForm(); saveDraft();

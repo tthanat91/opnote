@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bl';
+  global.TEMPLATES_BUILD = '2026-08-02bm';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -526,9 +526,6 @@
     /* ---------------- OTHERS ---------------- */
     f('others', 'หัตถการ | Procedure', 'ot_procedure_name', 'ชื่อการผ่าตัด', 'Name of procedure', 'text'),
     f('others', 'หัตถการ | Procedure', 'ot_position', 'ท่าผู้ป่วย', 'Patient position', 'text'),
-    f('others', 'หัตถการ | Procedure', 'ot_approach', 'วิธีการผ่าตัด', 'Approach', 'radio',
-      'Open; Laparoscopic; Endoscopic; Perineal; Percutaneous; Other'),
-    f('others', 'หัตถการ | Procedure', 'ot_findings', 'สิ่งตรวจพบเพิ่มเติม', 'Additional findings', 'textarea'),
     f('others', 'รายละเอียดขั้นตอน | Operative steps', 'ot_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('others', 'รายละเอียดขั้นตอน | Operative steps', 'ot_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea')
   ];

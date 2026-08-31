@@ -120,7 +120,7 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .linkbtn.danger{color:#a12f2f}
 
 /* category picker */
-#catPick{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+#catPick{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px}
 .catcard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:14px;cursor:pointer;text-align:left;font-weight:600}
 .catcard.on{border-color:var(--brand);background:#e9f4f2;box-shadow:inset 0 0 0 1px var(--brand)}
@@ -411,6 +411,10 @@ table.flow td{padding-top:4px;vertical-align:top}
     <!-- =================== NEW / EDIT =================== -->
     <section class="view" id="view-new">
 
+      <!-- The kind of operation decides which fields the later steps show,
+           so it is asked first and stays visible while you work. -->
+      <div id="catPick"></div>
+
       <div class="steps">
         <button class="stepbtn on" data-step="1"><b>1 · ผู้ป่วย</b><small>Patient &amp; form</small></button>
         <button class="stepbtn" data-step="2"><b>2 · รายละเอียด</b><small>Procedure detail</small></button>
@@ -419,7 +423,6 @@ table.flow td{padding-top:4px;vertical-align:top}
       </div>
 
       <div class="step" data-step="1">
-        <div id="catPick"></div>
         <div id="commonFields"></div>
       </div>
 
@@ -643,12 +646,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bl"></script>
-<script src="figures.js?v=bl"></script>
-<script src="figures-original.js?v=bl"></script>
-<script src="letterhead.js?v=bl"></script>
-<script src="narrative.js?v=bl"></script>
-<script src="templates.js?v=bl"></script>
-<script src="app.js?v=bl"></script>
+<script src="config.js?v=bm"></script>
+<script src="figures.js?v=bm"></script>
+<script src="figures-original.js?v=bm"></script>
+<script src="letterhead.js?v=bm"></script>
+<script src="narrative.js?v=bm"></script>
+<script src="templates.js?v=bm"></script>
+<script src="app.js?v=bm"></script>
 </body>
 </html>
