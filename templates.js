@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bk';
+  global.TEMPLATES_BUILD = '2026-08-02bl';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -101,9 +101,11 @@
     f('colorectal', 'การเข้าถึง | Approach', 'cr_incision', 'แผลผ่าตัด', 'Incision', 'textarea',
       '', 'cr_approach != Laparoscopic'),
     f('colorectal', 'การเข้าถึง | Approach', 'cr_extraction', 'ตำแหน่งเอาชิ้นเนื้อออก', 'Specimen extraction site', 'radio',
-      'Midline (umbilical port site extended); Left lower quadrant; Pfannenstiel; Right lower quadrant (port site extended); Transanal (NOSE); Through the stoma site'),
+      'Midline (umbilical port site extended); Left lower quadrant; Pfannenstiel; Right lower quadrant (port site extended); Transanal (NOSE); Through the stoma site',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA && cr_approach != Open'),
     f('colorectal', 'การเข้าถึง | Approach', 'cr_r_extraction_length', 'ความยาวแผลเอาชิ้นเนื้อออก (ซม.)',
-      'Extraction incision length (cm)', 'number'),
+      'Extraction incision length (cm)', 'number', '',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA && cr_approach != Open'),
 
     f('colorectal', 'หัตถการ | Procedure', 'cr_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
       'Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; ' +
@@ -160,13 +162,13 @@
 
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_vascular', 'การผูกหลอดเลือด', 'Vascular ligation', 'radio',
       'High tie (at origin); Low tie; Not applicable',
-      'cr_procedure = Abdominoperineal resection; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
+      'cr_procedure = Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_ima', 'การผูกหลอดเลือด IMA', 'Inferior mesenteric artery', 'radio',
       'High tie (at origin); Low tie; Not applicable',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Abdominoperineal resection; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_imv', 'การผูกหลอดเลือด IMV', 'Inferior mesenteric vein', 'radio',
       'High tie (below the pancreas); Low tie (at the level of the IMA); Not applicable',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Abdominoperineal resection; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_lymphadenectomy', 'การเลาะต่อมน้ำเหลือง', 'Lymphadenectomy', 'radio',
       'D1; D2; D3 / CME; Not applicable',
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
@@ -177,7 +179,7 @@
       'En-bloc resection — specify', 'text', '', 'cr_enbloc = Yes'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_flexure', 'mobilize splenic flexure', 'Splenic flexure mobilization', 'radio',
       'Yes; No; Not applicable',
-      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection; Hartmann procedure; Reversal of Hartmann; Subtotal colectomy; Total colectomy; Total proctocolectomy; Restorative proctocolectomy with IPAA'),
     f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_splenic_approach', 'วิธีเลาะ splenic flexure',
       'Splenic flexure — approach', 'radio',
       'Inferior; Anterior; Lateral; Combined inferior, anterior and lateral',
@@ -194,9 +196,11 @@
       'End-to-end; Side-to-side; End-to-side; Side-to-end; Colonic J-pouch',
       'cr_procedure != Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_diverting', 'ทวารเทียมชั่วคราว', 'Diverting stoma', 'radio',
-      'None; Loop ileostomy; Loop colostomy'),
+      'None; Loop ileostomy; Loop colostomy',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy; Restorative proctocolectomy with IPAA; Reversal of Hartmann; Stoma closure'),
     f('colorectal', 'การต่อลำไส้ | Anastomosis', 'cr_perfusion', 'ประเมินเลือดมาเลี้ยง', 'Perfusion assessment', 'radio',
-      'Clinical only; ICG fluorescence; Not assessed'),
+      'Clinical only; ICG fluorescence; Not assessed',
+      'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy; Restorative proctocolectomy with IPAA; Reversal of Hartmann; Stoma closure'),
 
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'radio',
@@ -261,10 +265,10 @@
     /* ---------------- LEFT-SIDED AND RECTAL ---------------- */
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_approach', 'แนวทางเข้าหา mesentery', 'Approach to the mesentery', 'radio',
       'Medial-to-lateral; Lateral-to-medial; Combined; Retroperitoneal-first',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Abdominoperineal resection; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_vessel_control', 'วิธีตัดหลอดเลือด', 'Vessel control', 'checklist',
       'Energy device; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Suture ligation; Vascular stapler',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Abdominoperineal resection; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_sra', 'หลอดเลือด superior rectal', 'Superior rectal artery', 'radio',
       'Divided; Preserved', 'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_imv_preserve', 'เก็บ IMV ไว้', 'Inferior mesenteric vein preserved', 'radio',
@@ -279,9 +283,9 @@
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_firings', 'จำนวนครั้งที่ยิง', 'Number of stapler firings', 'number', '',
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_circular', 'ขนาด circular stapler', 'Circular stapler size', 'radio',
-      '25 mm; 28 mm; 29 mm; 31 mm; 33 mm; Not used', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      '25 mm; 28 mm; 29 mm; 31 mm; 33 mm; Not used', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_doughnuts', 'Doughnuts', 'Anastomotic doughnuts', 'radio',
-      'Complete; Incomplete — reinforced; Not applicable', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'Complete; Incomplete — reinforced; Not applicable', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout', 'ล้างลำไส้ส่วนปลายก่อนตัด', 'Rectal washout before transection', 'radio',
       'Yes; No', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout_solution', 'น้ำยาที่ใช้ล้าง', 'Washout solution', 'radio',
@@ -293,11 +297,11 @@
       'Endoscopic bulldog clamp; Right-angled clamp; Umbilical tape; None',
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_leak_method', 'วิธีทดสอบรอยรั่ว', 'Air-leak test method', 'radio',
-      'Colonoscopic; Rigid proctoscope; Bulb syringe; Not performed', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'Colonoscopic; Rigid proctoscope; Bulb syringe; Not performed', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy; Reversal of Hartmann; Stoma closure'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_leak_test',
       'ผลการทดสอบรอยรั่ว', 'Air-leak test result', 'radio',
       'Negative; Positive – repaired; Not performed',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy; Reversal of Hartmann; Stoma closure'),
 
     /* ---------------- RECTAL DETAIL ---------------- */
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_tme', 'ขอบเขตการเลาะ mesorectum', 'Extent of mesorectal excision', 'radio',
@@ -309,9 +313,9 @@
       'Mesorectal division below the tumor (cm)', 'number', '',
       'cr_rect_tme = Tumor-specific (TSME)'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_isr', 'Intersphincteric resection', 'Intersphincteric resection', 'radio',
-      'None; Partial; Subtotal; Total', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+      'None; Partial; Subtotal; Total', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_level', 'ระดับรอยต่อจากขอบทวาร (ซม.)', 'Anastomotic level from the anal verge (cm)', 'number', '',
-      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+      'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis'),
 
     /* ---------------- PERINEAL PHASE ---------------- */
     f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_position', 'ท่าในช่วงฝีเย็บ', 'Position for the perineal phase', 'radio',
@@ -338,15 +342,15 @@
     /* ---------------- STOMA FORMATION ---------------- */
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_site', 'ตำแหน่งทวารเทียม', 'Stoma site', 'radio',
       'Right iliac fossa; Left iliac fossa; Right upper quadrant; Left upper quadrant; Through the midline wound',
-      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting = Loop ileostomy; Loop colostomy'),
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy; Abdominoperineal resection; Hartmann procedure || cr_diverting = Loop ileostomy; Loop colostomy'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_marked', 'ทำเครื่องหมายก่อนผ่าตัด', 'Site marked pre-operatively', 'radio',
-      'Yes, by a stoma nurse; Yes, by the surgeon; No', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting = Loop ileostomy; Loop colostomy'),
+      'Yes, by a stoma nurse; Yes, by the surgeon; No', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy; Abdominoperineal resection; Hartmann procedure || cr_diverting = Loop ileostomy; Loop colostomy'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_trephine', 'วิธีเปิดผนังหน้าท้อง', 'Trephine', 'radio',
-      'Circular skin disc; Transverse incision', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting = Loop ileostomy; Loop colostomy'),
+      'Circular skin disc; Transverse incision', 'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy; Abdominoperineal resection; Hartmann procedure || cr_diverting = Loop ileostomy; Loop colostomy'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_rod', 'ใส่แท่งรอง', 'Supporting rod', 'radio', 'Yes; No',
-      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting = Loop ileostomy; Loop colostomy'),
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy; Abdominoperineal resection; Hartmann procedure || cr_diverting = Loop ileostomy; Loop colostomy'),
     f('colorectal', 'ทวารเทียม | Stoma formation', 'cr_st_suture', 'ไหมเย็บ mucocutaneous', 'Mucocutaneous suture', 'text', '',
-      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy || cr_diverting = Loop ileostomy; Loop colostomy'),
+      'cr_procedure = Loop ileostomy; Loop colostomy; End colostomy; End ileostomy; Abdominoperineal resection; Hartmann procedure || cr_diverting = Loop ileostomy; Loop colostomy'),
 
     /* ---------------- STOMA CLOSURE ---------------- */
     f('colorectal', 'ปิดทวารเทียม | Stoma closure', 'cr_sc_type', 'ทวารเทียมที่ปิด', 'Stoma being closed', 'radio',

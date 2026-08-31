@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bk';
+  var APP_BUILD = '2026-08-02bl';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -540,9 +540,13 @@
   /* Two rules joined by || show the field when EITHER holds. A defunctioning
      stoma is the case that needs it: the stoma questions belong on the note
      whether the stoma is the operation or an addition to a resection. */
+  /* && binds tighter than ||, so "a = 1 && b != 2 || c = 3" reads as
+     "(a and b) or c". The case that needs it: the extraction site is asked
+     for a resection, but not when the abdomen is already open. */
   function parseShowIf(rule) {
-    return String(rule || '').split('||').map(parseOneRule)
-      .filter(function (r) { return r; });
+    return String(rule || '').split('||').map(function (grp) {
+      return grp.split('&&').map(parseOneRule).filter(function (r) { return r; });
+    }).filter(function (g) { return g.length; });
   }
 
   /* Deliberately reads S.data, not the DOM, so the printout and the draft
@@ -558,9 +562,9 @@
 
   function showIfOk(f) {
     if (!f || !f.showif) return true;
-    var rules = parseShowIf(f.showif);
-    if (!rules.length) return true;       /* an unreadable rule never hides a field */
-    return rules.some(ruleHolds);
+    var groups = parseShowIf(f.showif);
+    if (!groups.length) return true;      /* an unreadable rule never hides a field */
+    return groups.some(function (g) { return g.every(ruleHolds); });
   }
 
   /* Show or hide what the current answers call for. A section whose every
@@ -980,6 +984,23 @@
     return out;
   }
 
+  /* A block lists { use: 'name' } wherever a run of sentences is shared with
+     another operation — the APR, the Hartmann and the anterior resection all
+     pull in the same left-sided vessel sentences. Expanding the names here
+     means each sentence exists once in narrative.js and is corrected once.
+     The depth guard is for a part that names itself by mistake. */
+  function expandLines(lines, depth) {
+    var parts = (window.NARRATIVE || {}).parts || {}, out = [];
+    (lines || []).forEach(function (l) {
+      if (!l) return;
+      if (l.use) {
+        if ((depth || 0) > 4) return;
+        out = out.concat(expandLines(parts[l.use] || [], (depth || 0) + 1));
+      } else out.push(l);
+    });
+    return out;
+  }
+
   function buildNarrative(cat) {
     var N = window.NARRATIVE || {};
     var block = matchingSteps();
@@ -988,7 +1009,7 @@
        and closure, so it replaces the short field-based list rather than
        being added to it. The common tail still follows. */
     var lines = block
-      ? (block.lines || []).concat(N.common || [])
+      ? expandLines(block.lines).concat(N.common || [])
       : (N[cat] || []).concat(N.common || []);
     var numbered = !!block, used = {};
     var out = renderSentences(lines, used).map(function (t, i) {
