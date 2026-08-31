@@ -303,13 +303,17 @@ table.idbar td.wide{width:32%}
 /* while a page is being photographed for the PDF it must look like paper,
    not like a card floating on the preview background */
 .pdfshot{box-shadow:none !important;margin:0 !important}
-/* 1.7x the previous 33 mm. At this size the three views fill the width of
-   the box, so the set is a band across the top rather than a float, and the
-   findings paragraph runs underneath it at full width. */
-.findbox .figset{margin:0 0 5px;width:100%;text-align:center}
-.findbox .figset figure.fig{float:none;display:inline-block;width:56mm;margin:0 .5mm}
-.findbox .figset figure.fig img{max-width:56mm;max-height:56mm}
-.findbox .figset figcaption{font-size:11px;line-height:1.15}
+/* The usable width inside the box is about 163 mm — the page is 186 mm wide
+   less its own padding, less the box padding. Three 56 mm views plus their
+   margins came to 171 mm and wrapped onto a second row, which pushed the
+   paragraph off the bottom. A flex row that is forbidden to wrap keeps the
+   three side by side whatever happens, and 44 mm leaves the lower half of
+   the box for the text. */
+.findbox .figset{display:flex;flex-wrap:nowrap;justify-content:center;
+  align-items:flex-start;gap:2mm;margin:0 0 5px;width:100%}
+.findbox .figset figure.fig{float:none;flex:0 1 44mm;min-width:0;margin:0;text-align:center}
+.findbox .figset figure.fig img{max-width:100%;max-height:44mm}
+.findbox .figset figcaption{font-size:10px;line-height:1.15}
 /* and the box grows to hold the band plus the paragraph */
 .findbox.tall .bbody{height:100mm}
 .dsec{margin-bottom:8px;break-inside:avoid}
@@ -690,12 +694,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bu"></script>
-<script src="figures.js?v=bu"></script>
-<script src="figures-original.js?v=bu"></script>
-<script src="letterhead.js?v=bu"></script>
-<script src="narrative.js?v=bu"></script>
-<script src="templates.js?v=bu"></script>
-<script src="app.js?v=bu"></script>
+<script src="config.js?v=bv"></script>
+<script src="figures.js?v=bv"></script>
+<script src="figures-original.js?v=bv"></script>
+<script src="letterhead.js?v=bv"></script>
+<script src="narrative.js?v=bv"></script>
+<script src="templates.js?v=bv"></script>
+<script src="app.js?v=bv"></script>
 </body>
 </html>
