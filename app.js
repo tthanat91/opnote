@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bp';
+  var APP_BUILD = '2026-08-02br';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1729,10 +1729,11 @@
         '<figcaption>' + esc(n > 1 ? (f.short || f.en || '') : (f.en || '')) +
         '</figcaption></figure>';
     }
+    /* no caption under the set: three labelled views sitting together in
+       one frame already say they belong together, and the line cost a row
+       of height that the figures themselves can use */
     if (n === 1) return figs;
-    return '<div class="figset">' + figs +
-      '<div class="setcap">\u0e2d\u0e48\u0e32\u0e19\u0e17\u0e31\u0e49\u0e07\u0e2a\u0e32\u0e21\u0e20\u0e32\u0e1e\u0e1b\u0e23\u0e30\u0e01\u0e2d\u0e1a\u0e01\u0e31\u0e19 ' +
-      '<i>the three views are to be read together</i></div></div>';
+    return '<div class="figset">' + figs + '</div>';
   }
 
   function buildDocument(pngs) {

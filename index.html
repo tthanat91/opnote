@@ -285,7 +285,7 @@ table.idbar td.wide{width:32%}
    half a page, and the figures below move up to fill what is left */
 /* a fixed window, not a growing one — the text is fitted to it in
    app.js so the printed form is the same shape every time */
-.findbox .bbody{padding:6px 8px;height:62mm;overflow:hidden}
+.findbox .bbody{padding:6px 8px;height:78mm;overflow:hidden}
 .findbox .bbody .speclab{font-weight:700;font-size:11.5px;margin-top:5px;
   border-top:1px dotted #999;padding-top:3px}
 .findbox .bbody .speclab i{font-weight:400;color:#555;font-size:10.5px}
@@ -297,12 +297,13 @@ table.idbar td.wide{width:32%}
 .findbox .bbody::after{content:'';display:block;clear:both}
 /* three small views floated together, so the paragraph that interprets them
    wraps around the set instead of around each picture separately */
-.findbox .figset{float:right;margin:0 0 4px 10px;width:84mm;text-align:center}
-.findbox .figset figure.fig{float:none;display:inline-block;width:26mm;margin:0 .5mm}
-.findbox .figset figure.fig img{max-width:26mm;max-height:26mm}
-.findbox .figset figcaption{font-size:8.5px;line-height:1.15}
-.findbox .figset .setcap{font-size:8.5px;color:#444;margin-top:1px}
-.findbox .figset .setcap i{color:#666}
+.printhint{border-left:3px solid var(--brand);padding:6px 10px;background:#f4f8f7;
+  border-radius:0 8px 8px 0;font-size:.8rem;line-height:1.45;margin:0 0 6px}
+@media print{.printhint{display:none}}
+.findbox .figset{float:right;margin:0 0 4px 10px;width:102mm;text-align:center}
+.findbox .figset figure.fig{float:none;display:inline-block;width:33mm;margin:0 .5mm}
+.findbox .figset figure.fig img{max-width:33mm;max-height:33mm}
+.findbox .figset figcaption{font-size:9.5px;line-height:1.15}
 .dsec{margin-bottom:8px;break-inside:avoid}
 .dsec h5{background:#eee;border-left:3px solid #000;padding:2px 7px;font-size:12px;margin:8px 0 3px}
 .dsec h5 i{font-weight:400;color:#555;font-size:10.5px}
@@ -509,6 +510,19 @@ table.flow td{padding-top:4px;vertical-align:top}
             <button class="btn ghost" id="btnRefresh">รีเฟรชตัวอย่าง · Refresh preview</button>
             <button class="btn alt" id="btnSave">บันทึก / Save</button>
           </p>
+          <!-- The URL and date strip along the top and bottom of a printed
+               page is drawn by the browser itself, outside the document, so
+               no stylesheet here can remove it. It is a checkbox in the print
+               dialog, and this note is the only way to reach it. -->
+          <p class="muted printhint">
+            ในหน้าต่างพิมพ์ ให้เอาเครื่องหมายถูกออกจาก <b>Print headers and footers</b>
+            (Safari) หรือ <b>Headers and footers</b> (Chrome) เพื่อไม่ให้มีที่อยู่เว็บและวันที่ติดมาบนกระดาษ
+            และตั้ง <b>Margins</b> เป็น <b>None</b> กับ <b>Scale 100%</b><br>
+            <span class="en">In the print dialog, untick <b>Print headers and footers</b>
+            (Safari) or <b>Headers and footers</b> (Chrome) — that strip is added by the
+            browser, not by this form, so it cannot be removed from here. Set
+            <b>Margins</b> to <b>None</b> and <b>Scale</b> to <b>100%</b>.</span>
+          </p>
         </div>
         <div id="previewBox"></div>
       </div>
@@ -663,12 +677,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bp"></script>
-<script src="figures.js?v=bp"></script>
-<script src="figures-original.js?v=bp"></script>
-<script src="letterhead.js?v=bp"></script>
-<script src="narrative.js?v=bp"></script>
-<script src="templates.js?v=bp"></script>
-<script src="app.js?v=bp"></script>
+<script src="config.js?v=br"></script>
+<script src="figures.js?v=br"></script>
+<script src="figures-original.js?v=br"></script>
+<script src="letterhead.js?v=br"></script>
+<script src="narrative.js?v=br"></script>
+<script src="templates.js?v=br"></script>
+<script src="app.js?v=br"></script>
 </body>
 </html>
