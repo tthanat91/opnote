@@ -185,6 +185,10 @@ canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cu
 .photo{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}
 .photo img{width:100%;height:120px;object-fit:cover;border-radius:7px;display:block;margin-bottom:6px}
 .photo input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:.8rem}
+/* annotate on the left, remove on the right, so the destructive one is not
+   where the thumb lands after typing a caption */
+.photo .linkbtn{margin-top:6px}
+.photo .linkbtn+.linkbtn{float:right}
 
 /* ============================ buttons ============================ */
 .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:11px 20px;
@@ -694,12 +698,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bx"></script>
-<script src="figures.js?v=bx"></script>
-<script src="figures-original.js?v=bx"></script>
-<script src="letterhead.js?v=bx"></script>
-<script src="narrative.js?v=bx"></script>
-<script src="templates.js?v=bx"></script>
-<script src="app.js?v=bx"></script>
+<script src="config.js?v=by"></script>
+<script src="figures.js?v=by"></script>
+<script src="figures-original.js?v=by"></script>
+<script src="letterhead.js?v=by"></script>
+<script src="narrative.js?v=by"></script>
+<script src="templates.js?v=by"></script>
+<script src="app.js?v=by"></script>
 </body>
 </html>

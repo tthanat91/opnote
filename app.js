@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02m';
+  var EXPECTED_BUILD = '2026-08-02n';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bx';
+  var APP_BUILD = '2026-08-02by';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -57,7 +57,7 @@
 
   /* =================== state =================== */
 
-  var S = newNote();
+  var S = newNote();   /* S.drawKind says which picture the pen is on */
 
   function newNote() {
     return {
@@ -68,6 +68,7 @@
       sheets: [],
       photos: [],
       active: 0,
+      drawKind: 'sheet',
       mode: 'new'
     };
   }
@@ -1273,6 +1274,35 @@
 
   function activeSheet() { return S.sheets[S.active] || null; }
 
+  /* The drawing window used to be wired straight to a figure sheet. A
+     photograph of the specimen wants exactly the same pen, so the window now
+     asks this what it is pointed at — a diagram from the bank, or one of the
+     uploaded photographs — and everything downstream is the same code. */
+  function drawTarget() {
+    if (S.drawKind === 'photo') {
+      var p = S.photos[S.active];
+      if (!p) return null;
+      if (!p.strokes) p.strokes = [];
+      if (!p.texts) p.texts = [];
+      return {
+        bg: p.dataUrl || p.url, w: p.w || 1000, h: p.h || 750,
+        strokes: p.strokes, texts: p.texts,
+        title: p.caption || p.name || 'photograph'
+      };
+    }
+    var sh = activeSheet();
+    if (!sh) return null;
+    var f = window.FIGURES[sh.fig] || { w: 1000, h: 750 };
+    return {
+      bg: figSvgUrl(sh.fig), w: f.w, h: f.h,
+      strokes: sh.strokes, texts: sh.texts, title: f.en
+    };
+  }
+
+  function hasInk(o) {
+    return !!o && (((o.strokes || []).length) || ((o.texts || []).length));
+  }
+
   function addSheet(figKey) {
     S.sheets.push({ fig: figKey, strokes: [], texts: [] });
     S.active = S.sheets.length - 1;
@@ -1330,18 +1360,32 @@
     (sh.texts || []).forEach(function (t) { drawTextItem(c, t, w, h); });
   }
 
-  function openDraw(i) {
+  function openDraw(i, kind) {
+    S.drawKind = kind || 'sheet';
     S.active = i;
-    var fig = window.FIGURES[S.sheets[i].fig];
-    $('#drawTitle').textContent = (i + 1) + '. ' + fig.en;
+    var t = drawTarget();
+    if (!t) return;
+    $('#drawTitle').textContent = (S.drawKind === 'photo'
+      ? '\u0e23\u0e39\u0e1b\u0e16\u0e48\u0e32\u0e22 \u00b7 Photo ' : '') + (i + 1) + '. ' + (t.title || '');
+    /* "remove this figure sheet" would delete the wrong thing on a photo */
+    $('#toolDeleteSheet').style.display = S.drawKind === 'photo' ? 'none' : '';
     $('#drawModal').classList.remove('hidden');
-    mountCanvas();
+    /* a photograph has whatever shape the camera gave it, and a note reopened
+       from the Sheet has not been measured yet */
+    if (S.drawKind === 'photo' && !S.photos[i].w) {
+      loadImage(t.bg).then(function (im) {
+        S.photos[i].w = im.naturalWidth || im.width || 1000;
+        S.photos[i].h = im.naturalHeight || im.height || 750;
+        mountCanvas();
+      }, mountCanvas);
+    } else mountCanvas();
   }
 
   function closeDraw() {
     $('#drawModal').classList.add('hidden');
     saveDraft();
     renderSheetTabs();          /* the previews pick up what was just drawn */
+    renderPhotos();
   }
 
   function renderFigPicker() {
@@ -1359,25 +1403,27 @@
 
   function mountCanvas() {
     var host = $('#canvasHost');
-    var sh = activeSheet();
-    if (!sh) { host.innerHTML = '<p class="muted">ยังไม่มีรูป — กด “เพิ่มรูป” / No figure yet — tap “Add figure”.</p>'; return; }
-    var fig = window.FIGURES[sh.fig];
+    var t = drawTarget();
+    if (!t) { host.innerHTML = '<p class="muted">ยังไม่มีรูป — กด “เพิ่มรูป” / No figure yet — tap “Add figure”.</p>'; return; }
     host.innerHTML = '';
     var stage = el('div', 'stage');
-    stage.style.aspectRatio = fig.w + ' / ' + fig.h;
-    stage.style.backgroundImage = 'url("' + figSvgUrl(sh.fig) + '")';
+    stage.style.aspectRatio = t.w + ' / ' + t.h;
+    stage.style.backgroundImage = 'url("' + t.bg + '")';
+    stage.style.backgroundSize = 'contain';
+    stage.style.backgroundRepeat = 'no-repeat';
+    stage.style.backgroundPosition = 'center';
     cv = el('canvas', 'ink');
     stage.appendChild(cv);
     host.appendChild(stage);
-    sizeCanvas(fig);
+    sizeCanvas(t);
     bindPointer();
   }
 
-  function sizeCanvas(fig) {
+  function sizeCanvas(t) {
     var rect = cv.parentNode.getBoundingClientRect();
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     cv.width = Math.max(2, Math.round(rect.width * dpr));
-    cv.height = Math.max(2, Math.round(rect.width * (fig.h / fig.w) * dpr));
+    cv.height = Math.max(2, Math.round(rect.width * (t.h / t.w) * dpr));
     ctx = cv.getContext('2d');
     redraw();
   }
@@ -1409,11 +1455,11 @@
   }
 
   function redraw() {
-    var sh = activeSheet();
-    if (!ctx || !sh) return;
+    var d = drawTarget();
+    if (!ctx || !d) return;
     ctx.clearRect(0, 0, cv.width, cv.height);
-    sh.strokes.forEach(function (st) { drawStroke(ctx, st, cv.width, cv.height); });
-    sh.texts.forEach(function (t) { drawTextItem(ctx, t, cv.width, cv.height); });
+    d.strokes.forEach(function (st) { drawStroke(ctx, st, cv.width, cv.height); });
+    d.texts.forEach(function (t) { drawTextItem(ctx, t, cv.width, cv.height); });
   }
 
   function pos(e) {
@@ -1424,7 +1470,7 @@
   function bindPointer() {
     cv.style.touchAction = 'none';
     cv.addEventListener('pointerdown', function (e) {
-      var sh = activeSheet(); if (!sh) return;
+      var sh = drawTarget(); if (!sh) return;
       if (tool.mode === 'text') {
         var txt = window.prompt('ข้อความ / Text:');
         if (txt) {
@@ -1482,6 +1528,33 @@
     });
   }
 
+  /* The printed note and the copy filed in Drive both want the photograph
+     with its annotation burned in. The original is never touched — it is
+     what the specimen looked like, and it is uploaded unchanged. */
+  function exportPhotoInk(p) {
+    var src = p.dataUrl || p.url;
+    if (!src) return Promise.resolve('');
+    if (!hasInk(p)) { p.inkUrl = ''; return Promise.resolve(src); }
+    return loadImage(src).then(function (img) {
+      var nw = img.naturalWidth || img.width || 1200;
+      var nh = img.naturalHeight || img.height || 900;
+      var w = Math.min(1600, nw), h = Math.round(w * nh / nw);
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var x = c.getContext('2d');
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h);
+      x.drawImage(img, 0, 0, w, h);
+      p.strokes.forEach(function (st) { drawStroke(x, st, w, h); });
+      p.texts.forEach(function (t) { drawTextItem(x, t, w, h); });
+      p.inkUrl = c.toDataURL('image/jpeg', 0.92);
+      return p.inkUrl;
+    }, function () { p.inkUrl = ''; return src; });
+  }
+
+  function exportAllPhotos() {
+    return Promise.all(S.photos.map(function (p) { return exportPhotoInk(p); }));
+  }
+
   function exportAllSheets() {
     return Promise.all(S.sheets.map(function (sh) { return exportSheet(sh); }));
   }
@@ -1498,7 +1571,14 @@
             var c = document.createElement('canvas');
             c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
             c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-            S.photos.push({ name: file.name, caption: '', dataUrl: c.toDataURL('image/jpeg', 0.85) });
+            S.photos.push({
+              name: file.name, caption: '',
+              dataUrl: c.toDataURL('image/jpeg', 0.85),
+              /* measured now so the annotation canvas opens at the right
+                 shape without having to load the picture again */
+              w: c.width, h: c.height,
+              strokes: [], texts: []
+            });
             res();
           }).catch(res);
         };
@@ -1517,10 +1597,20 @@
       var cap = el('input');
       cap.type = 'text'; cap.placeholder = 'คำบรรยาย / caption'; cap.value = p.caption || '';
       cap.oninput = function () { p.caption = cap.value; saveDraft(); };
+      var draw = el('button', 'linkbtn',
+        '\u270e ' + (hasInk(p) ? ((p.strokes.length + p.texts.length) +
+          ' \u0e23\u0e2d\u0e22 / marks') : '\u0e27\u0e32\u0e14 / annotate'));
+      draw.type = 'button';
+      draw.onclick = function () { openDraw(i, 'photo'); };
       var del = el('button', 'linkbtn danger', 'ลบ / remove');
       del.type = 'button';
-      del.onclick = function () { S.photos.splice(i, 1); renderPhotos(); saveDraft(); };
-      card.appendChild(cap); card.appendChild(del);
+      del.onclick = function () {
+        if (hasInk(p) && !window.confirm(
+          '\u0e25\u0e1a\u0e23\u0e39\u0e1b\u0e19\u0e35\u0e49\u0e1e\u0e23\u0e49\u0e2d\u0e21\u0e20\u0e32\u0e1e\u0e27\u0e32\u0e14\u0e1a\u0e19\u0e19\u0e31\u0e49\u0e19? / ' +
+          'Remove this photograph and the drawing on it?')) return;
+        S.photos.splice(i, 1); renderPhotos(); saveDraft();
+      };
+      card.appendChild(cap); card.appendChild(draw); card.appendChild(del);
       box.appendChild(card);
     });
     if (!S.photos.length) box.appendChild(el('p', 'muted', 'ยังไม่มีรูปถ่าย / No photos attached.'));
@@ -1681,7 +1771,7 @@
         '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>');
     }
     S.photos.forEach(function (p) {
-      cells.push('<figure class="pph"><img src="' + (p.dataUrl || p.url) + '" alt="">' +
+      cells.push('<figure class="pph"><img src="' + (p.inkUrl || p.dataUrl || p.url) + '" alt="">' +
         '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>');
     });
     return imageTable(cells, 'figs');
@@ -1944,7 +2034,7 @@
 
   function refreshPreview() {
     harvest();
-    return exportAllSheets().then(function (pngs) {
+    return exportAllPhotos().then(exportAllSheets).then(function (pngs) {
       var html = buildDocument(pngs);
       $('#printRoot').innerHTML = html;
       $('#previewBox').innerHTML = html;
@@ -1965,14 +2055,27 @@
       category: S.category,
       categoryLabel: categoryLabel(),
       data: S.data,
-      sheets: S.sheets.map(function (sh) {
-        return { fig: sh.fig, strokes: sh.strokes, texts: sh.texts };
-      }),
+      /* the ink on the photographs travels with the ink on the figures, in
+         the one column that is already parked in Drive when it grows large.
+         An older note is a bare array; both shapes are read back. */
+      sheets: {
+        v: 2,
+        sheets: S.sheets.map(function (sh) {
+          return { fig: sh.fig, strokes: sh.strokes, texts: sh.texts };
+        }),
+        photoInk: S.photos.map(function (p) {
+          return { strokes: p.strokes || [], texts: p.texts || [] };
+        })
+      },
       figures: pngs.map(function (d, i) {
         return { name: 'figure' + (i + 1) + '_' + S.sheets[i].fig + '.png', dataUrl: d };
       }),
       photos: S.photos.filter(function (p) { return p.dataUrl; }).map(function (p, i) {
-        return { name: 'photo' + (i + 1) + '.jpg', caption: p.caption || '', dataUrl: p.dataUrl };
+        var o = { name: 'photo' + (i + 1) + '.jpg', caption: p.caption || '', dataUrl: p.dataUrl };
+        /* the annotated copy goes up as a second file, -drawing, beside the
+           untouched original */
+        if (hasInk(p) && p.inkUrl) o.drawnDataUrl = p.inkUrl;
+        return o;
       })
     };
   }
@@ -2092,15 +2195,19 @@
       S.id = n.id; S.createdAt = n.createdAt;
       S.category = n.category || 'colorectal';
       S.data = n.data || {};
-      S.sheets = n.sheets || [];
+      var ink = n.sheets || [];
+      S.sheets = Array.isArray(ink) ? ink : (ink.sheets || []);
+      var photoInk = Array.isArray(ink) ? [] : (ink.photoInk || []);
       /* the server sends each photograph back as base64 as well as a Drive
          link; dropping the base64 here was why a reopened note printed
          without its photographs — a Drive link cannot be drawn into the
          page, and would taint the canvas even if it could */
-      S.photos = (n.photoUrls || []).map(function (u) {
+      S.photos = (n.photoUrls || []).map(function (u, i) {
+        var k = photoInk[i] || {};
         return {
-          url: u.url, dataUrl: u.dataUrl || '',
-          caption: u.caption || '', name: u.name || ''
+          url: u.url, dataUrl: u.dataUrl || '', drawnUrl: u.drawnUrl || '',
+          caption: u.caption || '', name: u.name || '',
+          strokes: k.strokes || [], texts: k.texts || []
         };
       });
       S.mode = editable ? 'edit' : 'view';
@@ -2345,13 +2452,13 @@
     $('#toolText').onclick = function () { tool.mode = 'text'; markTool(this); };
     function markTool(b) { $$('.toolbtn').forEach(function (x) { x.classList.toggle('on', x === b); }); }
     $('#toolUndo').onclick = function () {
-      var sh = activeSheet(); if (!sh) return;
+      var sh = drawTarget(); if (!sh) return;
       if (sh.strokes.length) sh.strokes.pop();
       else if (sh.texts.length) sh.texts.pop();
       redraw(); saveDraft();
     };
     $('#toolClear').onclick = function () {
-      var sh = activeSheet(); if (!sh) return;
+      var sh = drawTarget(); if (!sh) return;
       if (!window.confirm('ล้างภาพวาดทั้งหมดในแผ่นนี้? / Clear all drawing on this sheet?')) return;
       sh.strokes = []; sh.texts = []; redraw(); saveDraft();
     };
@@ -2515,8 +2622,8 @@
     window.addEventListener('online', function () { updateConnBadge(); flushQueue(); });
     window.addEventListener('offline', updateConnBadge);
     window.addEventListener('resize', function () {
-      var sh = activeSheet();
-      if (sh && cv && cv.parentNode) sizeCanvas(window.FIGURES[sh.fig]);
+      var t = drawTarget();
+      if (t && cv && cv.parentNode) sizeCanvas(t);
     });
   }
 
