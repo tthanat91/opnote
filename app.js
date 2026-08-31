@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02l';
+  var EXPECTED_BUILD = '2026-08-02m';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bw';
+  var APP_BUILD = '2026-08-02bx';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -2093,8 +2093,15 @@
       S.category = n.category || 'colorectal';
       S.data = n.data || {};
       S.sheets = n.sheets || [];
+      /* the server sends each photograph back as base64 as well as a Drive
+         link; dropping the base64 here was why a reopened note printed
+         without its photographs — a Drive link cannot be drawn into the
+         page, and would taint the canvas even if it could */
       S.photos = (n.photoUrls || []).map(function (u) {
-        return { url: u.url, caption: u.caption || '', name: u.name || '' };
+        return {
+          url: u.url, dataUrl: u.dataUrl || '',
+          caption: u.caption || '', name: u.name || ''
+        };
       });
       S.mode = editable ? 'edit' : 'view';
       syncCategoryUI();
