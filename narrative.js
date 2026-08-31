@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bm',
+    build: '2026-08-02bn',
 
 
 
@@ -143,8 +143,7 @@
         { needs: ['fi_features'], text: 'Additional features were noted: {fi_features|lc|and}.' },
         { needs: ['fi_sphincter_involved'], text: 'Approximately {fi_sphincter_involved}% of the external sphincter was involved by the tract.' },
         { needs: ['fi_aetiology'], text: 'The etiology was {fi_aetiology|lc}.' },
-        { needs: ['fi_continence'], text: 'The pre-operative Wexner continence score was {fi_continence}.' },
-        { needs: ['fi_eua'], text: '{fi_eua}' }
+        { needs: ['fi_continence'], text: 'The pre-operative Wexner continence score was {fi_continence}.' }
       ],
 
       hemorrhoid: [
@@ -704,6 +703,211 @@
         { text: 'The anastomosis was inspected and was patent, well perfused and without tension. The mesenteric defect was «closed».' }
       ],
 
+      /* ---- perianal fistula ----------------------------------------
+         fi_procedure is a checklist, so a case may be "drainage of
+         abscess AND draining seton" — the usual pattern. Each procedure
+         therefore carries its OWN group prefix rather than sharing one,
+         so ticking two prints two accounts instead of the first one only. */
+      fi_setup: [
+        { group: 'fipos', needs: ['fi_position', 'anaesthesia'],
+          text: 'Under {anaesthesia}, the patient was placed in the {fi_position|lc} position and the perineum was prepared and draped.' },
+        { group: 'fipos', needs: ['fi_position'],
+          text: 'The patient was placed in the {fi_position|lc} position and the perineum was prepared and draped.' },
+        { group: 'fiprior', needs: ['fi_prior'], equals: 'None',
+          text: 'There had been no previous anorectal surgery.' },
+        { group: 'fiprior', needs: ['fi_prior'],
+          text: 'There had been previous anorectal surgery: {fi_prior|lc}.' },
+        { text: 'Examination under anesthesia was performed, with inspection of the perineum, digital rectal examination and proctoscopy.' }
+      ],
+
+      fi_assess: [
+        { group: 'fiid', needs: ['fi_identify'], not: 'Not identified',
+          text: 'The internal opening was identified using {fi_identify|lc|and}.' },
+        { group: 'fiid', needs: ['fi_identify'], equals: 'Not identified',
+          text: 'Despite a careful search the internal opening could not be identified.' },
+        { group: 'fiprobe', needs: ['fi_probe'], equals: 'Yes, easily',
+          text: 'A malleable probe passed easily along the tract between the two openings.' },
+        { group: 'fiprobe', needs: ['fi_probe'], equals: 'with difficulty',
+          text: 'A malleable probe passed along the tract with difficulty, the tract being narrow and tortuous; no false passage was created.' },
+        { group: 'fiprobe', needs: ['fi_probe'], equals: 'No',
+          text: 'A probe could not be passed along the tract, so no attempt was made to force it.' }
+      ],
+
+      /* --- drainage and assessment only --- */
+      fi_eua_only: [
+        { needs: ['fi_procedure'], equals: 'Examination under anesthesia only',
+          text: 'Examination under anesthesia alone was performed; no definitive procedure was undertaken at this sitting, and the findings were recorded to plan definitive treatment.' }
+      ],
+
+      fi_abscess: [
+        { group: 'fiabs', needs: ['fi_procedure', 'fi_abscess_site', 'fi_abscess_pus'], equals: 'Drainage of abscess',
+          text: 'A {fi_abscess_site|lc} abscess was drained through a «cruciate» incision placed as close to the anal verge as the cavity allowed, and {fi_abscess_pus} mL of pus was released and sent for culture and sensitivity.' },
+        { group: 'fiabs', needs: ['fi_procedure', 'fi_abscess_site'], equals: 'Drainage of abscess',
+          text: 'A {fi_abscess_site|lc} abscess was drained through a «cruciate» incision placed as close to the anal verge as the cavity allowed, and the pus was sent for culture and sensitivity.' },
+        { group: 'fiabs', needs: ['fi_procedure'], equals: 'Drainage of abscess',
+          text: 'The abscess was drained through a «cruciate» incision and the pus sent for culture and sensitivity.' },
+        { needs: ['fi_procedure'], equals: 'Drainage of abscess',
+          text: 'The cavity was explored with a finger, all loculi were broken down and the cavity was irrigated with «warm saline».' },
+        { group: 'fiabsdr', needs: ['fi_procedure', 'fi_abscess_drain'], equals: 'Drainage of abscess', not: 'Nothing',
+          text: 'A {fi_abscess_drain|lc} was left in the cavity.' },
+        { group: 'fiabsdr', needs: ['fi_abscess_drain'], equals: 'Nothing',
+          text: 'Nothing was left in the cavity, which was left open to drain freely.' }
+      ],
+
+      /* --- laying the tract open --- */
+      fi_fistulotomy: [
+        { group: 'filo', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulotomy',
+          text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin, subcutaneous tissue and the {fi_lay_open}% of the external sphincter that the tract encircled. The remaining sphincter was left intact and the anorectal ring was preserved.' },
+        { group: 'filo', needs: ['fi_procedure'], equals: 'Fistulotomy',
+          text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin and subcutaneous tissue and only that part of the external sphincter encircled by the tract. The anorectal ring was preserved.' },
+        { needs: ['fi_procedure'], equals: 'Fistulotomy',
+          text: 'The laid-open tract was saucerized, its edges trimmed so that the wound was wider at the skin than at its base and would heal from the base upwards.' }
+      ],
+
+      fi_fistulectomy: [
+        { group: 'file', needs: ['fi_procedure'], equals: 'Fistulectomy',
+          text: 'The tract was cored out in its entirety by sharp dissection immediately outside its fibrous wall, from the external opening through to the internal opening, and removed intact as a single specimen.' },
+        { group: 'filedivide', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulectomy',
+          text: 'In the course of the excision {fi_lay_open}% of the external sphincter was divided; the remainder and the anorectal ring were left intact.' },
+        { needs: ['fi_procedure'], equals: 'Fistulectomy',
+          text: 'The resulting defect was left open to granulate.' }
+      ],
+
+      fi_curettage: [
+        { group: 'ficur', needs: ['fi_curettage'], equals: 'Yes',
+          text: 'The granulation tissue lining the tract was curetted away with a Volkmann spoon and the tract irrigated.' },
+        { group: 'ficur', needs: ['fi_curettage'], equals: 'No',
+          text: 'The lining of the tract was not curetted.' },
+        { group: 'ficur', needs: ['fi_procedure'], equals: 'Curettage of tract',
+          text: 'The tract was curetted thoroughly with a Volkmann spoon and irrigated until the walls were clean and bleeding freely.' }
+      ],
+
+      /* --- sphincter-preserving procedures --- */
+      fi_lift: [
+        { needs: ['fi_procedure'], equals: 'LIFT',
+          text: 'A curved incision was made over the intersphincteric groove at the level of the tract, and the plane between the internal and external sphincters was opened by combined blunt and sharp dissection.' },
+        { needs: ['fi_procedure'], equals: 'LIFT',
+          text: 'The intersphincteric portion of the tract was isolated on a right-angled forceps, its identity confirmed by passing a probe from the external opening.' },
+        { group: 'filift', needs: ['fi_lift_tract', 'fi_lift_suture'], equals: 'Ligated and divided',
+          text: 'The tract was ligated on both sides with {fi_lift_suture} and divided between the ligatures.' },
+        { group: 'filift', needs: ['fi_lift_tract'], equals: 'Ligated and divided',
+          text: 'The tract was ligated on both sides «with 3-0 Vicryl» and divided between the ligatures.' },
+        { group: 'filift', needs: ['fi_lift_tract', 'fi_lift_suture'], equals: 'Ligated only',
+          text: 'The tract was ligated close to the internal sphincter with {fi_lift_suture} and left undivided.' },
+        { group: 'filift', needs: ['fi_lift_tract'], equals: 'Excised',
+          text: 'The intersphincteric segment of the tract was excised and both ends were ligated «with 3-0 Vicryl».' },
+        { needs: ['fi_procedure'], equals: 'LIFT',
+          text: 'Hydrogen peroxide was injected through the external opening and no leak was seen at the ligated internal end, confirming that the tract had been sealed.' },
+        { group: 'filiftext', needs: ['fi_lift_external'], equals: 'Cored out',
+          text: 'The external part of the tract was cored out and the external opening was left open to drain.' },
+        { group: 'filiftext', needs: ['fi_lift_external'], equals: 'Curetted',
+          text: 'The external part of the tract was curetted and the external opening was left open to drain.' },
+        { group: 'filiftext', needs: ['fi_lift_external'], equals: 'Closed',
+          text: 'The external opening was closed.' },
+        { needs: ['fi_procedure'], equals: 'LIFT',
+          text: 'The intersphincteric wound was closed «with interrupted 3-0 Vicryl», leaving a small gap at its dependent end for drainage.' }
+      ],
+
+      fi_flap: [
+        { group: 'fiflapopen', needs: ['fi_procedure'], equals: 'advancement flap',
+          text: 'The internal opening was excised together with the adjacent crypt-bearing tissue, and the tract was curetted from the internal opening outwards.' },
+        { group: 'fiflap', needs: ['fi_flap_type'], equals: 'Anodermal',
+          text: 'An anodermal flap with a broad base was raised from below the dentate line, «twice as wide at its base as at its apex», and mobilized until it lay over the defect without tension.' },
+        { group: 'fiflap', needs: ['fi_flap_type'],
+          text: 'A {fi_flap_type|lc} flap with a broad base was raised from the rectal wall above the internal opening, «twice as wide at its base as at its apex», and mobilized until it lay over the defect without tension.' },
+        { group: 'fiflap', needs: ['fi_procedure'], equals: 'advancement flap',
+          text: 'A broad-based flap was raised above the internal opening and mobilized until it lay over the defect without tension.' },
+        { needs: ['fi_procedure'], equals: 'advancement flap',
+          text: 'The defect in the sphincter was closed «with interrupted 3-0 Vicryl».' },
+        { group: 'fiflapsut', needs: ['fi_flap_suture'],
+          text: 'The flap was advanced beyond the level of the closed internal opening and sutured in place with {fi_flap_suture}, its suture line lying on healthy tissue away from the repair.' },
+        { group: 'fiflapsut', needs: ['fi_procedure'], equals: 'advancement flap',
+          text: 'The flap was advanced beyond the level of the closed internal opening and sutured in place «with interrupted 3-0 Vicryl», its suture line lying on healthy tissue away from the repair.' },
+        { needs: ['fi_procedure'], equals: 'advancement flap',
+          text: 'The external opening was curetted and left open to drain.' }
+      ],
+
+      fi_vaaft: [
+        { needs: ['fi_procedure'], equals: 'VAAFT',
+          text: 'A fistuloscope was introduced through the external opening and the tract was inspected under continuous irrigation along its whole length, the internal opening being identified endoscopically from within the tract and confirmed by transillumination in the anal canal.' },
+        { needs: ['fi_procedure'], equals: 'VAAFT',
+          text: 'Any secondary tract seen was followed and treated in the same way.' },
+        { needs: ['fi_procedure'], equals: 'VAAFT',
+          text: 'The lining of the tract was ablated under direct vision with a unipolar electrode and the necrotic debris cleared with the endobrush and irrigation.' },
+        { needs: ['fi_procedure'], equals: 'VAAFT',
+          text: 'The internal opening was closed «with a linear stapler», and the closure was checked and found to be secure.' }
+      ],
+
+      fi_filac: [
+        { needs: ['fi_procedure'], equals: 'Laser closure',
+          text: 'The tract was curetted and irrigated, and a radial-emitting laser fibre was passed along it until its tip lay at the internal opening.' },
+        { needs: ['fi_procedure'], equals: 'Laser closure',
+          text: 'The fibre was withdrawn at a steady «1 mm per second» while delivering «13 W», so that the epithelial lining was ablated and the tract shrank along its whole length.' },
+        { needs: ['fi_procedure'], equals: 'Laser closure',
+          text: 'The internal opening was closed «with an advancement flap» and the external opening was left open to drain.' }
+      ],
+
+      fi_plug: [
+        { needs: ['fi_procedure'], equals: 'Fistula plug',
+          text: 'The tract was curetted and irrigated «with hydrogen peroxide and saline», and no attempt was made to excise it.' },
+        { needs: ['fi_procedure'], equals: 'Fistula plug',
+          text: 'A bioprosthetic plug was drawn through the tract from the internal opening until it seated snugly, secured at the internal opening «with a figure-of-eight 2-0 Vicryl taking the internal sphincter», and the excess trimmed flush at both ends.' },
+        { needs: ['fi_procedure'], equals: 'Fistula plug',
+          text: 'The external opening was left open so that the tract could drain around the plug.' }
+      ],
+
+      fi_glue: [
+        { needs: ['fi_procedure'], equals: 'Fibrin glue',
+          text: 'The tract was curetted and irrigated, and fibrin glue was injected through a catheter advanced to the internal opening and withdrawn steadily, until glue appeared at the external opening and the tract was filled along its whole length.' },
+        { needs: ['fi_procedure'], equals: 'Fibrin glue',
+          text: 'The glue was left undisturbed to set and no dressing was packed into the tract.' }
+      ],
+
+      fi_seton: [
+        /* the material is quoted after the sentence rather than in front of
+           it, because "a 2-0 silk" and "2-0 silk" are both things a surgeon
+           types and only one of them takes an article */
+        { group: 'fisetonpass', needs: ['fi_procedure', 'fi_seton_material'], equals: 'seton',
+          text: 'A seton was passed along the tract from the external opening, brought out through the internal opening and tied outside the anal verge; the material used was {fi_seton_material}.' },
+        { group: 'fisetonpass', needs: ['fi_procedure'], equals: 'seton',
+          text: 'A «2-0 silk» seton was passed along the tract from the external opening, brought out through the internal opening and tied outside the anal verge.' },
+        { group: 'fisetonkind', needs: ['fi_seton_type'], equals: 'Loose draining',
+          text: 'It was tied loosely and without tension as a draining seton, so that sepsis is controlled and the tract allowed to mature before any definitive procedure. It divides nothing.' },
+        { group: 'fisetonkind', needs: ['fi_seton_type'], equals: 'Cutting',
+          text: 'It was tied snugly as a cutting seton, so that the encircled sphincter divides slowly while healing takes place behind it.' },
+        { group: 'fisetonkind', needs: ['fi_seton_type'], equals: 'Chemical',
+          text: 'A chemical seton was used.' },
+        { group: 'fisetonkind', needs: ['fi_procedure'], equals: 'Draining (loose) seton',
+          text: 'It was tied loosely and without tension as a draining seton, so that sepsis is controlled and the tract allowed to mature. It divides nothing.' },
+        { group: 'fisetonkind', needs: ['fi_procedure'], equals: 'Cutting seton',
+          text: 'It was tied snugly as a cutting seton, so that the encircled sphincter divides slowly while healing takes place behind it.' },
+        { needs: ['fi_seton_plan'],
+          text: 'The plan for the seton is as follows: {fi_seton_plan}' }
+      ],
+
+      fi_other: [
+        { needs: ['fi_procedure'], equals: 'Other',
+          text: 'A further procedure was performed as recorded: {fi_procedure}.' }
+      ],
+
+      fi_close: [
+        { needs: ['fi_marsupialise'], equals: 'Yes',
+          text: 'The cut edges of the wound were marsupialized to the base of the track «with a continuous 3-0 Vicryl», reducing the raw area and hastening healing.' },
+        { group: 'fiwound', needs: ['fi_wound'], equals: 'Left open',
+          text: 'The wound was left open to heal by secondary intention.' },
+        { group: 'fiwound', needs: ['fi_wound'], equals: 'Marsupialized',
+          text: 'The wound was left marsupialized.' },
+        { group: 'fiwound', needs: ['fi_wound'], equals: 'Partially closed',
+          text: 'The wound was partially closed, its dependent part being left open to drain.' },
+        { needs: ['fi_specimen'],
+          text: 'The following was sent for histopathology: {fi_specimen}.' },
+        /* an examination under anesthesia leaves no wound to dress */
+        { group: 'ficlose', needs: ['fi_procedure'], equals: 'Examination under anesthesia only',
+          text: 'No wound was made. A digital examination confirmed that the sphincter tone was preserved, and the patient was returned to recovery in a stable condition.' },
+        { group: 'ficlose',
+          text: 'Hemostasis was secured with diathermy. A digital examination confirmed that the anal canal admitted a finger comfortably and that the sphincter tone was preserved. The wound was dressed «with a light non-adherent dressing» and the patient was returned to recovery in a stable condition.' }
+      ],
+
       sc_wound: [
         { group: 'scw', needs: ['cr_sc_wound'], equals: 'Primary',
           text: 'The stoma wound was closed primarily.' },
@@ -842,6 +1046,30 @@
         ]
       },
       {
+        /* fi_procedure is a checklist and combinations are the norm —
+           "drainage of abscess with a draining seton" is one operation
+           with two named parts, and both must reach the note. Each
+           procedure carries its own group prefix, so ticking two prints
+           two accounts rather than the first one only. */
+        name: 'Perianal fistula and anorectal abscess',
+        when: [
+          { key: 'fi_procedure', any: ['Fistulotomy', 'Fistulectomy', 'Cutting seton',
+            'Draining (loose) seton', 'LIFT', 'Mucosal advancement flap',
+            'Anodermal advancement flap', 'VAAFT', 'Fibrin glue', 'Fistula plug',
+            'Laser closure', 'Curettage of tract', 'Drainage of abscess',
+            'Examination under anesthesia only', 'Other'] }
+        ],
+        lines: [
+          { use: 'fi_setup' }, { use: 'fi_assess' },
+          { use: 'fi_eua_only' }, { use: 'fi_abscess' },
+          { use: 'fi_fistulotomy' }, { use: 'fi_fistulectomy' }, { use: 'fi_curettage' },
+          { use: 'fi_lift' }, { use: 'fi_flap' }, { use: 'fi_vaaft' },
+          { use: 'fi_filac' }, { use: 'fi_plug' }, { use: 'fi_glue' },
+          { use: 'fi_seton' }, { use: 'fi_other' },
+          { use: 'fi_close' }
+        ]
+      },
+      {
         /* Listed last of the colorectal blocks on purpose. A low anterior
            resection with a defunctioning loop ileostomy records both
            procedures; the resection is the operation, and it must be the
@@ -922,7 +1150,6 @@
       { group: 'pos', needs: ['fi_position'],
         text: 'The patient was placed in the {fi_position|lc} position and the perineum was prepared and draped.' },
 
-      { needs: ['fi_eua'], text: 'Examination under anesthesia showed {fi_eua}' },
       { needs: ['fi_aetiology'], text: 'The aetiology was considered to be {fi_aetiology|lc}.' },
 
       { group: 'int', needs: ['fi_internal_opening', 'fi_internal_height'],
@@ -980,6 +1207,7 @@
       { group: 'pos', needs: ['ot_position'],
         text: 'The patient was placed in the {ot_position|lc} position and prepared and draped.' },
       { needs: ['ot_procedure_name'], text: 'The procedure performed was {ot_procedure_name}.' },
+      { needs: ['ot_incision'], text: 'The incision used was {ot_incision|lc}.' },
       { needs: ['findings'], text: 'On exploration: {findings}' }
     ],
 

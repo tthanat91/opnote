@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bm';
+  var APP_BUILD = '2026-08-02bn';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1016,6 +1016,11 @@
       ? expandLines(block.lines).concat(N.common || [])
       : (N[cat] || []).concat(N.common || []);
     var numbered = !!block, used = {};
+    /* Anything the findings paragraph already states has been said once on
+       the page. Marking those fields as used stops the catch-all list at the
+       foot of the narrative from repeating them as bullets — which is how
+       the Parks type and the opening positions were appearing twice. */
+    renderSentences((N.findings || {})[cat] || [], used);
     var out = renderSentences(lines, used).map(function (t, i) {
       return numbered ? (i + 1) + '. ' + t : '- ' + t;
     });

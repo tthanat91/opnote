@@ -31,7 +31,7 @@
     /* the abdominal wall sheet is still in the Add figure picker, it just
        no longer opens by default on every colorectal case */
     colorectal: ['orig_colon'],
-    fistula: ['orig_anal_clock', 'orig_anal_coronal'],
+    fistula: ['orig_anal_clock', 'orig_anal_coronal', 'orig_anal_tract'],
     hemorrhoid: ['orig_anal_clock'],
     others: ['blank']
   };

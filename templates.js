@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bm';
+  global.TEMPLATES_BUILD = '2026-08-02bn';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -388,7 +388,6 @@
     /* ---------------- FISTULA ---------------- */
     f('fistula', 'การประเมิน | Assessment', 'fi_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
       'Prone jackknife; Lithotomy; Prone splitleg'),
-    f('fistula', 'การประเมิน | Assessment', 'fi_eua', 'ผลตรวจใต้ยาสลบ (EUA)', 'Examination under anesthesia', 'textarea'),
     f('fistula', 'การประเมิน | Assessment', 'fi_prior', 'เคยผ่าตัดบริเวณนี้มาก่อน', 'Previous anorectal surgery', 'radio',
       'None; Previous fistula surgery; Previous abscess drainage; Previous hemorrhoid surgery; Other'),
     f('fistula', 'การประเมิน | Assessment', 'fi_aetiology', 'สาเหตุ', 'Aetiology', 'radio',
@@ -457,7 +456,8 @@
       'Nothing; Corrugated drain; Mushroom catheter; Packing', 'fi_procedure = Drainage of abscess'),
 
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_wound', 'การดูแลแผล', 'Wound at the end of the operation', 'radio',
-      'Left open; Marsupialized; Partially closed'),
+      'Left open; Marsupialized; Partially closed',
+      'fi_procedure != Examination under anesthesia only'),
 
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),
@@ -526,6 +526,7 @@
     /* ---------------- OTHERS ---------------- */
     f('others', 'หัตถการ | Procedure', 'ot_procedure_name', 'ชื่อการผ่าตัด', 'Name of procedure', 'text'),
     f('others', 'หัตถการ | Procedure', 'ot_position', 'ท่าผู้ป่วย', 'Patient position', 'text'),
+    f('others', 'หัตถการ | Procedure', 'ot_incision', 'แผลผ่าตัด', 'Incision', 'text'),
     f('others', 'รายละเอียดขั้นตอน | Operative steps', 'ot_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('others', 'รายละเอียดขั้นตอน | Operative steps', 'ot_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea')
   ];
