@@ -295,6 +295,14 @@ table.idbar td.wide{width:32%}
 .findbox figure.fig{float:right;margin:0 0 4px 10px;width:var(--imgw,52mm);text-align:center}
 .findbox figure.fig img{max-width:var(--imgw,52mm);max-height:var(--imgh,38mm)}
 .findbox .bbody::after{content:'';display:block;clear:both}
+/* three small views floated together, so the paragraph that interprets them
+   wraps around the set instead of around each picture separately */
+.findbox .figset{float:right;margin:0 0 4px 10px;width:84mm;text-align:center}
+.findbox .figset figure.fig{float:none;display:inline-block;width:26mm;margin:0 .5mm}
+.findbox .figset figure.fig img{max-width:26mm;max-height:26mm}
+.findbox .figset figcaption{font-size:8.5px;line-height:1.15}
+.findbox .figset .setcap{font-size:8.5px;color:#444;margin-top:1px}
+.findbox .figset .setcap i{color:#666}
 .dsec{margin-bottom:8px;break-inside:avoid}
 .dsec h5{background:#eee;border-left:3px solid #000;padding:2px 7px;font-size:12px;margin:8px 0 3px}
 .dsec h5 i{font-weight:400;color:#555;font-size:10.5px}
@@ -655,12 +663,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bo"></script>
-<script src="figures.js?v=bo"></script>
-<script src="figures-original.js?v=bo"></script>
-<script src="letterhead.js?v=bo"></script>
-<script src="narrative.js?v=bo"></script>
-<script src="templates.js?v=bo"></script>
-<script src="app.js?v=bo"></script>
+<script src="config.js?v=bp"></script>
+<script src="figures.js?v=bp"></script>
+<script src="figures-original.js?v=bp"></script>
+<script src="letterhead.js?v=bp"></script>
+<script src="narrative.js?v=bp"></script>
+<script src="templates.js?v=bp"></script>
+<script src="app.js?v=bp"></script>
 </body>
 </html>

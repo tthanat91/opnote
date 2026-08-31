@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02bo';
+  global.TEMPLATES_BUILD = '2026-08-02bp';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -46,12 +46,14 @@
     f('common', COMMON, 'department', 'ภาควิชา', 'Department', 'text'),
 
     f('common', IDENT, 'hn', 'HN', 'HN', 'text'),
-    f('common', IDENT, 'an', 'AN', 'AN', 'text'),
+    f('common', IDENT, 'an', 'AN (ถ้าเป็น case ODS ใส่วันที่มาผ่าตัด DD/MM/YYYY)',
+      'AN (for an ODS case, enter the date of operation, DD/MM/YYYY)', 'text'),
     f('common', IDENT, 'patient_name', 'ชื่อ', 'First name', 'text'),
     f('common', IDENT, 'patient_surname', 'นามสกุล', 'Surname', 'text'),
     f('common', IDENT, 'age', 'อายุ', 'Age', 'text'),
     f('common', IDENT, 'sex', 'เพศ', 'Sex', 'radio', 'ชาย / Male; หญิง / Female'),
-    f('common', IDENT, 'ward', 'หอผู้ป่วย', 'Ward', 'text'),
+    f('common', IDENT, 'ward', 'หอผู้ป่วย (ถ้าเป็น case ODS ใส่ ODS)',
+      'Ward (for an ODS case, enter ODS)', 'text'),
     f('common', IDENT, 'admit_date', 'วันที่รับไว้', 'Admission date', 'date'),
 
     f('common', DIAG, 'preop_dx', 'การวินิจฉัยก่อนผ่าตัด', 'Pre-operative diagnosis', 'textarea'),
@@ -419,8 +421,8 @@
       'Examination under anesthesia only; Other'),
     f('fistula', 'หัตถการ | Procedure', 'fi_seton_material', 'วัสดุ seton', 'Seton material', 'text', '',
       'fi_procedure = Cutting seton; Draining (loose) seton'),
-    f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialization of wound edges', 'Marsupialization', 'checkbox'),
-    f('fistula', 'หัตถการ | Procedure', 'fi_specimen', 'ชิ้นเนื้อส่งตรวจ', 'Specimen sent', 'text'),
+    f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialization of wound edges', 'Marsupialization', 'checkbox', '',
+      'fi_procedure = Fistulotomy; Fistulotomy with immediate sphincteroplasty (FIPS)'),
 
 
     /* ---- how the tract was found, and what was done to it ---- */
@@ -471,6 +473,9 @@
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_wound', 'การดูแลแผล', 'Wound at the end of the operation', 'radio',
       'Left open; Marsupialized; Partially closed',
       'fi_procedure != Examination under anesthesia only'),
+    f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_drain',
+      'ท่อระบายที่ใส่ไว้', 'Drain placement', 'radio',
+      'None; Penrose drain; Rubber catheter; Other'),
 
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),

@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bo';
+  var APP_BUILD = '2026-08-02bp';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1060,7 +1060,7 @@
 
   /* device and suture names keep their capital wherever they fall */
   /* device, suture and eponym names keep their capital wherever they fall */
-  var TRADE_NAMES = /^(Hem-o-lok|V-Loc|Endo|LigaSure|Ligasure|Signia|Echelon|Monocryl|Vicryl|Prolene|PDS|Ethibond|Stratafix|Harmonic|Thunderbeat|Enseal|Pfannenstiel|Denonvilliers|Toldt|Henle|Hartmann|Brooke|Baker|Waldeyer|Lloyd-Davies|Trendelenburg)$/i;
+  var TRADE_NAMES = /^(Hem-o-lok|V-Loc|Endo|LigaSure|Ligasure|Signia|Echelon|Monocryl|Vicryl|Prolene|PDS|Ethibond|Stratafix|Harmonic|Thunderbeat|Enseal|Pfannenstiel|Penrose|Volkmann|Denonvilliers|Toldt|Henle|Hartmann|Brooke|Baker|Waldeyer|Lloyd-Davies|Trendelenburg)$/i;
 
   function fixArticles(text) {
     return text.replace(/\b([Aa]) (?=[aeiouAEIOU])([A-Za-z-]+)/g, function (m, art, word) {
@@ -1225,7 +1225,25 @@
     toast('ร่างแล้ว โปรดอ่านและแก้ไขก่อนบันทึก / Draft inserted — please read and edit it', 'ok');
   }
 
+  /* Values the surgeon does not type, worked out from ones he did. They are
+     read-only, exist only for the sentence templates to quote, and have no
+     row in the Templates tab — so they never appear as a question on screen
+     and never take a column in the Sheet. */
+  var DERIVED = {
+    /* a transsphincteric tract is called high or low by how much of the
+       external sphincter lies below it, and 30% is the line Ball uses */
+    fi_parks_text: function () {
+      var parks = String(S.data.fi_parks || '');
+      if (!parks) return '';
+      var pct = parseFloat(S.data.fi_sphincter_involved);
+      var word = parks.charAt(0).toLowerCase() + parks.slice(1);
+      if (!/transsphincteric/i.test(parks) || isNaN(pct)) return word;
+      return (pct >= 30 ? 'high ' : 'low ') + word;
+    }
+  };
+
   function valueOf(key) {
+    if (DERIVED[key]) return DERIVED[key]();
     var f = fieldByKey(key);
     if (!showIfOk(f)) return '';          /* the question was never asked */
     if (f && f.type === 'repeat') return repeatText(key);
@@ -1692,6 +1710,31 @@
     return typed || buildFindings(S.category);
   }
 
+  /* How many drawings belong inside the findings box rather than on page 2.
+     A fistula is read from the axial, coronal and tract views together — one
+     of them alone says nothing — so all three sit beside the paragraph that
+     interprets them. Every other operation keeps a single figure there. */
+  function inBoxCount(pngs) {
+    if (S.category === 'fistula') return Math.min(3, pngs.length);
+    return pngs.length ? 1 : 0;
+  }
+
+  function boxFigures(pngs) {
+    var n = inBoxCount(pngs);
+    if (!n) return '';
+    var figs = '', i;
+    for (i = 0; i < n; i++) {
+      var f = window.FIGURES[S.sheets[i].fig] || {};
+      figs += '<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
+        '<figcaption>' + esc(n > 1 ? (f.short || f.en || '') : (f.en || '')) +
+        '</figcaption></figure>';
+    }
+    if (n === 1) return figs;
+    return '<div class="figset">' + figs +
+      '<div class="setcap">\u0e2d\u0e48\u0e32\u0e19\u0e17\u0e31\u0e49\u0e07\u0e2a\u0e32\u0e21\u0e20\u0e32\u0e1e\u0e1b\u0e23\u0e30\u0e01\u0e2d\u0e1a\u0e01\u0e31\u0e19 ' +
+      '<i>the three views are to be read together</i></div></div>';
+  }
+
   function buildDocument(pngs) {
     var p1 =
       '<section class="pg" style="' + imgVars() + '">' +
@@ -1743,8 +1786,7 @@
          findings text. One small figure cannot overflow the page, so page 1
          stays whole; the rest go to page 2 where the narrative can follow
          straight on from them. */
-      (pngs.length ? '<figure class="fig"><img src="' + pngs[0] + '" alt="">' +
-        '<figcaption>' + esc(window.FIGURES[S.sheets[0].fig].en) + '</figcaption></figure>' : '') +
+      boxFigures(pngs) +
       nl2br(printableFindings()) +
       (valueOf('specimen_description')
         ? '<div class="speclab">คำอธิบายชิ้นเนื้อ <i>Specimen description</i></div>' +
@@ -1764,7 +1806,7 @@
          section, so anything overflowing it lands on a sheet of its own and
          the narrative — which belongs to this section — could never follow on
          from it. Here the figures and the narrative are one flow. */
-      imagesHTML(pngs, 1) +
+      imagesHTML(pngs, inBoxCount(pngs)) +
       accessBlock() +
       stepsBlock() +
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +

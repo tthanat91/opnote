@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02bo',
+    build: '2026-08-02bp',
 
 
 
@@ -132,7 +132,9 @@
       ],
 
       fistula: [
-        { needs: ['fi_parks'], text: 'The tract was {fi_parks|lc}.' },
+        /* fi_parks_text adds "high" or "low" to a transsphincteric tract
+           from the recorded sphincter percentage */
+        { needs: ['fi_parks'], text: 'The tract was {fi_parks_text}.' },
         { group: 'io', needs: ['fi_internal_opening', 'fi_internal_height'],
           text: 'The internal opening lay at {fi_internal_opening} o’clock, {fi_internal_height} cm from the anal verge.' },
         { group: 'io', needs: ['fi_internal_opening'], text: 'The internal opening lay at {fi_internal_opening} o’clock.' },
@@ -936,8 +938,10 @@
           text: 'The wound was left marsupialized.' },
         { group: 'fiwound', needs: ['fi_wound'], equals: 'Partially closed',
           text: 'The wound was partially closed, its dependent part being left open to drain.' },
-        { needs: ['fi_specimen'],
-          text: 'The following was sent for histopathology: {fi_specimen}.' },
+        { group: 'fidrain', needs: ['fi_drain'], equals: 'None',
+          text: 'No drain was left.' },
+        { group: 'fidrain', needs: ['fi_drain'],
+          text: 'A {fi_drain|lc} was left in the wound.' },
         /* an examination under anesthesia leaves no wound to dress */
         { group: 'ficlose', needs: ['fi_procedure'], equals: 'Examination under anesthesia only',
           text: 'No wound was made. A digital examination confirmed that the sphincter tone was preserved, and the patient was returned to recovery in a stable condition.' },
@@ -1202,7 +1206,7 @@
       { group: 'ext', needs: ['fi_external_opening'],
         text: 'The external opening lay at {fi_external_opening} o’clock.' },
 
-      { needs: ['fi_parks'], text: 'The tract was {fi_parks|lc} in type.' },
+      { needs: ['fi_parks'], text: 'The tract was {fi_parks_text} in type.' },
       { needs: ['fi_complexity'], text: 'It was classified as a {fi_complexity|lc} fistula.' },
       { needs: ['fi_features'], text: 'Additional findings: {fi_features}.' },
       { needs: ['fi_sphincter_involved'],
