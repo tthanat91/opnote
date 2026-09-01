@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02bz';
+  var APP_BUILD = '2026-08-02ca';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1406,21 +1406,74 @@
     });
   }
 
+  /* =================== zoom and pan ===================
+     A 5 mm fistula tract drawn on a figure the width of a phone is guesswork.
+     So the picture can be pinched up to six times and pushed around under
+     the finger, exactly as a photograph would be.
+
+     The view is a CSS transform on the stage, and the ink canvas is a child
+     of it — so the drawing scales and moves with the picture for free, and
+     no stroke has to be recomputed. Strokes are stored as fractions of the
+     picture, and getBoundingClientRect already reports the transformed box,
+     so the pen lands in the right place at any zoom without a line of extra
+     arithmetic.
+
+     One finger or the Pencil draws. Two fingers always mean the view, never
+     a mark — which is the rule every drawing app on these devices uses. */
+  var view = { k: 1, x: 0, y: 0 };
+
+  function resetView() { view.k = 1; view.x = 0; view.y = 0; }
+
+  function stageEl() { return cv && cv.parentNode; }
+
+  function clampView() {
+    var st = stageEl();
+    if (!st) return;
+    var w = parseFloat(st.style.width) || st.offsetWidth;
+    var h = parseFloat(st.style.height) || st.offsetHeight;
+    view.k = Math.min(6, Math.max(1, view.k));
+    /* the picture may not be dragged away from the window it sits in */
+    view.x = Math.min(0, Math.max(w - w * view.k, view.x));
+    view.y = Math.min(0, Math.max(h - h * view.k, view.y));
+  }
+
+  function applyView() {
+    var st = stageEl();
+    if (!st) return;
+    clampView();
+    st.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
+    var tag = $('#zoomTag');
+    if (tag) tag.textContent = Math.round(view.k * 100) + '%';
+  }
+
+  /* Zoom about a point, so the tissue under the fingers stays under them. */
+  function zoomAt(k, cx, cy) {
+    var before = view.k;
+    view.k = Math.min(6, Math.max(1, k));
+    var f = view.k / before;
+    view.x = cx - (cx - view.x) * f;
+    view.y = cy - (cy - view.y) * f;
+    applyView();
+  }
+
   function mountCanvas() {
     var host = $('#canvasHost');
     var t = drawTarget();
     if (!t) { host.innerHTML = '<p class="muted">ยังไม่มีรูป — กด “เพิ่มรูป” / No figure yet — tap “Add figure”.</p>'; return; }
     host.innerHTML = '';
+    /* the window the picture is seen through; the picture moves inside it */
+    var vp = el('div', 'stageview');
     var stage = el('div', 'stage');
-    stage.style.aspectRatio = t.w + ' / ' + t.h;
     stage.style.backgroundImage = 'url("' + t.bg + '")';
-    stage.style.backgroundSize = 'contain';
+    stage.style.backgroundSize = '100% 100%';
     stage.style.backgroundRepeat = 'no-repeat';
-    stage.style.backgroundPosition = 'center';
     cv = el('canvas', 'ink');
     stage.appendChild(cv);
-    host.appendChild(stage);
+    vp.appendChild(stage);
+    host.appendChild(vp);
+    resetView();
     sizeCanvas(t);
+    applyView();
     bindPointer();
   }
 
@@ -1430,7 +1483,8 @@
      unreachable. So the stage is fitted to BOTH dimensions of whatever space
      the window actually has, and the smaller of the two wins. */
   function fitStage(stage, t) {
-    var host = stage.parentNode;
+    var vp = stage.parentNode;
+    var host = vp.parentNode;
     var box = host.parentNode;
     var used = 0;
     Array.prototype.forEach.call(box.children, function (ch) {
@@ -1440,20 +1494,41 @@
     var availH = Math.max(200, (window.innerHeight || 700) - used - 46);
     var w = availW, h = w * t.h / t.w;
     if (h > availH) { h = availH; w = h * t.w / t.h; }
-    stage.style.width = Math.round(w) + 'px';
-    stage.style.height = Math.round(h) + 'px';
+    w = Math.round(w); h = Math.round(h);
+    vp.style.width = w + 'px'; vp.style.height = h + 'px';
+    stage.style.width = w + 'px'; stage.style.height = h + 'px';
+  }
+
+  /* Zoomed in, the ink would be a blown-up version of the pixels drawn at
+     100%. Painting the bitmap larger keeps the line sharp — but only up to
+     a point, because a 6x bitmap on a Retina iPad is memory nobody has. */
+  function inkResolution() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Math.min(dpr * Math.max(1, view.k), 3.5);
+  }
+
+  function rescaleInk() {
+    var st = stageEl();
+    if (!st || !cv) return;
+    var mult = inkResolution();
+    var w = Math.max(2, Math.round((parseFloat(st.style.width) || 300) * mult));
+    if (Math.abs(w - cv.width) < 8) return;      /* not worth reallocating */
+    cv.width = w;
+    cv.height = Math.max(2, Math.round((parseFloat(st.style.height) || 200) * mult));
+    ctx = cv.getContext('2d');
+    redraw();
   }
 
   function sizeCanvas(t) {
     var stage = cv.parentNode;
     fitStage(stage, t);
-    var rect = stage.getBoundingClientRect();
-    /* 2 rather than 2.5: on a Retina iPad every extra pixel is one more the
-       pen has to paint on every frame, and 2x is already beyond the eye */
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    cv.width = Math.max(2, Math.round(rect.width * dpr));
-    cv.height = Math.max(2, Math.round(rect.height * dpr));
+    /* the CSS size, not the transformed size: the transform is what makes it
+       bigger on screen, and the bitmap follows separately in rescaleInk */
+    var mult = inkResolution();
+    cv.width = Math.max(2, Math.round(parseFloat(stage.style.width) * mult));
+    cv.height = Math.max(2, Math.round(parseFloat(stage.style.height) * mult));
     ctx = cv.getContext('2d');
+    applyView();
     redraw();
   }
 
@@ -1527,10 +1602,108 @@
     cur.drawn = cur.p.length;
   }
 
+  /* Every finger and pen currently on the glass. Two or more of them mean
+     the view is being moved, not drawn on. */
+  var live = {};
+
+  function livePoints() {
+    var out = [];
+    for (var k in live) if (live.hasOwnProperty(k)) out.push(live[k]);
+    return out;
+  }
+
+  function abandonStroke(target) {
+    /* a second finger landing turns what had begun as a mark into a gesture,
+       and the half-drawn line must not be left behind */
+    if (!drawing) return;
+    drawing = false;
+    if (cur && target && target.strokes[target.strokes.length - 1] === cur) {
+      target.strokes.pop();
+    }
+    cur = null;
+    redraw();
+  }
+
+  var gesture = null;
+
+  function gestureStart() {
+    var p = livePoints();
+    if (p.length < 2) { gesture = null; return; }
+    var dx = p[0].x - p[1].x, dy = p[0].y - p[1].y;
+    gesture = {
+      dist: Math.max(1, Math.hypot(dx, dy)),
+      cx: (p[0].x + p[1].x) / 2, cy: (p[0].y + p[1].y) / 2,
+      k: view.k, x: view.x, y: view.y
+    };
+  }
+
+  function gestureMove() {
+    var p = livePoints();
+    if (!gesture || p.length < 2) return;
+    var st = stageEl();
+    if (!st) return;
+    var r = st.parentNode.getBoundingClientRect();
+    var dx = p[0].x - p[1].x, dy = p[0].y - p[1].y;
+    var dist = Math.max(1, Math.hypot(dx, dy));
+    var cx = (p[0].x + p[1].x) / 2, cy = (p[0].y + p[1].y) / 2;
+    /* zoom about where the fingers started, then follow where they moved */
+    var k = Math.min(6, Math.max(1, gesture.k * (dist / gesture.dist)));
+    var ax = gesture.cx - r.left, ay = gesture.cy - r.top;
+    var f = k / gesture.k;
+    view.k = k;
+    view.x = ax - (ax - gesture.x) * f + (cx - gesture.cx);
+    view.y = ay - (ay - gesture.y) * f + (cy - gesture.cy);
+    applyView();
+  }
+
   function bindPointer() {
     cv.style.touchAction = 'none';
+    var vp = cv.parentNode.parentNode;
+    vp.style.touchAction = 'none';
+
+    /* the gesture is watched on the window the picture sits in, so it keeps
+       working when a finger strays off the picture itself */
+    vp.addEventListener('pointerdown', function (e) {
+      live[e.pointerId] = { x: e.clientX, y: e.clientY, t: e.pointerType };
+      if (livePoints().length >= 2) {
+        abandonStroke(drawTarget());
+        gestureStart();
+      }
+    });
+    vp.addEventListener('pointermove', function (e) {
+      if (!live[e.pointerId]) return;
+      live[e.pointerId].x = e.clientX;
+      live[e.pointerId].y = e.clientY;
+      if (livePoints().length >= 2) { gestureMove(); e.preventDefault(); }
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+      vp.addEventListener(ev, function (e) {
+        var many = livePoints().length >= 2;
+        delete live[e.pointerId];
+        if (livePoints().length < 2) {
+          gesture = null;
+          /* redraw the ink at the resolution the new zoom deserves */
+          if (many) rescaleInk();
+        } else gestureStart();
+      });
+    });
+    /* a trackpad pinch arrives as ctrl+wheel; a plain wheel scrolls the view */
+    vp.addEventListener('wheel', function (e) {
+      var r = vp.getBoundingClientRect();
+      if (e.ctrlKey) {
+        e.preventDefault();
+        zoomAt(view.k * (1 - e.deltaY / 400), e.clientX - r.left, e.clientY - r.top);
+        rescaleInk();
+      } else if (view.k > 1) {
+        e.preventDefault();
+        view.x -= e.deltaX; view.y -= e.deltaY;
+        applyView();
+      }
+    }, { passive: false });
+
     cv.addEventListener('pointerdown', function (e) {
       var sh = drawTarget(); if (!sh) return;
+      if (livePoints().length >= 2) return;      /* this is a gesture */
       if (tool.mode === 'text') {
         var txt = window.prompt('ข้อความ / Text:');
         if (txt) {
@@ -1547,6 +1720,7 @@
     });
     cv.addEventListener('pointermove', function (e) {
       if (!drawing || !cur) return;
+      if (livePoints().length >= 2) { abandonStroke(drawTarget()); return; }
       /* an Apple Pencil reports far faster than the screen refreshes; taking
          the coalesced events keeps the curve smooth without painting each */
       var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
@@ -2565,6 +2739,9 @@
       };
     });
     $('#penSize').oninput = function () { tool.width = +this.value; };
+    $('#toolZoomReset').onclick = function () {
+      resetView(); applyView(); rescaleInk();
+    };
     $('#toolPen').onclick = function () { tool.mode = 'pen'; markTool(this); };
     $('#toolEraser').onclick = function () { tool.mode = 'eraser'; markTool(this); };
     $('#toolText').onclick = function () { tool.mode = 'text'; markTool(this); };

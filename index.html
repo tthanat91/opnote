@@ -178,12 +178,15 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
   box-shadow:0 0 0 1px var(--line);cursor:pointer}
 #penColors button.on{box-shadow:0 0 0 3px var(--brand-2)}
 #penSize{width:110px;accent-color:var(--brand)}
-/* width and height are set in script, from the space the window actually
-   has — a portrait figure on a landscape iPad has to be fitted to the
-   height, not the width */
-.stage{position:relative;width:100%;margin:0 auto;background:#fff no-repeat center/contain;
-  border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none}
+/* The picture is seen through a fixed window and moves inside it. Both are
+   sized in script, from the space the screen actually has — a portrait
+   figure on a landscape iPad has to be fitted to the height, not the width. */
+.stageview{position:relative;margin:0 auto;overflow:hidden;touch-action:none;
+  border:1px solid var(--line);border-radius:10px;background:#fff}
+.stage{position:absolute;left:0;top:0;transform-origin:0 0;
+  background:#fff no-repeat;touch-action:none;will-change:transform}
 canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#zoomTag{font-variant-numeric:tabular-nums}
 #photoList{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .photo{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}
 .photo img{width:100%;height:120px;object-fit:cover;border-radius:7px;display:block;margin-bottom:6px}
@@ -501,6 +504,8 @@ table.flow td{padding-top:4px;vertical-align:top}
               <button type="button" data-color="#ffffff" style="background:#ffffff"></button>
             </div>
             <input type="range" id="penSize" min="1" max="10" value="3" title="ขนาดปากกา / pen size">
+            <button type="button" class="toolbtn" id="toolZoomReset"
+              title="กลับไปขนาดเต็มภาพ / fit the whole picture">⤢ <span id="zoomTag">100%</span></button>
             <button type="button" class="toolbtn on" id="toolPen">✏️ วาด · Draw</button>
             <button type="button" class="toolbtn" id="toolText">T ข้อความ · Text</button>
             <button type="button" class="toolbtn" id="toolEraser">◻︎ ลบ · Erase</button>
@@ -509,6 +514,10 @@ table.flow td{padding-top:4px;vertical-align:top}
             <button type="button" class="toolbtn" id="toolDeleteSheet">🗑 ลบแผ่น · Delete sheet</button>
           </div>
           <div id="canvasHost"></div>
+          <p class="muted drawhint" style="margin:6px 0 0">
+            สองนิ้วเพื่อย่อ–ขยายและเลื่อนภาพ · นิ้วเดียวหรือปากกาเพื่อวาด
+            <span class="en">Two fingers to zoom and move the picture; one finger or the
+            Pencil to draw. ⤢ returns it to the full view.</span></p>
           </div>
         </div>
 
@@ -709,12 +718,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=bz"></script>
-<script src="figures.js?v=bz"></script>
-<script src="figures-original.js?v=bz"></script>
-<script src="letterhead.js?v=bz"></script>
-<script src="narrative.js?v=bz"></script>
-<script src="templates.js?v=bz"></script>
-<script src="app.js?v=bz"></script>
+<script src="config.js?v=ca"></script>
+<script src="figures.js?v=ca"></script>
+<script src="figures-original.js?v=ca"></script>
+<script src="letterhead.js?v=ca"></script>
+<script src="narrative.js?v=ca"></script>
+<script src="templates.js?v=ca"></script>
+<script src="app.js?v=ca"></script>
 </body>
 </html>
