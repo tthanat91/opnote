@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cf';
+  var APP_BUILD = '2026-08-02ch';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -2010,7 +2010,7 @@
   }
 
   function stepsBlock() {
-    var pre = { colorectal: 'cr', fistula: 'fi', hemorrhoid: 'he', others: 'ot' }[S.category] || 'ot';
+    var pre = { colorectal: 'cr', fistula: 'fi', hemorrhoid: 'he', stoma: 'st', others: 'ot' }[S.category] || 'ot';
     var out = '';
     [pre + '_steps', pre + '_postop'].forEach(function (k) {
       var f = fieldByKey(k), v = valueOf(k);
@@ -2484,18 +2484,34 @@
           '</td></tr>';
       });
       box.innerHTML = t + '</tbody></table>';
-      $$('[data-open]', box).forEach(function (b) {
-        b.onclick = function () { openNote(b.dataset.open, false); };
-      });
-      $$('[data-edit]', box).forEach(function (b) {
-        b.onclick = function () { openNote(b.dataset.edit, true); };
-      });
+      /* Fetching a note is slow enough that a second press feels reasonable,
+         and a second press starts a second fetch. So the pressed button says
+         what it is doing and every button in the list goes dead until it
+         finishes. */
+      function arm(attr, editable) {
+        $$('[' + attr + ']', box).forEach(function (b) {
+          b.onclick = function () {
+            if (b.disabled) return;
+            var was = b.innerHTML;
+            $$('button.mini', box).forEach(function (x) { x.disabled = true; });
+            b.classList.add('loading');
+            b.innerHTML = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e1b\u0e34\u0e14…<br>Opening…';
+            openNote(b.dataset[attr === 'data-open' ? 'open' : 'edit'], editable, function () {
+              b.classList.remove('loading');
+              b.innerHTML = was;
+              $$('button.mini', box).forEach(function (x) { x.disabled = false; });
+            });
+          };
+        });
+      }
+      arm('data-open', false);
+      arm('data-edit', true);
     }).catch(function (e) {
       box.innerHTML = '<p class="muted">ค้นหาไม่สำเร็จ / Search failed: ' + esc(e.message) + '</p>';
     });
   }
 
-  function openNote(id, editable) {
+  function openNote(id, editable, done) {
     /* The note just saved is already here, in full, with every photograph in
        memory. Asking Google to send it all back — which means re-downloading
        each picture from Drive and encoding it as text — is a slow way to
@@ -2512,6 +2528,7 @@
       if (!editable) refreshPreview();
       toast(editable ? '\u0e40\u0e1b\u0e34\u0e14\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e41\u0e01\u0e49\u0e44\u0e02 / Opened for editing'
         : '\u0e40\u0e1b\u0e34\u0e14\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e14\u0e39\u0e41\u0e25\u0e30\u0e1e\u0e34\u0e21\u0e1e\u0e4c / Opened read-only', 'ok');
+      if (done) done();
       return;
     }
     busy('\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e1b\u0e34\u0e14\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u2026<br>' +
@@ -2549,9 +2566,11 @@
       $('#lockNote').style.display = editable ? 'none' : '';
       if (!editable) refreshPreview();
       busy(false);
+      if (done) done();
       toast(editable ? 'เปิดเพื่อแก้ไข / Opened for editing' : 'เปิดเพื่อดูและพิมพ์ / Opened read-only', 'ok');
     }).catch(function (e) {
       busy(false);
+      if (done) done();
       toast('เปิดไม่สำเร็จ / Could not open: ' + e.message, 'warn');
     });
   }

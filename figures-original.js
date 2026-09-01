@@ -41,6 +41,8 @@
     colorectal: ['orig_colon_vessels'],
     fistula: ['orig_anal_clock', 'orig_anal_coronal', 'orig_anal_tract'],
     hemorrhoid: ['orig_anal_clock'],
+    /* the abdominal wall, because a stoma is sited on it */
+    stoma: ['abdomen'],
     others: ['blank']
   };
 
