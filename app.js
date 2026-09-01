@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02n';
+  var EXPECTED_BUILD = '2026-08-02o';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ca';
+  var APP_BUILD = '2026-08-02cc';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1766,8 +1766,8 @@
       var x = c.getContext('2d');
       x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h);
       x.drawImage(img, 0, 0, w, h);
-      sh.strokes.forEach(function (st) { drawStroke(x, st, w, h); });
-      sh.texts.forEach(function (t) { drawTextItem(x, t, w, h); });
+      var layer = inkLayer(sh, w, h);
+      if (layer) x.drawImage(layer, 0, 0);
       return c.toDataURL('image/png');
     });
   }
@@ -1775,6 +1775,26 @@
   /* The printed note and the copy filed in Drive both want the photograph
      with its annotation burned in. The original is never touched — it is
      what the specimen looked like, and it is uploaded unchanged. */
+  /* The ink is composited on a transparent sheet of its own and then laid
+     over the picture — which is exactly what happens on screen, where the
+     canvas floats above a CSS background.
+
+     Doing it in one pass was the bug behind the black smears: the eraser
+     works by punching a hole through whatever is already on the canvas
+     ("destination-out"), so with the photograph painted underneath it, the
+     eraser cut a hole through the PHOTOGRAPH as well. A hole is transparent,
+     and transparency saved as JPEG comes out black. On its own layer the
+     eraser can only reach the ink. */
+  function inkLayer(o, w, h) {
+    if (!hasInk(o)) return null;
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var x = c.getContext('2d');
+    (o.strokes || []).forEach(function (st) { drawStroke(x, st, w, h); });
+    (o.texts || []).forEach(function (t) { drawTextItem(x, t, w, h); });
+    return c;
+  }
+
   function exportPhotoInk(p) {
     var src = p.dataUrl || p.url;
     if (!src) return Promise.resolve('');
@@ -1788,8 +1808,8 @@
       var x = c.getContext('2d');
       x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h);
       x.drawImage(img, 0, 0, w, h);
-      p.strokes.forEach(function (st) { drawStroke(x, st, w, h); });
-      p.texts.forEach(function (t) { drawTextItem(x, t, w, h); });
+      var layer = inkLayer(p, w, h);
+      if (layer) x.drawImage(layer, 0, 0);
       p.inkUrl = c.toDataURL('image/jpeg', 0.92);
       return p.inkUrl;
     }, function () { p.inkUrl = ''; return src; });
@@ -1842,8 +1862,7 @@
       cap.type = 'text'; cap.placeholder = 'คำบรรยาย / caption'; cap.value = p.caption || '';
       cap.oninput = function () { p.caption = cap.value; saveDraft(); };
       var draw = el('button', 'linkbtn',
-        '\u270e ' + (hasInk(p) ? ((p.strokes.length + p.texts.length) +
-          ' \u0e23\u0e2d\u0e22 / marks') : '\u0e27\u0e32\u0e14 / annotate'));
+        '\u270e \u0e27\u0e32\u0e14 / annotate');
       draw.type = 'button';
       draw.onclick = function () { openDraw(i, 'photo'); };
       var del = el('button', 'linkbtn danger', 'ลบ / remove');
@@ -2593,6 +2612,9 @@
     $('#tplInfo').innerHTML = TEMPLATES.length + ' fields' +
       (at ? ' · updated ' + esc(new Date(at).toLocaleString()) : ' · built-in defaults') +
       ' · app build <code>' + esc(APP_BUILD) + '</code>' +
+      ' · script build <code>' + esc(serverBuild || 'ยังไม่ทราบ / press Test') + '</code>' +
+      (serverBuild && serverBuild !== EXPECTED_BUILD
+        ? ' <b style="color:#8a3d00">— ต้อง deploy ใหม่ / needs redeploying</b>' : '') +
       ' · ตราสัญลักษณ์ / crest ' + (window.LETTERHEAD_LOGO ? 'loaded &#10003;' : 'NOT loaded') +
       staleFileWarning() + findingsDiagnostic();
   }
@@ -2601,6 +2623,38 @@
      against old sentences, and the only symptom is a draft that quietly
      falls back to the generic list. Each file states its own build, so the
      mismatch can be named instead of guessed at. */
+  /* The deployed script announces its own version. A script left on an old
+     deployment does not fail loudly — it simply stops doing whatever the
+     newest version added, and the -drawing copy of an annotated photograph
+     silently never appears. So the app asks once at startup and says so in
+     plain sight, rather than waiting to be interrogated in Settings. */
+  var serverBuild = null;
+
+  function renderBuildBanner() {
+    var n = $('#buildWarn');
+    if (!n) return;
+    var bad = serverBuild && serverBuild !== EXPECTED_BUILD;
+    n.classList.toggle('hidden', !bad);
+    if (!bad) return;
+    n.innerHTML = '<b>\u0e2a\u0e04\u0e23\u0e34\u0e1b\u0e15\u0e4c\u0e43\u0e19 Google \u0e22\u0e31\u0e07\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e27\u0e2d\u0e23\u0e4c\u0e0a\u0e31\u0e19\u0e40\u0e01\u0e48\u0e32</b> \u2014 ' +
+      '\u0e21\u0e35 <code>' + esc(serverBuild) + '</code> \u0e41\u0e15\u0e48\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e32\u0e23 <code>' + esc(EXPECTED_BUILD) + '</code>. ' +
+      '\u0e43\u0e2b\u0e49\u0e27\u0e32\u0e07 Code.gs \u0e43\u0e2b\u0e21\u0e48 \u0e41\u0e25\u0e49\u0e27 Deploy \u25b8 Manage deployments \u25b8 ' +
+      '\u0e14\u0e34\u0e19\u0e2a\u0e2d \u25b8 Version: New version \u25b8 Deploy<br>' +
+      '<span class="en">The Apps Script deployment is older than this app expects. ' +
+      'Some things will simply not happen \u2014 an annotated photograph will not get its ' +
+      '<code>-drawing</code> copy, for one. Paste the current Code.gs, then ' +
+      'Deploy \u25b8 Manage deployments \u25b8 pencil \u25b8 Version: <b>New version</b> \u25b8 Deploy.</span>';
+  }
+
+  function checkServerBuild() {
+    if (!scriptUrl) return Promise.resolve();
+    return api('GET', { action: 'ping' }).then(function (r) {
+      serverBuild = (r && r.build) || '';
+      renderBuildBanner();
+      if ($('#viewSettingsOpen')) fillSettings();
+    }, function () { /* offline is not a version problem */ });
+  }
+
   function staleFileWarning() {
     var stale = [];
     if (((window.NARRATIVE || {}).build || '') !== APP_BUILD) stale.push('narrative.js');
@@ -2846,6 +2900,8 @@
               'newer of the two, upload the current index.html and app.js to GitHub; if it is ' +
               'the older, paste the current Code.gs and deploy a New version. They work anyway ' +
               'unless a feature needs both halves.</span>');
+          serverBuild = r.build || '';
+          renderBuildBanner();
           toast(current ? 'เชื่อมต่อสำเร็จ / Connection OK'
             : 'เชื่อมต่อได้ แต่เวอร์ชันแอปกับสคริปต์ไม่ตรงกัน / Connected, but the two versions differ',
             current ? 'ok' : 'warn');
@@ -2941,6 +2997,9 @@
     bind();
     updateConnBadge();
     updateQueueBadge();
+    /* one call, which also warms the script so the first save is not the
+       one that pays for waking it up */
+    checkServerBuild();
 
     var d = readJSON(LS.draft, null);
     if (d && d.data && Object.keys(d.data).length) {

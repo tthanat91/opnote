@@ -307,6 +307,11 @@ table.idbar td.wide{width:32%}
 .findbox .bbody::after{content:'';display:block;clear:both}
 /* three small views floated together, so the paragraph that interprets them
    wraps around the set instead of around each picture separately */
+.buildwarn{margin:0;padding:9px 14px;background:#fdf3e2;border-bottom:1px solid #e0c48a;
+  color:#7a4b00;font-size:.82rem;line-height:1.45}
+.buildwarn b{color:#8a3d00}
+.buildwarn code{background:#fff;border:1px solid #e0c48a;border-radius:4px;padding:0 4px}
+@media print{.buildwarn{display:none}}
 .printhint{border-left:3px solid var(--brand);padding:6px 10px;background:#f4f8f7;
   border-radius:0 8px 8px 0;font-size:.8rem;line-height:1.45;margin:0 0 6px}
 @media print{.printhint{display:none}}
@@ -445,6 +450,12 @@ table.flow td{padding-top:4px;vertical-align:top}
       <button data-view="settings" id="navSettings">ตั้งค่า · Settings</button>
     </nav>
   </header>
+
+  <!-- Shown only when the deployed Apps Script is not the version this app
+       expects. A stale script does not fail loudly — it just quietly stops
+       doing whatever the newest version added — so it has to announce
+       itself rather than wait to be looked for in Settings. -->
+  <div id="buildWarn" class="buildwarn hidden"></div>
 
   <main>
 
@@ -718,12 +729,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=ca"></script>
-<script src="figures.js?v=ca"></script>
-<script src="figures-original.js?v=ca"></script>
-<script src="letterhead.js?v=ca"></script>
-<script src="narrative.js?v=ca"></script>
-<script src="templates.js?v=ca"></script>
-<script src="app.js?v=ca"></script>
+<script src="config.js?v=cc"></script>
+<script src="figures.js?v=cc"></script>
+<script src="figures-original.js?v=cc"></script>
+<script src="letterhead.js?v=cc"></script>
+<script src="narrative.js?v=cc"></script>
+<script src="templates.js?v=cc"></script>
+<script src="app.js?v=cc"></script>
 </body>
 </html>
