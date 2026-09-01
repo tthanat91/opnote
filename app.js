@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cc';
+  var APP_BUILD = '2026-08-02cd';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -2630,6 +2630,13 @@
      plain sight, rather than waiting to be interrogated in Settings. */
   var serverBuild = null;
 
+  /* the /macros/s/<this>/exec part, which is what identifies one deployment
+     among several in the same script project */
+  function deploymentId() {
+    var m = /\/macros\/s\/([^\/]+)\//.exec(scriptUrl || '');
+    return m ? m[1] : (scriptUrl || 'no URL set');
+  }
+
   function renderBuildBanner() {
     var n = $('#buildWarn');
     if (!n) return;
@@ -2643,7 +2650,17 @@
       '<span class="en">The Apps Script deployment is older than this app expects. ' +
       'Some things will simply not happen \u2014 an annotated photograph will not get its ' +
       '<code>-drawing</code> copy, for one. Paste the current Code.gs, then ' +
-      'Deploy \u25b8 Manage deployments \u25b8 pencil \u25b8 Version: <b>New version</b> \u25b8 Deploy.</span>';
+      'Deploy \u25b8 Manage deployments \u25b8 pencil \u25b8 Version: <b>New version</b> \u25b8 Deploy.</span>' +
+      /* The app can only report what the URL it is pointed at replies. If the
+         editor shows the new code but this still shows the old build, the two
+         are not the same deployment — and the only way to tell is to ask the
+         URL directly, outside the app. */
+      '<br><b>\u0e15\u0e23\u0e27\u0e08\u0e42\u0e14\u0e22\u0e15\u0e23\u0e07 / check it directly:</b> ' +
+      '<a href="' + esc(scriptUrl) + '?action=ping" target="_blank" rel="noopener">' +
+      esc(deploymentId()) + '</a> ' +
+      '<span class="en">\u2014 opens the script itself and prints the build it is really ' +
+      'running. Compare that id with the one in Deploy \u25b8 Manage deployments: if they ' +
+      'differ, the version you updated is not the one this app is calling.</span>';
   }
 
   function checkServerBuild() {
