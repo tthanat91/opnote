@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02cd',
+    build: '2026-08-02cf',
 
 
 
@@ -692,21 +692,7 @@
         { group: 'sctype', needs: ['cr_sc_type'],
           text: 'The {cr_sc_type|lc} was mobilized, the mucocutaneous junction being excised circumferentially and the bowel freed from the fascia and the peritoneum until it lay free within the abdominal cavity.' },
         { group: 'sctype',
-          text: 'The stoma was mobilized, the mucocutaneous junction being excised circumferentially and the bowel freed from the fascia and the peritoneum until it lay free within the abdominal cavity.' },
-        { text: 'The bowel ends were trimmed back to healthy, well-perfused tissue.' }
-      ],
-
-      sc_anastomosis: [
-        { group: 'scan', needs: ['cr_sc_anast'], equals: 'Stapled side-to-side',
-          text: 'A stapled side-to-side, functional end-to-end anastomosis was fashioned with «a 60 mm linear stapler», and the common enterotomy was closed «with a further stapled firing».' },
-        { group: 'scan', needs: ['cr_sc_anast'], equals: 'single layer',
-          text: 'A hand-sewn end-to-end anastomosis was fashioned in a single layer «with interrupted 3-0 PDS».' },
-        { group: 'scan', needs: ['cr_sc_anast'], equals: 'two layers',
-          text: 'A hand-sewn end-to-end anastomosis was fashioned in two layers «with an inner continuous 3-0 PDS and an outer interrupted seromuscular layer».' },
-        { group: 'scan', needs: ['cr_sc_anast'], equals: 'circular stapler',
-          text: 'The anvil of a «29 mm» circular stapler was secured in the proximal bowel with a purse-string suture, the stapler was passed per anum, and a stapled end-to-end anastomosis was completed under direct vision.' },
-        { group: 'scan', needs: ['cr_sc_anast'], text: 'Anastomosis: {cr_sc_anast}.' },
-        { text: 'The anastomosis was inspected and was patent, well perfused and without tension. The mesenteric defect was «closed».' }
+          text: 'The stoma was mobilized, the mucocutaneous junction being excised circumferentially and the bowel freed from the fascia and the peritoneum until it lay free within the abdominal cavity.' }
       ],
 
       /* ---- perianal fistula ----------------------------------------
@@ -740,7 +726,6 @@
         { needs: ['fi_tracts'], text: '{fi_tracts}' }
       ],
 
-      /* --- drainage and assessment only --- */
       fi_eua_only: [
         { needs: ['fi_procedure'], equals: 'Examination under anesthesia only',
           text: 'Examination under anesthesia alone was performed; no definitive procedure was undertaken at this sitting, and the findings were recorded to plan definitive treatment.' }
@@ -761,7 +746,9 @@
           text: 'Nothing was left in the cavity, which was left open to drain freely.' }
       ],
 
-      /* --- laying the tract open --- */
+      /* "Fistulotomy" is a substring of "Fistulotomy with immediate
+         sphincteroplasty (FIPS)", so these lines say what they are NOT as
+         well as what they are — equals and not both test the same field. */
       fi_fistulotomy: [
         { group: 'filo', needs: ['fi_procedure', 'fi_lay_open'], equals: 'Fistulotomy', not: 'immediate sphincteroplasty',
           text: 'The tract was laid open along the probe with diathermy, dividing the overlying skin, subcutaneous tissue and the {fi_lay_open}% of the external sphincter that the tract encircled. The remaining sphincter was left intact and the anorectal ring was preserved.' },
@@ -821,7 +808,6 @@
           text: 'The tract was curetted thoroughly with a Volkmann spoon and irrigated until the walls were clean and bleeding freely.' }
       ],
 
-      /* --- sphincter-preserving procedures --- */
       fi_lift: [
         { needs: ['fi_procedure'], equals: 'LIFT',
           text: 'A curved incision was made over the intersphincteric groove at the level of the tract, and the plane between the internal and external sphincters was opened by combined blunt and sharp dissection.' },
@@ -949,14 +935,134 @@
           text: 'Hemostasis was secured with diathermy. A digital examination confirmed that the anal canal admitted a finger comfortably and that the sphincter tone was preserved. The wound was dressed «with a light non-adherent dressing» and the patient was returned to recovery in a stable condition.' }
       ],
 
+      /* ---- taking a stoma down -------------------------------------
+         The branching here is deeper than anywhere else in the app: hand
+         or stapler, then which stapler, then how the common channel was
+         closed. Each answer is asked only when the one above it calls for
+         it, and each has its own sentence — so the note reads as an account
+         of one operation rather than a list of everything that might have
+         been done. */
+      sc_findings: [
+        { group: 'scadh', needs: ['cr_sc_adhesion'], equals: 'None',
+          text: 'No significant intra-abdominal adhesions were encountered.' },
+        { group: 'scadh', needs: ['cr_sc_adhesion'], equals: 'Filmy',
+          text: 'Filmy adhesions around the stoma were divided; the rest of the abdomen was free.' },
+        { group: 'scadh', needs: ['cr_sc_adhesion'], equals: 'Dense, around the stoma only',
+          text: 'Dense adhesions around the stoma were divided sharply; the rest of the abdomen was free.' },
+        { group: 'scadh', needs: ['cr_sc_adhesion'], equals: 'Dense and generalized',
+          text: 'Dense and generalized adhesions were encountered and divided sharply, and the small bowel was run in its entirety at the end to confirm that no injury had been missed.' },
+        { group: 'scent', needs: ['cr_sc_enterotomy'], equals: 'None',
+          text: 'The bowel was not injured during the dissection.' },
+        { group: 'scent', needs: ['cr_sc_enterotomy'], equals: 'Serosal tear',
+          text: 'A serosal tear was made during the dissection and was repaired «with interrupted 3-0 Vicryl».' },
+        { group: 'scent', needs: ['cr_sc_enterotomy'], equals: 'Full-thickness',
+          text: 'A full-thickness enterotomy was made during the dissection and was repaired «in two layers».' },
+        { group: 'scent', needs: ['cr_sc_enterotomy'], equals: 'Required resection',
+          text: 'The bowel was injured beyond repair during the dissection, and the damaged segment was resected.' },
+        { group: 'scph', needs: ['cr_sc_parastomal', 'cr_sc_parastomal_size'], equals: 'Present',
+          text: 'A parastomal hernia was present, with a fascial defect of {cr_sc_parastomal_size} cm.' },
+        { group: 'scph', needs: ['cr_sc_parastomal'], equals: 'Present',
+          text: 'A parastomal hernia was present.' },
+        { group: 'scph', needs: ['cr_sc_parastomal'], equals: 'None',
+          text: 'There was no parastomal hernia.' },
+        { group: 'scphr', needs: ['cr_sc_parastomal_repair'], equals: 'Primary suture',
+          text: 'The defect was repaired primarily «with interrupted 0 Prolene».' },
+        { group: 'scphr', needs: ['cr_sc_parastomal_repair'], equals: 'Mesh',
+          text: 'The defect was repaired with «a sublay polypropylene» mesh.' },
+        { group: 'scphr', needs: ['cr_sc_parastomal_repair'], equals: 'Not repaired',
+          text: 'The defect was closed with the fascia and no separate repair was undertaken.' }
+      ],
+
+      /* This says how the abdomen was entered, so the generic access part is
+         not used as well — together they produced "the abdomen was opened"
+         immediately followed by "the abdomen was not opened". */
+      sc_access: [
+        { group: 'sclap', needs: ['cr_sc_laparotomy', 'cr_approach', 'cr_incision'], equals: 'circumstomal incision only',
+          text: '{cr_incision} The operation was completed through this incision alone; the abdomen was not opened.' },
+        { group: 'sclap', needs: ['cr_sc_laparotomy', 'cr_approach'], equals: 'circumstomal incision only',
+          text: 'A circumstomal incision was made, and the operation was completed through it alone; the abdomen was not opened.' },
+        { group: 'sclap', needs: ['cr_sc_laparotomy', 'cr_approach', 'cr_incision'], equals: 'midline laparotomy',
+          text: 'A circumstomal incision was made, but the dissection would not free the bowel safely, so the abdomen was opened. {cr_incision}' },
+        { group: 'sclap', needs: ['cr_sc_laparotomy', 'cr_approach'], equals: 'midline laparotomy',
+          text: 'A circumstomal incision was made, but the dissection would not free the bowel safely, so a midline laparotomy was made and the mobilization completed from within the abdomen.' }
+      ],
+
+      sc_resect: [
+        { group: 'screm', needs: ['cr_sc_resect', 'cr_sc_resect_len'], equals: 'Yes',
+          text: 'A {cr_sc_resect_len} cm segment of bowel carrying the stoma was resected, and the ends were trimmed back to healthy, well-perfused tissue.' },
+        { group: 'screm', needs: ['cr_sc_resect'], equals: 'Yes',
+          text: 'The segment of bowel carrying the stoma was resected, and the ends were trimmed back to healthy, well-perfused tissue.' },
+        { group: 'screm', needs: ['cr_sc_resect'], equals: 'No',
+          text: 'No bowel was resected; the edges of the stoma were freshened back to healthy tissue.' }
+      ],
+
+      sc_anastomosis: [
+        /* --- by hand --- */
+        { group: 'scan', needs: ['cr_sc_method', 'cr_sc_hs_config', 'cr_sc_hs_material', 'cr_sc_hs_technique'], equals: 'Hand-sewn',
+          text: 'A hand-sewn {cr_sc_hs_config|lc} anastomosis was fashioned with {cr_sc_hs_material}, {cr_sc_hs_technique|lc}.' },
+        { group: 'scan', needs: ['cr_sc_method', 'cr_sc_hs_config', 'cr_sc_hs_material'], equals: 'Hand-sewn',
+          text: 'A hand-sewn {cr_sc_hs_config|lc} anastomosis was fashioned with {cr_sc_hs_material}.' },
+        { group: 'scan', needs: ['cr_sc_method', 'cr_sc_hs_config'], equals: 'Hand-sewn',
+          text: 'A hand-sewn {cr_sc_hs_config|lc} anastomosis was fashioned «with interrupted 3-0 PDS».' },
+        { needs: ['cr_sc_hs_layers'], equals: 'Two layers',
+          text: 'A second, seromuscular layer was placed over the first.' },
+        { needs: ['cr_sc_hs_layers'], equals: 'Single layer',
+          text: 'The anastomosis was made in a single layer.' },
+
+        /* --- with a stapler --- */
+        /* "1 firings" is the sort of thing that makes a reader distrust the
+           whole note, so one firing gets its own sentence */
+        { group: 'scan', needs: ['cr_sc_st_firings', 'cr_sc_st_device', 'cr_sc_st_gia_len', 'cr_sc_st_gia_colour', 'cr_sc_method'], equals: '1',
+          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with a single firing of a {cr_sc_st_gia_len} linear cutter, {cr_sc_st_gia_colour|lc} cartridge.' },
+        { group: 'scan', needs: ['cr_sc_st_device', 'cr_sc_st_firings', 'cr_sc_st_gia_len', 'cr_sc_st_gia_colour', 'cr_sc_method'], equals: 'Linear cutter',
+          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with {cr_sc_st_firings} firings of a {cr_sc_st_gia_len} linear cutter, {cr_sc_st_gia_colour|lc} cartridge.' },
+        { group: 'scan', needs: ['cr_sc_st_device', 'cr_sc_st_gia_len', 'cr_sc_st_gia_colour', 'cr_sc_method'], equals: 'Linear cutter',
+          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with a {cr_sc_st_gia_len} linear cutter, {cr_sc_st_gia_colour|lc} cartridge.' },
+        { group: 'scan', needs: ['cr_sc_st_device', 'cr_sc_st_gia_len', 'cr_sc_method'], equals: 'Linear cutter',
+          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with a {cr_sc_st_gia_len} linear cutter.' },
+        { group: 'scan', needs: ['cr_sc_st_device', 'cr_sc_st_circ_size', 'cr_sc_method'], equals: 'Circular',
+          text: 'The anvil of a {cr_sc_st_circ_size} circular stapler was secured in the proximal limb with a purse-string suture, the stapler was passed per anum, and a stapled end-to-end anastomosis was completed under direct vision.' },
+        { group: 'scan', needs: ['cr_sc_st_device', 'cr_sc_method'], equals: 'Circular',
+          text: 'A «29 mm» circular stapler was used to complete an end-to-end anastomosis under direct vision.' },
+        { group: 'scan', needs: ['cr_sc_st_device', 'cr_sc_method'], equals: 'Linear (TA)',
+          text: 'The anastomosis was completed with a linear (TA) stapler.' },
+        { group: 'scan', needs: ['cr_sc_method'], equals: 'Stapled',
+          text: 'A stapled anastomosis was fashioned.' },
+        { needs: ['cr_sc_st_circ_size'], text: 'The doughnuts were inspected and were complete.' },
+
+        /* --- the hole the stapler was passed through --- */
+        { group: 'scch', needs: ['cr_sc_channel', 'cr_sc_channel_device', 'cr_sc_channel_len', 'cr_sc_channel_colour'], equals: 'Stapled',
+          text: 'The common channel was closed with a {cr_sc_channel_len} {cr_sc_channel_device|lc} stapler, {cr_sc_channel_colour|lc} cartridge.' },
+        { group: 'scch', needs: ['cr_sc_channel', 'cr_sc_channel_device'], equals: 'Stapled',
+          text: 'The common channel was closed with a {cr_sc_channel_device|lc} stapler.' },
+        { group: 'scch', needs: ['cr_sc_channel', 'cr_sc_channel_material', 'cr_sc_channel_technique'], equals: 'Hand-sewn',
+          text: 'The common channel was closed by hand with {cr_sc_channel_material}, {cr_sc_channel_technique|lc}.' },
+        { group: 'scch', needs: ['cr_sc_channel', 'cr_sc_channel_material'], equals: 'Hand-sewn',
+          text: 'The common channel was closed by hand with {cr_sc_channel_material}.' },
+        { group: 'scch', needs: ['cr_sc_channel'], equals: 'Hand-sewn',
+          text: 'The common channel was closed by hand «with interrupted 3-0 PDS».' },
+
+        { text: 'The anastomosis was patent and lay without tension, and the mesenteric defect was «closed».' }
+      ],
+
       sc_wound: [
+        { group: 'scw', needs: ['cr_sc_wound', 'cr_sc_wound_material'], equals: 'Primary',
+          text: 'The stoma wound was closed primarily with {cr_sc_wound_material}.' },
         { group: 'scw', needs: ['cr_sc_wound'], equals: 'Primary',
           text: 'The stoma wound was closed primarily.' },
+        { group: 'scw', needs: ['cr_sc_wound', 'cr_sc_wound_material'], equals: 'Purse-string',
+          text: 'The stoma wound was closed with a subcuticular purse-string of {cr_sc_wound_material}, leaving a small central opening to drain.' },
         { group: 'scw', needs: ['cr_sc_wound'], equals: 'Purse-string',
           text: 'The stoma wound was closed with a subcuticular purse-string, leaving a small central opening to drain.' },
         { group: 'scw', needs: ['cr_sc_wound'], equals: 'Left open',
-          text: 'The stoma wound was left open to heal by secondary intention.' }
-      ]
+          text: 'The stoma wound was left open to heal by secondary intention.' },
+        { group: 'scsd', needs: ['cr_sc_drain_sc', 'cr_sc_drain_sc_type'], equals: 'Yes',
+          text: 'A subcutaneous drain was left in the stoma wound: {cr_sc_drain_sc_type}.' },
+        { group: 'scsd', needs: ['cr_sc_drain_sc'], equals: 'Yes',
+          text: 'A subcutaneous drain was left in the stoma wound.' },
+        { group: 'scsd', needs: ['cr_sc_drain_sc'], equals: 'No',
+          text: 'No subcutaneous drain was left.' }
+      ],
     },
 
     /* =================================================================
@@ -1025,8 +1131,9 @@
           { key: 'cr_approach', any: ['Open', 'Laparoscopic', 'Robotic', 'Transanal'] }
         ],
         lines: [
-          { use: 'setup' }, { use: 'access_plain' },
-          { use: 'adhesiolysis' }, { use: 'stoma_takedown' },
+          { use: 'setup' }, { use: 'sc_access' },
+          { use: 'adhesiolysis' }, { use: 'sc_findings' },
+          { use: 'stoma_takedown' }, { use: 'sc_resect' },
           { use: 'stump_found' },
           { use: 'splenic_flexure' },
           { use: 'sc_anastomosis' }, { use: 'anast_check' },
@@ -1078,9 +1185,9 @@
           { key: 'cr_approach', any: ['Open', 'Laparoscopic', 'Robotic', 'Transanal'] }
         ],
         lines: [
-          { use: 'setup' }, { use: 'access_plain' },
-          { use: 'stoma_takedown' }, { use: 'adhesiolysis' },
-          { use: 'sc_anastomosis' }, { use: 'anast_check' },
+          { use: 'setup' }, { use: 'sc_access' },
+          { use: 'stoma_takedown' }, { use: 'sc_findings' },
+          { use: 'sc_resect' }, { use: 'sc_anastomosis' }, { use: 'anast_check' },
           { text: 'The anastomosis was returned to the peritoneal cavity in the correct orientation.' },
           { use: 'drain' }, { use: 'close_fascia' }, { use: 'sc_wound' },
           { use: 'count' }

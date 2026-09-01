@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cd';
+  var APP_BUILD = '2026-08-02cf';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -105,6 +105,16 @@
     clearTimeout(t._h);
     t._h = setTimeout(function () { t.className = 'toast'; }, 3600);
   }
+  /* A screen that has not changed for fifteen seconds looks broken, whatever
+     is happening behind it. */
+  function busy(msg) {
+    var n = $('#busy');
+    if (!n) return;
+    if (msg === false) { n.classList.add('hidden'); return; }
+    $('#busyMsg').innerHTML = msg;
+    n.classList.remove('hidden');
+  }
+
   function bilingual(th, en) {
     return '<span class="th">' + esc(th) + '</span><span class="en">' + esc(en) + '</span>';
   }
@@ -2486,6 +2496,27 @@
   }
 
   function openNote(id, editable) {
+    /* The note just saved is already here, in full, with every photograph in
+       memory. Asking Google to send it all back — which means re-downloading
+       each picture from Drive and encoding it as text — is a slow way to
+       fetch something we are already holding. */
+    if (S.id === id && S.data && Object.keys(S.data).length) {
+      S.mode = editable ? 'edit' : 'view';
+      syncCategoryUI();
+      buildCommonForm(); buildCategoryForm();
+      renderSheetTabs(); renderPhotos();
+      showView('new');
+      gotoStep(editable ? 1 : 4);
+      $('#btnSave').style.display = editable ? '' : 'none';
+      $('#lockNote').style.display = editable ? 'none' : '';
+      if (!editable) refreshPreview();
+      toast(editable ? '\u0e40\u0e1b\u0e34\u0e14\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e41\u0e01\u0e49\u0e44\u0e02 / Opened for editing'
+        : '\u0e40\u0e1b\u0e34\u0e14\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e14\u0e39\u0e41\u0e25\u0e30\u0e1e\u0e34\u0e21\u0e1e\u0e4c / Opened read-only', 'ok');
+      return;
+    }
+    busy('\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e1b\u0e34\u0e14\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u2026<br>' +
+      '<span class="en">Fetching the note. Photographs come back one at a time ' +
+      'from Drive, so a note with several may take a few seconds.</span>');
     api('GET', { action: 'get', id: id }).then(function (r) {
       if (!r || !r.ok || !r.note) throw new Error('not found');
       var n = r.note;
@@ -2517,8 +2548,10 @@
       $('#btnSave').style.display = editable ? '' : 'none';
       $('#lockNote').style.display = editable ? 'none' : '';
       if (!editable) refreshPreview();
+      busy(false);
       toast(editable ? 'เปิดเพื่อแก้ไข / Opened for editing' : 'เปิดเพื่อดูและพิมพ์ / Opened read-only', 'ok');
     }).catch(function (e) {
+      busy(false);
       toast('เปิดไม่สำเร็จ / Could not open: ' + e.message, 'warn');
     });
   }
