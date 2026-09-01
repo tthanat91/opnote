@@ -173,12 +173,15 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .toolbtn{background:#f1f5f4;border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.85rem}
 .toolbtn.on{background:var(--brand);color:#fff;border-color:var(--brand)}
-#penColors{display:flex;gap:6px}
+#penColors{display:flex;flex-wrap:wrap;gap:6px;max-width:260px}
 #penColors button{width:28px;height:28px;border-radius:50%;border:2px solid #fff;
   box-shadow:0 0 0 1px var(--line);cursor:pointer}
 #penColors button.on{box-shadow:0 0 0 3px var(--brand-2)}
 #penSize{width:110px;accent-color:var(--brand)}
-.stage{position:relative;width:100%;background:#fff no-repeat center/contain;
+/* width and height are set in script, from the space the window actually
+   has — a portrait figure on a landscape iPad has to be fitted to the
+   height, not the width */
+.stage{position:relative;width:100%;margin:0 auto;background:#fff no-repeat center/contain;
   border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none}
 canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #photoList{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
@@ -483,11 +486,19 @@ table.flow td{padding-top:4px;vertical-align:top}
             </div>
           <div class="toolbar">
             <div id="penColors">
-              <button type="button" class="on" data-color="#111111" style="background:#111"></button>
+              <button type="button" class="on" data-color="#111111" style="background:#111111"></button>
+              <button type="button" data-color="#6d6d6d" style="background:#6d6d6d"></button>
               <button type="button" data-color="#c62828" style="background:#c62828"></button>
-              <button type="button" data-color="#1565c0" style="background:#1565c0"></button>
-              <button type="button" data-color="#2e7d32" style="background:#2e7d32"></button>
+              <button type="button" data-color="#e91e63" style="background:#e91e63"></button>
               <button type="button" data-color="#ef6c00" style="background:#ef6c00"></button>
+              <button type="button" data-color="#f9a825" style="background:#f9a825"></button>
+              <button type="button" data-color="#2e7d32" style="background:#2e7d32"></button>
+              <button type="button" data-color="#00897b" style="background:#00897b"></button>
+              <button type="button" data-color="#1565c0" style="background:#1565c0"></button>
+              <button type="button" data-color="#3949ab" style="background:#3949ab"></button>
+              <button type="button" data-color="#6a1b9a" style="background:#6a1b9a"></button>
+              <button type="button" data-color="#795548" style="background:#795548"></button>
+              <button type="button" data-color="#ffffff" style="background:#ffffff"></button>
             </div>
             <input type="range" id="penSize" min="1" max="10" value="3" title="ขนาดปากกา / pen size">
             <button type="button" class="toolbtn on" id="toolPen">✏️ วาด · Draw</button>
@@ -698,12 +709,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=by"></script>
-<script src="figures.js?v=by"></script>
-<script src="figures-original.js?v=by"></script>
-<script src="letterhead.js?v=by"></script>
-<script src="narrative.js?v=by"></script>
-<script src="templates.js?v=by"></script>
-<script src="app.js?v=by"></script>
+<script src="config.js?v=bz"></script>
+<script src="figures.js?v=bz"></script>
+<script src="figures-original.js?v=bz"></script>
+<script src="letterhead.js?v=bz"></script>
+<script src="narrative.js?v=bz"></script>
+<script src="templates.js?v=bz"></script>
+<script src="app.js?v=bz"></script>
 </body>
 </html>

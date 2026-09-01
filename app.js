@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02by';
+  var APP_BUILD = '2026-08-02bz';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
@@ -1382,10 +1382,15 @@
   }
 
   function closeDraw() {
+    var wasPhoto = S.drawKind === 'photo', ix = S.active;
     $('#drawModal').classList.add('hidden');
     saveDraft();
     renderSheetTabs();          /* the previews pick up what was just drawn */
-    renderPhotos();
+    /* the photograph's thumbnail is the annotated version, which has to be
+       composited before the card can show it */
+    if (wasPhoto && S.photos[ix]) {
+      exportPhotoInk(S.photos[ix]).then(renderPhotos, renderPhotos);
+    } else renderPhotos();
   }
 
   function renderFigPicker() {
@@ -1419,11 +1424,35 @@
     bindPointer();
   }
 
+  /* Turning an iPad on its side halves the height available and doubles the
+     width. Sizing the picture from its width alone — which is what this did —
+     leaves a portrait figure taller than the screen, with the bottom of it
+     unreachable. So the stage is fitted to BOTH dimensions of whatever space
+     the window actually has, and the smaller of the two wins. */
+  function fitStage(stage, t) {
+    var host = stage.parentNode;
+    var box = host.parentNode;
+    var used = 0;
+    Array.prototype.forEach.call(box.children, function (ch) {
+      if (ch !== host) used += ch.offsetHeight + 10;
+    });
+    var availW = host.clientWidth || 320;
+    var availH = Math.max(200, (window.innerHeight || 700) - used - 46);
+    var w = availW, h = w * t.h / t.w;
+    if (h > availH) { h = availH; w = h * t.w / t.h; }
+    stage.style.width = Math.round(w) + 'px';
+    stage.style.height = Math.round(h) + 'px';
+  }
+
   function sizeCanvas(t) {
-    var rect = cv.parentNode.getBoundingClientRect();
-    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    var stage = cv.parentNode;
+    fitStage(stage, t);
+    var rect = stage.getBoundingClientRect();
+    /* 2 rather than 2.5: on a Retina iPad every extra pixel is one more the
+       pen has to paint on every frame, and 2x is already beyond the eye */
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.max(2, Math.round(rect.width * dpr));
-    cv.height = Math.max(2, Math.round(rect.width * (t.h / t.w) * dpr));
+    cv.height = Math.max(2, Math.round(rect.height * dpr));
     ctx = cv.getContext('2d');
     redraw();
   }
@@ -1467,6 +1496,37 @@
     return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
   }
 
+  /* Why drawing lagged: every pointermove redrew EVERY stroke on the sheet
+     from scratch. The tenth stroke therefore cost ten times the first, and a
+     Pencil reporting 240 points a second made it worse, not better. Now only
+     the new piece of the current stroke is painted, and only once per frame.
+     A full redraw happens when the stroke ends, so what is exported is the
+     same smoothed path as before. */
+  var inkPending = false;
+
+  function drawTail() {
+    inkPending = false;
+    if (!ctx || !cur || cur.p.length < 2) return;
+    var w = cv.width, h = cv.height;
+    var from = Math.max(1, cur.drawn || 1);
+    if (from >= cur.p.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = cur.e ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = cur.c;
+    ctx.lineWidth = Math.max(1, cur.w * (w / 1000));
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    var a0 = cur.p[from - 1];
+    ctx.moveTo(a0[0] * w, a0[1] * h);
+    for (var i = from; i < cur.p.length; i++) {
+      var a = cur.p[i - 1], b = cur.p[i];
+      ctx.quadraticCurveTo(a[0] * w, a[1] * h, (a[0] + b[0]) / 2 * w, (a[1] + b[1]) / 2 * h);
+    }
+    ctx.stroke();
+    ctx.restore();
+    cur.drawn = cur.p.length;
+  }
+
   function bindPointer() {
     cv.style.touchAction = 'none';
     cv.addEventListener('pointerdown', function (e) {
@@ -1484,19 +1544,29 @@
       drawing = true;
       cur = { c: tool.color, w: tool.mode === 'eraser' ? tool.width * 5 : tool.width, e: tool.mode === 'eraser', p: [pos(e)] };
       sh.strokes.push(cur);
-      redraw();
     });
     cv.addEventListener('pointermove', function (e) {
       if (!drawing || !cur) return;
-      cur.p.push(pos(e));
-      redraw();
+      /* an Apple Pencil reports far faster than the screen refreshes; taking
+         the coalesced events keeps the curve smooth without painting each */
+      var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (var i = 0; i < evs.length; i++) cur.p.push(pos(evs[i]));
+      if (!inkPending) {
+        inkPending = true;
+        (window.requestAnimationFrame || setTimeout)(drawTail, 16);
+      }
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
       cv.addEventListener(ev, function () {
         if (!drawing) return;
         drawing = false;
-        if (cur) cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
-        cur = null; saveDraft();
+        if (cur) {
+          delete cur.drawn;      /* a paint cursor, not part of the record */
+          cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
+        }
+        cur = null;
+        redraw();                /* settle the stroke to its exported shape */
+        saveDraft();
       });
     });
   }
@@ -1593,7 +1663,7 @@
     box.innerHTML = '';
     S.photos.forEach(function (p, i) {
       var card = el('div', 'photo');
-      card.innerHTML = '<img src="' + (p.dataUrl || p.url) + '" alt="">';
+      card.innerHTML = '<img src="' + (p.inkUrl || p.dataUrl || p.url) + '" alt="">';
       var cap = el('input');
       cap.type = 'text'; cap.placeholder = 'คำบรรยาย / caption'; cap.value = p.caption || '';
       cap.oninput = function () { p.caption = cap.value; saveDraft(); };
@@ -2067,8 +2137,18 @@
           return { strokes: p.strokes || [], texts: p.texts || [] };
         })
       },
+      /* Every image in this list becomes a separate createFile call in Apps
+         Script, and each of those takes a second or two — which is nearly all
+         of the wait when saving. A figure sheet with nothing drawn on it is
+         just the stock diagram from the bank: filing a copy of it in Drive
+         records nothing that the note does not already say. So only the
+         sheets that were actually drawn on are uploaded. The printed note
+         still shows all of them, and the strokes are kept either way, so
+         nothing is lost. */
       figures: pngs.map(function (d, i) {
-        return { name: 'figure' + (i + 1) + '_' + S.sheets[i].fig + '.png', dataUrl: d };
+        return { name: 'figure' + (i + 1) + '_' + S.sheets[i].fig + '.png', dataUrl: d, ink: hasInk(S.sheets[i]) };
+      }).filter(function (f) { return f.ink; }).map(function (f) {
+        return { name: f.name, dataUrl: f.dataUrl };
       }),
       photos: S.photos.filter(function (p) { return p.dataUrl; }).map(function (p, i) {
         var o = { name: 'photo' + (i + 1) + '.jpg', caption: p.caption || '', dataUrl: p.dataUrl };
@@ -2082,9 +2162,16 @@
 
   function doSave() {
     var btn = $('#btnSave');
-    btn.disabled = true; btn.textContent = 'กำลังบันทึก… / Saving…';
+    btn.disabled = true;
+    btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21\u0e23\u0e39\u0e1b… / Preparing images…';
     return refreshPreview().then(function (pngs) {
       var pl = payload(pngs);
+      /* the upload is the slow part and it is worth saying so, with a count,
+         rather than leaving a dead button for ten seconds */
+      var n = (pl.figures || []).length + (pl.photos || []).length;
+      btn.textContent = n
+        ? '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07 ' + n + ' \u0e23\u0e39\u0e1b… / Uploading ' + n + ' image' + (n === 1 ? '' : 's') + '…'
+        : '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01… / Saving…';
       S.id = pl.id; S.createdAt = pl.createdAt;
       if (!scriptUrl) { queue(pl); throw new Error('ยังไม่ได้ตั้งค่า Google Sheet / Sheet not configured'); }
       return api('POST', pl).then(function (r) {
@@ -2129,13 +2216,31 @@
     b.style.display = n ? 'inline-block' : 'none';
   }
 
-  function saveDraft() {
-    harvest();
+  /* Called on every keystroke and every stroke of the pen. Reading the form
+     back into S.data has to happen at once — everything else in the app asks
+     S.data what the answers are — but writing the whole note out to
+     localStorage that often is work the browser does instead of drawing, so
+     only that half is coalesced. */
+  var draftTimer = null;
+
+  function writeDraft() {
     writeJSON(LS.draft, {
       at: Date.now(), id: S.id, createdAt: S.createdAt, mode: S.mode,
       category: S.category, data: S.data,
       sheets: S.sheets, photos: S.photos
     });
+  }
+
+  function saveDraft() {
+    harvest();
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(writeDraft, 250);
+  }
+
+  function saveDraftNow() {
+    clearTimeout(draftTimer);
+    harvest();
+    writeDraft();
   }
 
   function restoreDraft(d) {
@@ -2432,7 +2537,20 @@
       if ((k === 'operation' || k === 'findings') && e.type === 'input') {
         S.data[k + '_manual'] = !!e.target.value.trim();
       }
+      clearMissingFlag(e.target);
       saveDraft(); applyVisibility();
+    }
+
+    /* Being told a field is missing and then still being shouted at after
+       filling it in is the sort of thing that makes people distrust a form. */
+    function clearMissingFlag(node) {
+      var wrap = node.closest ? node.closest('.field.missing') : null;
+      if (!wrap) return;
+      var answered = $$('[data-key]', wrap).some(function (n) {
+        if (n.type === 'radio' || n.type === 'checkbox') return n.checked;
+        return String(n.value || '').trim() !== '';
+      });
+      if (answered) wrap.classList.remove('missing');
     }
     document.addEventListener('input', onFieldChanged);
     document.addEventListener('change', onFieldChanged);
@@ -2619,12 +2737,23 @@
       if (readJSON(LS.queue, []).length) flushQueue();
     };
 
+    window.addEventListener('pagehide', saveDraftNow);
     window.addEventListener('online', function () { updateConnBadge(); flushQueue(); });
     window.addEventListener('offline', updateConnBadge);
-    window.addEventListener('resize', function () {
-      var t = drawTarget();
-      if (t && cv && cv.parentNode) sizeCanvas(t);
-    });
+    var refit = null;
+    function refitCanvas() {
+      clearTimeout(refit);
+      /* iOS reports the old viewport size until a moment after the turn */
+      refit = setTimeout(function () {
+        var t = drawTarget();
+        if (t && cv && cv.parentNode && !$('#drawModal').classList.contains('hidden')) {
+          sizeCanvas(t);
+        }
+      }, 120);
+    }
+    window.addEventListener('resize', refitCanvas);
+    window.addEventListener('orientationchange', refitCanvas);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', refitCanvas);
   }
 
   function init() {
