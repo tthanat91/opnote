@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02ch',
+    build: '2026-08-02cj',
 
 
 
@@ -178,7 +178,13 @@
         { group: 'stfent', needs: ['st_enterotomy'],
           text: 'The bowel was injured during the dissection: {st_enterotomy|lc}.' },
         { needs: ['st_stump'],
-          text: 'The rectal stump had been {st_stump|lc} at the index operation.' }
+          text: 'The rectal stump had been {st_stump|lc} at the index operation.' },
+        /* a stoma being raised has no adhesions to report — what it has is
+           a reason, and that is the finding worth stating */
+        { group: 'stfwhy', needs: ['st_indication'], equals: 'Other',
+          text: 'The indication for the stoma was as recorded: {st_indication}.' },
+        { group: 'stfwhy', needs: ['st_indication'],
+          text: 'The indication for the stoma was {st_indication|lc}.' }
       ],
 
       /* "Others" has no checklist to summarize, so the findings box is
@@ -658,6 +664,13 @@
         { text: 'The stoma was pink and viable at the end of the procedure and an appliance was applied.' }
       ],
 
+      st_reason: [
+        { group: 'streason', needs: ['st_indication'], equals: 'Other',
+          text: 'The stoma was raised for the reason recorded: {st_indication}.' },
+        { group: 'streason', needs: ['st_indication'],
+          text: 'The stoma was raised {st_indication|lc}.' }
+      ],
+
       st_setup: [
         { group: 'stpos', needs: ['st_position', 'anaesthesia'],
           text: 'Under {anaesthesia}, the patient was placed in the {st_position|lc} position. A urinary catheter was inserted. The abdomen was prepared and draped in the usual sterile fashion and the surgical safety checklist was completed.' },
@@ -666,7 +679,9 @@
       ],
 
       st_access_form: [
-        { group: 'staccess', needs: ['st_approach', 'st_incision'], equals: 'Open',
+        { group: 'staccess', needs: ['st_approach'], equals: 'Trephine',
+          text: 'The abdomen was not opened; the stoma was made through a trephine at the marked site alone.' },
+        { group: 'staccess', needs: ['st_approach', 'st_incision'], equals: 'Open (laparotomy)',
           text: 'The abdomen was opened: {st_incision}' },
         { group: 'staccess', needs: ['st_approach'], equals: 'converted to open',
           text: 'Pneumoperitoneum was established to «12 mmHg» and the procedure was subsequently converted to open.' },
@@ -674,7 +689,7 @@
           text: 'Pneumoperitoneum was established to «12 mmHg» and «a camera port at the umbilicus with two 5 mm working ports» was used, and the bowel was inspected.' },
         { group: 'staccess', needs: ['st_approach'], equals: 'Robotic',
           text: 'Pneumoperitoneum was established to «12 mmHg», the robotic ports were placed and the platform was docked.' },
-        { group: 'staccess', needs: ['st_approach'], equals: 'Open',
+        { group: 'staccess', needs: ['st_approach'], equals: 'Open (laparotomy)',
           text: 'The abdomen was opened through a «midline» incision.' }
       ],
 
@@ -709,24 +724,23 @@
       ],
 
       st_drain_part: [
-        { group: 'stdrain', needs: ['st_drain', 'st_drain_site'], not: 'None',
-          text: 'A {st_drain|lc} was placed in the {st_drain_site|lc}.' },
         { group: 'stdrain', needs: ['st_drain_site'], equals: 'None',
           text: 'No intra-abdominal drain was left.' },
-        { group: 'stdrain', needs: ['st_drain'], text: 'A drain was placed: {st_drain}.' }
+        { group: 'stdrain', needs: ['st_drain_site', 'st_drain'],
+          text: 'A {st_drain|lc} was placed in the {st_drain_site|lc}.' },
+        { group: 'stdrain', needs: ['st_drain_site'],
+          text: 'A drain was placed in the {st_drain_site|lc}.' }
       ],
 
       st_close: [
         { group: 'stports', needs: ['st_approach'], equals: 'Laparoscopic',
           text: 'Ports were removed under direct vision.' },
-        { group: 'stsheath', needs: ['st_closure_sheath_material', 'st_closure_sheath_fashion'],
-          text: 'The fascia was closed with {st_closure_sheath_material}, {st_closure_sheath_fashion|lc}.' },
-        { group: 'stsheath', needs: ['st_closure_sheath_material'],
-          text: 'The fascia was closed with {st_closure_sheath_material}.' },
-        { group: 'stskin', needs: ['st_closure_skin_material', 'st_closure_skin_fashion'],
-          text: 'The skin was closed with {st_closure_skin_material}, {st_closure_skin_fashion|lc}.' },
-        { group: 'stskin', needs: ['st_closure_skin_material'],
-          text: 'The skin was closed with {st_closure_skin_material}.' }
+        { group: 'stsheath', needs: ['st_sheath_material', 'st_sheath_fashion'],
+          text: 'The sheath was closed with {st_sheath_material}, {st_sheath_fashion|lc}.' },
+        { group: 'stsheath', needs: ['st_sheath_material'],
+          text: 'The sheath was closed with {st_sheath_material}.' },
+        { group: 'stsheath', needs: ['st_sheath_fashion'],
+          text: 'The sheath was closed {st_sheath_fashion|lc}.' }
       ],
 
       st_count: [
@@ -1113,12 +1127,12 @@
 
       st_anastomosis: [
         /* --- by hand --- */
-        { group: 'scan', needs: ['st_method', 'st_hs_config', 'st_hs_material', 'st_hs_technique'], equals: 'Hand-sewn',
-          text: 'A hand-sewn {st_hs_config|lc} anastomosis was fashioned with {st_hs_material}, {st_hs_technique|lc}.' },
-        { group: 'scan', needs: ['st_method', 'st_hs_config', 'st_hs_material'], equals: 'Hand-sewn',
-          text: 'A hand-sewn {st_hs_config|lc} anastomosis was fashioned with {st_hs_material}.' },
-        { group: 'scan', needs: ['st_method', 'st_hs_config'], equals: 'Hand-sewn',
-          text: 'A hand-sewn {st_hs_config|lc} anastomosis was fashioned «with interrupted 3-0 PDS».' },
+        { group: 'scan', needs: ['st_method', 'st_anast_config', 'st_hs_material', 'st_hs_technique'], equals: 'Hand-sewn',
+          text: 'A hand-sewn {st_anast_config|lc} anastomosis was fashioned with {st_hs_material}, {st_hs_technique|lc}.' },
+        { group: 'scan', needs: ['st_method', 'st_anast_config', 'st_hs_material'], equals: 'Hand-sewn',
+          text: 'A hand-sewn {st_anast_config|lc} anastomosis was fashioned with {st_hs_material}.' },
+        { group: 'scan', needs: ['st_method', 'st_anast_config'], equals: 'Hand-sewn',
+          text: 'A hand-sewn {st_anast_config|lc} anastomosis was fashioned «with interrupted 3-0 PDS».' },
         { needs: ['st_hs_layers'], equals: 'Two layers',
           text: 'A second, seromuscular layer was placed over the first.' },
         { needs: ['st_hs_layers'], equals: 'Single layer',
@@ -1128,13 +1142,15 @@
         /* "1 firings" is the sort of thing that makes a reader distrust the
            whole note, so one firing gets its own sentence */
         { group: 'scan', needs: ['st_st_firings', 'st_st_device', 'st_st_gia_len', 'st_st_gia_colour', 'st_method'], equals: '1',
-          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with a single firing of a {st_st_gia_len} linear cutter, {st_st_gia_colour|lc} cartridge.' },
+          text: 'The two limbs were aligned antimesenterically and a {st_anast_config|lc} anastomosis was made with a single firing of a {st_st_gia_len} linear cutter, {st_st_gia_colour|lc} cartridge.' },
         { group: 'scan', needs: ['st_st_device', 'st_st_firings', 'st_st_gia_len', 'st_st_gia_colour', 'st_method'], equals: 'Linear cutter',
-          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with {st_st_firings} firings of a {st_st_gia_len} linear cutter, {st_st_gia_colour|lc} cartridge.' },
+          text: 'The two limbs were aligned antimesenterically and a {st_anast_config|lc} anastomosis was made with {st_st_firings} firings of a {st_st_gia_len} linear cutter, {st_st_gia_colour|lc} cartridge.' },
         { group: 'scan', needs: ['st_st_device', 'st_st_gia_len', 'st_st_gia_colour', 'st_method'], equals: 'Linear cutter',
-          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with a {st_st_gia_len} linear cutter, {st_st_gia_colour|lc} cartridge.' },
+          text: 'The two limbs were aligned antimesenterically and a {st_anast_config|lc} anastomosis was made with a {st_st_gia_len} linear cutter, {st_st_gia_colour|lc} cartridge.' },
         { group: 'scan', needs: ['st_st_device', 'st_st_gia_len', 'st_method'], equals: 'Linear cutter',
-          text: 'The two limbs were aligned antimesenterically and a side-to-side, functional end-to-end anastomosis was made with a {st_st_gia_len} linear cutter.' },
+          text: 'The two limbs were aligned antimesenterically and a {st_anast_config|lc} anastomosis was made with a {st_st_gia_len} linear cutter.' },
+        { group: 'scan', needs: ['st_st_device', 'st_st_circ_size', 'st_anast_config', 'st_method'], equals: 'Circular',
+          text: 'The anvil of a {st_st_circ_size} circular stapler was secured in the proximal limb with a purse-string suture, the stapler was passed per anum, and a stapled {st_anast_config|lc} anastomosis was completed under direct vision.' },
         { group: 'scan', needs: ['st_st_device', 'st_st_circ_size', 'st_method'], equals: 'Circular',
           text: 'The anvil of a {st_st_circ_size} circular stapler was secured in the proximal limb with a purse-string suture, the stapler was passed per anum, and a stapled end-to-end anastomosis was completed under direct vision.' },
         { group: 'scan', needs: ['st_st_device', 'st_method'], equals: 'Circular',
@@ -1162,19 +1178,19 @@
 
       st_wound_part: [
         { group: 'scw', needs: ['st_wound', 'st_wound_material'], equals: 'Primary',
-          text: 'The stoma wound was closed primarily with {st_wound_material}.' },
+          text: 'The skin was closed primarily with {st_wound_material}.' },
         { group: 'scw', needs: ['st_wound'], equals: 'Primary',
-          text: 'The stoma wound was closed primarily.' },
+          text: 'The skin was closed primarily.' },
         { group: 'scw', needs: ['st_wound', 'st_wound_material'], equals: 'Purse-string',
-          text: 'The stoma wound was closed with a subcuticular purse-string of {st_wound_material}, leaving a small central opening to drain.' },
+          text: 'The skin was closed with a subcuticular purse-string of {st_wound_material}, leaving a small central opening to drain.' },
         { group: 'scw', needs: ['st_wound'], equals: 'Purse-string',
-          text: 'The stoma wound was closed with a subcuticular purse-string, leaving a small central opening to drain.' },
+          text: 'The skin was closed with a subcuticular purse-string, leaving a small central opening to drain.' },
         { group: 'scw', needs: ['st_wound'], equals: 'Left open',
-          text: 'The stoma wound was left open to heal by secondary intention.' },
+          text: 'The skin was left open to heal by secondary intention.' },
         { group: 'scsd', needs: ['st_drain_sc', 'st_drain_sc_type'], equals: 'Yes',
-          text: 'A subcutaneous drain was left in the stoma wound: {st_drain_sc_type}.' },
+          text: 'A subcutaneous drain was left in the wound: {st_drain_sc_type}.' },
         { group: 'scsd', needs: ['st_drain_sc'], equals: 'Yes',
-          text: 'A subcutaneous drain was left in the stoma wound.' },
+          text: 'A subcutaneous drain was left in the wound.' },
         { group: 'scsd', needs: ['st_drain_sc'], equals: 'No',
           text: 'No subcutaneous drain was left.' }
       ],
@@ -1272,7 +1288,7 @@
            stoma has no lesion to locate, no margin to measure and no
            lymphadenectomy, and asking those questions of it was noise. */
         name: 'Stoma closure and reversal of Hartmann',
-        when: [{ key: 'st_procedure', any: ['Stoma closure', 'Reversal of Hartmann'] }],
+        when: [{ key: 'st_procedure', any: ['Stoma closure'] }],
         lines: [
           { use: 'st_setup' }, { use: 'st_access' },
           { use: 'st_findings' }, { use: 'st_takedown' }, { use: 'st_resect_part' },
@@ -1288,9 +1304,8 @@
         when: [{ key: 'st_procedure', any: ['Loop ileostomy', 'Loop colostomy',
           'End colostomy', 'End ileostomy'] }],
         lines: [
-          { use: 'st_setup' }, { use: 'st_access_form' },
-          { use: 'st_form' }, { use: 'st_drain_part' },
-          { use: 'st_close' }, { use: 'st_mature' }, { use: 'st_count' }
+          { use: 'st_setup' }, { use: 'st_access_form' }, { use: 'st_reason' },
+          { use: 'st_form' }, { use: 'st_mature' }, { use: 'st_count' }
         ]
       },
       {
