@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cp';
+  var APP_BUILD = '2026-08-02cr';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2387,6 +2387,10 @@
     if (!requireComplete('print')) return;
     toast('กำลังสร้าง PDF … / Building the PDF …');
     ensurePdfLibs().then(function () {
+      /* rasterising while the embedded face is still loading would put the
+         fallback font in the PDF — the very thing the font is here to stop */
+      return (document.fonts && document.fonts.ready) ? document.fonts.ready : null;
+    }).then(function () {
       return refreshPreview();
     }).then(function () {
       var pages = $$('#previewBox .pg');
