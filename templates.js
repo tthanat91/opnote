@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02cj';
+  global.TEMPLATES_BUILD = '2026-08-02co';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -628,7 +628,7 @@
       'st_st_device = Linear cutter (GIA)'),
     f('stoma', 'การต่อลำไส้ | Anastomosis', 'st_channel',
       'ปิดรูร่วมด้วย', 'Common channel closed by', 'radio', 'Stapled; Hand-sewn',
-      'st_method = Stapled'),
+      'st_st_device = Linear cutter (GIA)'),
     f('stoma', 'การต่อลำไส้ | Anastomosis', 'st_channel_device',
       'เครื่องเย็บที่ปิดรูร่วม', 'Device used on the common channel', 'radio', 'Linear (TA); Linear cutter (GIA)',
       'st_channel = Stapled'),

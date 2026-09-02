@@ -47,9 +47,35 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cj';
+  var APP_BUILD = '2026-08-02co';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
+  /* Opened as a file rather than from a web address — which is how the app
+     runs on a hospital computer that cannot reach colovjr.com — some browsers
+     refuse localStorage outright and throw. Everything the app remembers is
+     a convenience, not the record, so it falls back to remembering it for
+     this session only rather than failing to start. */
+  var memStore = {};
+  var localStorage = (function () {
+    /* Reading window.localStorage is itself what throws on a file:// page —
+       "localStorage is not available for opaque origins" — so even touching
+       it has to be inside the try. Taking it as an argument, as this did at
+       first, evaluates it before the guard can run and the app dies before
+       it draws anything. */
+    try {
+      var real = window.localStorage;
+      real.setItem('opnote.probe', '1');
+      real.removeItem('opnote.probe');
+      return real;
+    } catch (e) {
+      return {
+        getItem: function (k) { return Object.prototype.hasOwnProperty.call(memStore, k) ? memStore[k] : null; },
+        setItem: function (k, v) { memStore[k] = String(v); },
+        removeItem: function (k) { delete memStore[k]; }
+      };
+    }
+  })();
+
   var scriptUrl = localStorage.getItem(LS.url) || SITE.scriptUrl || '';
   var passcode = localStorage.getItem(LS.pass) || '';
   var me = readJSON(LS.me, null);   /* { name, license, role } once identified */
@@ -377,7 +403,12 @@
        blank note cannot be started, but opening an existing note for
        reprinting still works — that view is reached from Search, not from
        the tab bar. */
-    var ro = !!(me && me.role === 'readonly');
+    /* The bundled copy that lives on the hospital computer is built with
+       printOnly set: it exists to find a note and print it, and nothing on
+       it can alter the record. That is not a security boundary — the Sheet
+       and the passcode are — it is a guard against the wrong window being
+       open when someone starts typing. */
+    var ro = !!(me && me.role === 'readonly') || !!SITE.printOnly;
     $('#btnSave').style.display = ro ? 'none' : '';
     $('#roNote').style.display = ro ? '' : 'none';
     $('#navNew').style.display = ro ? 'none' : '';
@@ -2257,23 +2288,92 @@
     return (safe || 'operative-note') + '.pdf';
   }
 
+  var PDF_W = 200, PDF_H = 287;   /* A4 less the 5 mm margins of the form */
+
+  /* Where a tall page may be cut without slicing through a line of text.
+     Every block inside the page offers its bottom edge as a candidate; the
+     cut is then made at the last one that still fits. Without this the page
+     is sliced wherever the arithmetic lands, which on a narrative means
+     through the middle of a sentence. */
+  function breakOffsets(pg) {
+    var top = pg.getBoundingClientRect().top, out = [];
+    var nodes = pg.querySelectorAll('.prow, .dsec, .ptext, .catline, tr, figure, p, li, .findbox, .signline, .pgfoot');
+    Array.prototype.forEach.call(nodes, function (n) {
+      var r = n.getBoundingClientRect();
+      if (r.height > 0) out.push(r.bottom - top);
+    });
+    out.sort(function (a, b) { return a - b; });
+    return out;
+  }
+
+  /* How many sheets a rendered page should occupy, and how much to shrink it
+     so that it fills them exactly.
+
+     Slicing on the raw arithmetic produced a blank sheet for every page:
+     a form page renders 3087 px tall and a sheet holds 3026, so the last
+     61 px — under 6 mm — got a sheet to itself. A page that overflows by a
+     hair should be nudged onto the sheet it nearly fits, not split; a page
+     that genuinely runs long should still be split rather than shrunk into
+     unreadability. The line between the two is drawn at 12%: below that the
+     shrink is invisible, above it the text starts to suffer.
+
+     Kept separate from the drawing so the arithmetic can be tested on its
+     own, which is how the 61 px sliver would have been caught. */
+  function sheetPlan(height, sliceMax) {
+    var sheets = Math.ceil(height / sliceMax);
+    if (sheets > 1 && (height / (sheets - 1)) <= sliceMax * 1.12) sheets -= 1;
+    var strip = Math.ceil(height / sheets);
+    return { sheets: sheets, strip: strip, fits: Math.min(1, sliceMax / strip) };
+  }
+
   /* One page at a time. An iPad will run out of memory if three A4 canvases
-     at this resolution are alive at once. */
+     at this resolution are alive at once.
+
+     A page taller than A4 is SPLIT across as many sheets as it needs. It
+     used to be scaled down to fit, which is why a long narrative came out
+     in shrinking type instead of running on to a third page — the note has
+     a fixed size on paper and must keep it. */
   function pagesToPdf(pages, doc, scale) {
-    return pages.reduce(function (chain, pg, i) {
+    var added = 0;
+    return pages.reduce(function (chain, pg) {
       return chain.then(function () {
+        var breaks = breakOffsets(pg);
+        var cssH = pg.getBoundingClientRect().height;
         pg.classList.add('pdfshot');
         return window.html2canvas(pg, {
           scale: scale, backgroundColor: '#ffffff', useCORS: true, logging: false
         }).then(function (canvas) {
           pg.classList.remove('pdfshot');
-          var img = canvas.toDataURL('image/jpeg', 0.92);
-          /* the page is drawn 200 mm wide on screen, which is A4 less the
-             5 mm margins the form is designed for */
-          var w = 200, h = w * canvas.height / canvas.width;
-          if (h > 287) { h = 287; w = h * canvas.width / canvas.height; }
-          if (i) doc.addPage();
-          doc.addImage(img, 'JPEG', (210 - w) / 2, 5, w, h, undefined, 'FAST');
+          var pxPerMm = canvas.width / PDF_W;
+          var pxPerCss = canvas.height / (cssH || 1);
+          var sliceMax = Math.floor(PDF_H * pxPerMm);
+          var plan = sheetPlan(canvas.height, sliceMax);
+          var y = 0;
+          while (y < canvas.height) {
+            var h = Math.min(plan.strip, canvas.height - y);
+            if (plan.sheets > 1 && h === plan.strip && y + h < canvas.height) {
+              /* pull the cut back to the nearest block boundary */
+              var limitCss = (y + h) / pxPerCss, best = 0;
+              for (var b = 0; b < breaks.length; b++) {
+                if (breaks[b] <= limitCss && breaks[b] * pxPerCss > y + plan.strip * 0.35) {
+                  best = breaks[b];
+                }
+              }
+              if (best) h = Math.round(best * pxPerCss) - y;
+            }
+            var strip = document.createElement('canvas');
+            strip.width = canvas.width; strip.height = h;
+            strip.getContext('2d').drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+            if (added) doc.addPage();
+            /* a page that overflows by a few millimetres is set very
+               slightly smaller so it lands on one sheet */
+            var hmm = Math.min(PDF_H, (h / pxPerMm) * plan.fits);
+            var wmm = PDF_W * (hmm / (h / pxPerMm));
+            doc.addImage(strip.toDataURL('image/jpeg', 0.92), 'JPEG',
+              (210 - wmm) / 2, 5, wmm, hmm, undefined, 'FAST');
+            added++;
+            y += h;
+          }
         }, function (e) {
           pg.classList.remove('pdfshot');
           throw e;
@@ -2479,8 +2579,8 @@
           '</td><td>' + esc(n.an || '') + '</td><td>' + esc(n.patient_name || '') +
           '</td><td>' + esc(n.categoryLabel || n.category || '') + '</td><td>' + esc(n.operation || '') + '</td>' +
           '<td class="act"><button class="mini" data-open="' + esc(n.id) + '">เปิด/ดูพิมพ์<br>Open</button>' +
-          (can ? '<button class="mini go" data-edit="' + esc(n.id) + '">แก้ไข<br>Edit</button>'
-            : '<span class="mini off" title="เกิน 30 วัน">ล็อกแล้ว<br>Locked</span>') +
+          ((can && !SITE.printOnly) ? '<button class="mini go" data-edit="' + esc(n.id) + '">แก้ไข<br>Edit</button>'
+            : (SITE.printOnly ? '' : '<span class="mini off" title="เกิน 30 วัน">ล็อกแล้ว<br>Locked</span>')) +
           '</td></tr>';
       });
       box.innerHTML = t + '</tbody></table>';
@@ -2505,7 +2605,7 @@
         });
       }
       arm('data-open', false);
-      arm('data-edit', true);
+      if (!SITE.printOnly) arm('data-edit', true);
     }).catch(function (e) {
       box.innerHTML = '<p class="muted">ค้นหาไม่สำเร็จ / Search failed: ' + esc(e.message) + '</p>';
     });
@@ -2687,6 +2787,28 @@
   function deploymentId() {
     var m = /\/macros\/s\/([^\/]+)\//.exec(scriptUrl || '');
     return m ? m[1] : (scriptUrl || 'no URL set');
+  }
+
+  function renderPrintOnlyBanner() {
+    try { paintPrintOnlyBanner(); } catch (e) { /* never block the app */ }
+  }
+
+  function paintPrintOnlyBanner() {
+    if (!SITE.printOnly) return;
+    var n = $('#buildWarn');
+    if (!n) return;
+    var b = document.createElement('div');
+    b.className = 'buildwarn printonly';
+    b.innerHTML = '<b>\u0e2a\u0e33\u0e40\u0e19\u0e32\u0e2a\u0e33\u0e2b\u0e23\u0e31\u0e1a\u0e04\u0e49\u0e19\u0e2b\u0e32\u0e41\u0e25\u0e30\u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e40\u0e17\u0e48\u0e32\u0e19\u0e31\u0e49\u0e19</b> ' +
+      '\u2014 \u0e41\u0e01\u0e49\u0e44\u0e02\u0e2b\u0e23\u0e37\u0e2d\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e43\u0e2b\u0e21\u0e48\u0e15\u0e49\u0e2d\u0e07\u0e17\u0e33\u0e17\u0e35\u0e48 colovjr.com ' +
+      '<span class="en">This is the print-only copy: search, open and print. ' +
+      'Nothing here can change a note \u2014 do that on colovjr.com. ' +
+      'App build <code>' + esc(APP_BUILD) + '</code>.</span>';
+    /* defensive: this runs before anything else on a copy that may have been
+       opened from a file, and a banner is never worth failing to start for */
+    var host = n.parentNode || document.body;
+    if (host === document.body && !n.parentNode) host.insertBefore(b, host.firstChild);
+    else host.insertBefore(b, n);
   }
 
   function renderBuildBanner() {
@@ -3059,6 +3181,7 @@
   }
 
   function init() {
+    renderPrintOnlyBanner();
     renderCategoryPicker();
     renderFigPicker();
     buildCommonForm();
@@ -3069,6 +3192,14 @@
     /* one call, which also warms the script so the first save is not the
        one that pays for waking it up */
     checkServerBuild();
+
+    /* nothing on this copy can write a note, so the note-writing screen is
+       not where it should open */
+    if (SITE.printOnly) {
+      showView('search');
+      var box = $('#searchQ');
+      if (box && box.focus) box.focus();
+    }
 
     var d = readJSON(LS.draft, null);
     if (d && d.data && Object.keys(d.data).length) {
