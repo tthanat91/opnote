@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02cr',
+    build: '2026-08-02cs',
 
 
 
@@ -175,6 +175,8 @@
           text: 'There was no parastomal hernia.' },
         { group: 'stfent', needs: ['st_enterotomy'], equals: 'None',
           text: 'The bowel was not injured during the dissection.' },
+        { group: 'stfent', needs: ['st_enterotomy', 'st_enterotomy_repair'],
+          text: 'The bowel was injured during the dissection: {st_enterotomy|lc}, {st_enterotomy_repair}.' },
         { group: 'stfent', needs: ['st_enterotomy'],
           text: 'The bowel was injured during the dissection: {st_enterotomy|lc}.' },
         { needs: ['st_stump'],
@@ -1082,8 +1084,12 @@
           text: 'Dense and generalized adhesions were encountered and divided sharply, and the small bowel was run in its entirety at the end to confirm that no injury had been missed.' },
         { group: 'scent', needs: ['st_enterotomy'], equals: 'None',
           text: 'The bowel was not injured during the dissection.' },
+        { group: 'scent', needs: ['st_enterotomy', 'st_enterotomy_repair'], equals: 'Serosal tear',
+          text: 'A serosal tear was made during the dissection and was repaired: {st_enterotomy_repair}.' },
         { group: 'scent', needs: ['st_enterotomy'], equals: 'Serosal tear',
           text: 'A serosal tear was made during the dissection and was repaired «with interrupted 3-0 Vicryl».' },
+        { group: 'scent', needs: ['st_enterotomy', 'st_enterotomy_repair'], equals: 'Full-thickness',
+          text: 'A full-thickness enterotomy was made during the dissection and was repaired: {st_enterotomy_repair}.' },
         { group: 'scent', needs: ['st_enterotomy'], equals: 'Full-thickness',
           text: 'A full-thickness enterotomy was made during the dissection and was repaired «in two layers».' },
         { group: 'scent', needs: ['st_enterotomy'], equals: 'Required resection',

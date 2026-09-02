@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cr';
+  var APP_BUILD = '2026-08-02cs';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1425,7 +1425,7 @@
   function closeDraw() {
     var wasPhoto = S.drawKind === 'photo', ix = S.active;
     $('#drawModal').classList.add('hidden');
-    saveDraft();
+    saveDraftNow();
     renderSheetTabs();          /* the previews pick up what was just drawn */
     /* the photograph's thumbnail is the annotated version, which has to be
        composited before the card can show it */
@@ -1750,7 +1750,7 @@
         if (txt) {
           var p = pos(e);
           sh.texts.push({ t: txt, x: p[0], y: p[1], c: tool.color, s: 26 + tool.width * 4 });
-          redraw(); saveDraft();
+          redraw(); saveInk();
         }
         return;
       }
@@ -1781,7 +1781,7 @@
         }
         cur = null;
         redraw();                /* settle the stroke to its exported shape */
-        saveDraft();
+        saveInk();
       });
     });
   }
@@ -2544,6 +2544,21 @@
     draftTimer = setTimeout(writeDraft, 250);
   }
 
+  /* What the pen writes is held in S.sheets and S.photos, not in any form
+     field — so calling saveDraft after every stroke was paying twice over
+     for nothing: harvest() walks every input on the page and re-runs the
+     findings and operation auto-fill, and writeDraft serialises the whole
+     note, photographs included, into localStorage. Writing a word is a
+     dozen short strokes, and that bill fell due after each of them, which
+     is the pause between letters.
+
+     The ink is written out when the drawing window closes, and every few
+     seconds in between as insurance against a crash. */
+  function saveInk() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(writeDraft, 4000);
+  }
+
   function saveDraftNow() {
     clearTimeout(draftTimer);
     harvest();
@@ -2999,12 +3014,12 @@
       var sh = drawTarget(); if (!sh) return;
       if (sh.strokes.length) sh.strokes.pop();
       else if (sh.texts.length) sh.texts.pop();
-      redraw(); saveDraft();
+      redraw(); saveInk();
     };
     $('#toolClear').onclick = function () {
       var sh = drawTarget(); if (!sh) return;
       if (!window.confirm('ล้างภาพวาดทั้งหมดในแผ่นนี้? / Clear all drawing on this sheet?')) return;
-      sh.strokes = []; sh.texts = []; redraw(); saveDraft();
+      sh.strokes = []; sh.texts = []; redraw(); saveInk();
     };
     $('#toolDeleteSheet').onclick = function () {
       if (!S.sheets.length) return;

@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02cr';
+  global.TEMPLATES_BUILD = '2026-08-02cs';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -559,6 +559,9 @@
     f('stoma', 'สิ่งตรวจพบ | Operative findings', 'st_enterotomy',
       'ลำไส้บาดเจ็บระหว่างเลาะ', 'Bowel injury during dissection', 'radio', 'None; Serosal tear, repaired; Full-thickness enterotomy, repaired; Required resection of the injured segment',
       'st_procedure = Stoma closure'),
+    f('stoma', 'สิ่งตรวจพบ | Operative findings', 'st_enterotomy_repair',
+      'วิธีซ่อมและไหมที่ใช้', 'How it was repaired, and with what', 'text', '',
+      'st_enterotomy = Serosal tear, repaired; Full-thickness enterotomy, repaired'),
     f('stoma', 'สิ่งตรวจพบ | Operative findings', 'st_parastomal',
       'ไส้เลื่อนข้างทวารเทียม', 'Parastomal hernia', 'radio', 'None; Present',
       'st_procedure = Stoma closure'),
