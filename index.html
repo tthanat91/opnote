@@ -360,7 +360,9 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
 /* A table, not a grid. A browser will slice a grid item across a page break;
    a table row it moves whole. Four fixed-width cells to a row, so a wide
    drawing cannot stretch its column and squeeze the others. */
-.imgtab{width:100%;table-layout:fixed;border-collapse:separate;
+/* border-spacing adds its gap OUTSIDE the declared width, so a table at
+   100% is really 100% plus 10px — enough on its own to overflow the sheet */
+.imgtab{width:calc(100% - 10px);table-layout:fixed;border-collapse:separate;
   border-spacing:5px 6px;margin-top:6px}
 .imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
 .imgtab td{width:25%;vertical-align:top;padding:0}
@@ -375,7 +377,12 @@ table.flow th{text-align:left;font-weight:400}
 table.flow td{padding-top:4px;vertical-align:top}
 
 @media print{
-  @page{size:A4;margin:5mm}
+  /* 6 mm, not 5. At 5 mm the printed block is exactly as wide as the
+     printable area, and "exactly" loses to rounding: a fraction of a
+     millimetre over and the browser pushes the sheet onto the next one,
+     which is why 100% did not fit and 99% did. A millimetre of slack costs
+     nothing on the page and removes the whole class of problem. */
+  @page{size:A4;margin:6mm}
   body{background:#fff;font-size:12.5px}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
@@ -750,12 +757,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=co"></script>
-<script src="figures.js?v=co"></script>
-<script src="figures-original.js?v=co"></script>
-<script src="letterhead.js?v=co"></script>
-<script src="narrative.js?v=co"></script>
-<script src="templates.js?v=co"></script>
-<script src="app.js?v=co"></script>
+<script src="config.js?v=cp"></script>
+<script src="figures.js?v=cp"></script>
+<script src="figures-original.js?v=cp"></script>
+<script src="letterhead.js?v=cp"></script>
+<script src="narrative.js?v=cp"></script>
+<script src="templates.js?v=cp"></script>
+<script src="app.js?v=cp"></script>
 </body>
 </html>
