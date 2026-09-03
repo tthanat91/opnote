@@ -216,7 +216,10 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .drawback,.drawbox,.stageview,.stage,canvas.ink,.toolbar{
   -webkit-user-select:none;user-select:none;
   -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
-.stageview{position:relative;margin:0 auto;overflow:hidden;touch-action:none;
+/* contain tells the browser that nothing inside this box affects the layout
+   outside it, so a repaint of the canvas cannot drag the rest of the page
+   into the calculation */
+.stageview{contain:layout paint;position:relative;margin:0 auto;overflow:hidden;touch-action:none;
   border:1px solid var(--line);border-radius:10px;background:#fff}
 .stage{position:absolute;left:0;top:0;transform-origin:0 0;
   background:#fff no-repeat;touch-action:none;will-change:transform}
@@ -792,12 +795,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=cu"></script>
-<script src="figures.js?v=cu"></script>
-<script src="figures-original.js?v=cu"></script>
-<script src="letterhead.js?v=cu"></script>
-<script src="narrative.js?v=cu"></script>
-<script src="templates.js?v=cu"></script>
-<script src="app.js?v=cu"></script>
+<script src="config.js?v=cv"></script>
+<script src="figures.js?v=cv"></script>
+<script src="figures-original.js?v=cv"></script>
+<script src="letterhead.js?v=cv"></script>
+<script src="narrative.js?v=cv"></script>
+<script src="templates.js?v=cv"></script>
+<script src="app.js?v=cv"></script>
 </body>
 </html>

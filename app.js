@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cu';
+  var APP_BUILD = '2026-08-02cv';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1483,6 +1483,7 @@
     if (!st) return;
     clampView();
     st.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
+    forgetRect();
     var tag = $('#zoomTag');
     if (tag) tag.textContent = Math.round(view.k * 100) + '%';
   }
@@ -1557,6 +1558,7 @@
     cv.width = w;
     cv.height = Math.max(2, Math.round((parseFloat(st.style.height) || 200) * mult));
     ctx = cv.getContext('2d');
+    forgetRect();
     redraw();
   }
 
@@ -1569,6 +1571,7 @@
     cv.width = Math.max(2, Math.round(parseFloat(stage.style.width) * mult));
     cv.height = Math.max(2, Math.round(parseFloat(stage.style.height) * mult));
     ctx = cv.getContext('2d');
+    forgetRect();
     applyView();
     redraw();
   }
@@ -1607,8 +1610,23 @@
     d.texts.forEach(function (t) { drawTextItem(ctx, t, cv.width, cv.height); });
   }
 
+  /* THE ONE THAT COST A SECOND.
+
+     getBoundingClientRect forces the browser to lay the page out then and
+     there. This ran once per POINT — and an Apple Pencil reports around 240
+     points a second, every one of them re-laying out a page holding the whole
+     form and a transformed stage. Hundreds of forced layouts per stroke.
+
+     The canvas cannot move while a stroke is in progress: the modal is fixed,
+     the page cannot scroll, and zoom needs two fingers, which cancels the
+     stroke. So the rectangle is measured once when the pen goes down and
+     reused until something that could actually change it happens. */
+  var cvRect = null;
+
+  function forgetRect() { cvRect = null; }
+
   function pos(e) {
-    var r = cv.getBoundingClientRect();
+    var r = cvRect || (cvRect = cv.getBoundingClientRect());
     return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
   }
 
@@ -1764,6 +1782,7 @@
         return;
       }
       cv.setPointerCapture(e.pointerId);
+      cvRect = cv.getBoundingClientRect();
       drawing = true;
       cur = { c: tool.color, w: tool.mode === 'eraser' ? tool.width * 5 : tool.width, e: tool.mode === 'eraser', p: [pos(e)] };
       sh.strokes.push(cur);
@@ -1789,6 +1808,7 @@
           cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
         }
         cur = null;
+        forgetRect();
         /* No repaint here. drawTail has already painted this stroke, and
            redrawing every stroke on the sheet each time the pen lifts is the
            last of the per-stroke costs — the one felt between letters, where
@@ -3214,6 +3234,7 @@
     }
     window.addEventListener('resize', refitCanvas);
     window.addEventListener('orientationchange', refitCanvas);
+    window.addEventListener('scroll', forgetRect, true);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', refitCanvas);
   }
 
