@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cw';
+  var APP_BUILD = '2026-08-02cy';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2275,6 +2275,31 @@
     return p1 + p2;
   }
 
+  /* The findings box belongs at the foot of page 1, and page 1 belongs on one
+     sheet. Fixing the box at 78 mm made both true only as long as everything
+     above it stayed the same height — and embedding Sarabun changed the
+     height of every row on the page, so the box no longer fitted and
+     break-inside:avoid moved the whole thing, figure and all, to a sheet of
+     its own.
+
+     So the height is measured rather than assumed: shrink the box to nothing,
+     see how much of the sheet the rest of page 1 uses, and give the box what
+     is left. It then ends exactly at the foot of the page whatever the
+     operation, the font or the number of rows. */
+  var MM_PX = 96 / 25.4;
+
+  function fitPageOne(root) {
+    var pg = root.querySelector('.pg:not(.last)');
+    if (!pg) return;
+    var body = pg.querySelector('.findbox .bbody');
+    if (!body) return;
+    var floor = 40 * MM_PX;                 /* never squeeze it below this */
+    body.style.height = floor + 'px';
+    var rest = pg.getBoundingClientRect().height - floor;
+    var room = (PDF_H * MM_PX) - rest - 2;  /* a hair, for rounding */
+    body.style.height = Math.max(floor, Math.floor(room)) + 'px';
+  }
+
   /* The findings box is a fixed height on the form, so the paragraph is
      shrunk to fit rather than the box being stretched to hold it. A box that
      grows pushes the page 1 footer onto a sheet of its own — the blank second
@@ -2346,7 +2371,7 @@
     return (safe || 'operative-note') + '.pdf';
   }
 
-  var PDF_W = 200, PDF_H = 287;   /* A4 less the 5 mm margins of the form */
+  var PDF_W = 198, PDF_H = 285;   /* the page box, which is A4 less 6 mm */
 
   /* Where a tall page may be cut without slicing through a line of text.
      Every block inside the page offers its bottom edge as a candidate; the
@@ -2473,6 +2498,8 @@
       var html = buildDocument(pngs);
       $('#printRoot').innerHTML = html;
       $('#previewBox').innerHTML = html;
+      fitPageOne($('#printRoot'));
+      fitPageOne($('#previewBox'));
       fitFindings($('#printRoot'));
       fitFindings($('#previewBox'));
       return pngs;
@@ -2526,11 +2553,11 @@
   }
 
   function doSave() {
-    var btn = $('#btnSave');
+    var btn = $('#btnSave'), pl = null;
     btn.disabled = true;
     btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21\u0e23\u0e39\u0e1b… / Preparing images…';
     return refreshPreview().then(function (pngs) {
-      var pl = payload(pngs);
+      pl = payload(pngs);
       /* the upload is the slow part and it is worth saying so, with a count,
          rather than leaving a dead button for ten seconds */
       var n = (pl.figures || []).length + (pl.photos || []).length;
@@ -2546,7 +2573,31 @@
         localStorage.removeItem(LS.draft);
       });
     }).catch(function (e) {
-      toast('บันทึกลงเครื่องไว้ก่อน จะส่งเมื่อออนไลน์ / Queued locally: ' + e.message, 'warn');
+      /* This said the note had been kept on the device while keeping nothing.
+         Only the "no script URL" branch above ever queued, so a save that
+         failed for any other reason — a slow Sheet, a refused request, an
+         error while drawing the preview — was lost, and the surgeon was told
+         it was safe. For a record-keeping app that is the one message that
+         must never be wrong.
+
+         Now it is queued first, and only then reported. And the report says
+         which of the two things happened, because "we are offline" and "we
+         are online and it still failed" call for different actions from the
+         person reading it. */
+      if (pl) queue(pl);
+      var offline = ('onLine' in navigator) && navigator.onLine === false;
+      if (!pl) {
+        toast('\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08 \u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e22\u0e31\u0e07\u0e2d\u0e22\u0e39\u0e48\u0e43\u0e19\u0e2b\u0e19\u0e49\u0e32\u0e08\u0e2d / ' +
+          'Could not save — nothing was sent and nothing was queued. The note is still on screen: ' +
+          e.message, 'warn');
+      } else if (offline) {
+        toast('\u0e2d\u0e2d\u0e1f\u0e44\u0e25\u0e19\u0e4c \u2014 \u0e40\u0e01\u0e47\u0e1a\u0e44\u0e27\u0e49\u0e43\u0e19\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 \u0e08\u0e30\u0e2a\u0e48\u0e07\u0e40\u0e21\u0e37\u0e48\u0e2d\u0e2d\u0e2d\u0e19\u0e44\u0e25\u0e19\u0e4c / ' +
+          'Offline — kept on this device and sent automatically when the connection returns.', 'warn');
+      } else {
+        toast('\u0e2a\u0e48\u0e07\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08 \u0e40\u0e01\u0e47\u0e1a\u0e44\u0e27\u0e49\u0e43\u0e19\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e41\u0e25\u0e49\u0e27 \u0e41\u0e15\u0e30\u0e17\u0e35\u0e48\u0e1b\u0e49\u0e32\u0e22 "\u0e23\u0e2d\u0e2a\u0e48\u0e07" \u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e25\u0e2d\u0e07\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07 / ' +
+          'Sending failed, but the note is kept on this device — tap the pending badge to try again. (' +
+          e.message + ')', 'warn');
+      }
     }).then(function () {
       btn.disabled = false; btn.textContent = 'บันทึก / Save';
       updateQueueBadge();
@@ -2579,6 +2630,13 @@
     var b = $('#queueBadge');
     b.textContent = n ? n + ' รอส่ง / pending' : '';
     b.style.display = n ? 'inline-block' : 'none';
+    /* it looked like a button and did nothing; now it is one */
+    b.style.cursor = n ? 'pointer' : '';
+    b.title = n ? 'แตะเพื่อลองส่งอีกครั้ง / tap to try sending again' : '';
+    b.onclick = n ? function () {
+      toast('กำลังลองส่งอีกครั้ง… / Trying again…');
+      flushQueue();
+    } : null;
   }
 
   /* Called on every keystroke and every stroke of the pen. Reading the form
