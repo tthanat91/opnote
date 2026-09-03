@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ct';
+  var APP_BUILD = '2026-08-02cu';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1789,7 +1789,11 @@
           cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
         }
         cur = null;
-        redraw();                /* settle the stroke to its exported shape */
+        /* No repaint here. drawTail has already painted this stroke, and
+           redrawing every stroke on the sheet each time the pen lifts is the
+           last of the per-stroke costs — the one felt between letters, where
+           lifts come a dozen to the word. The full redraw still happens
+           where it is actually needed: mounting, undo, clear and zoom. */
         saveInk();
       });
     });
@@ -3028,7 +3032,12 @@
     $('#toolClear').onclick = function () {
       var sh = drawTarget(); if (!sh) return;
       if (!window.confirm('ล้างภาพวาดทั้งหมดในแผ่นนี้? / Clear all drawing on this sheet?')) return;
-      sh.strokes = []; sh.texts = []; redraw(); saveInk();
+      /* drawTarget() hands back a fresh little object each time, holding
+         REFERENCES to the sheet's arrays. Assigning sh.strokes = [] replaced
+         the property on that throwaway object and left the real sheet
+         untouched — which is why Clear appeared to do nothing while Undo,
+         which calls pop() on the same array, worked. Empty them in place. */
+      sh.strokes.length = 0; sh.texts.length = 0; redraw(); saveInk();
     };
     $('#toolDeleteSheet').onclick = function () {
       if (!S.sheets.length) return;
