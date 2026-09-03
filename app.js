@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cz';
+  var APP_BUILD = '2026-08-02da';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2104,8 +2104,17 @@
     [pre + '_steps', pre + '_postop'].forEach(function (k) {
       var f = fieldByKey(k), v = valueOf(k);
       if (!f || !v) return;
+      /* One element per line, not one block with <br> between. The page can
+         only be cut where an element ends, so a narrative written as a
+         single block offered no cut between "Approach" and the end of the
+         steps — the slicer had to break before the whole section and leave
+         the rest of the sheet blank. A line each, and it can break anywhere
+         sensible. */
+      var lines = String(v).split(/\n/).map(function (ln) {
+        return '<div class="pline">' + esc(ln) + '</div>';
+      }).join('');
       out += '<div class="dsec"><h5>' + esc(f.th) + ' <i>' + esc(f.en) + '</i></h5>' +
-        '<div class="ptext">' + nl2br(v) + '</div></div>';
+        '<div class="ptext">' + lines + '</div></div>';
     });
     return out || '<p class="muted">—</p>';
   }
@@ -2288,16 +2297,27 @@
      operation, the font or the number of rows. */
   var MM_PX = 96 / 25.4;
 
-  function fitPageOne(root) {
-    var pg = root.querySelector('.pg:not(.last)');
-    if (!pg) return;
-    var body = pg.querySelector('.findbox .bbody');
+  function fitPageOne() {
+    /* Measured on the PREVIEW, never on #printRoot: that one is display:none
+       until the browser prints, so every height read from it is zero. Asking
+       a hidden element how tall it is and then sizing the findings box from
+       the answer is what pushed the box onto a sheet of its own — the very
+       bug this function was written to fix.
+
+       The height is computed once from the copy that is actually laid out,
+       then applied to both. */
+    var pg = $('#previewBox .pg:not(.last)');
+    var body = pg && pg.querySelector('.findbox .bbody');
     if (!body) return;
     var floor = 40 * MM_PX;                 /* never squeeze it below this */
     body.style.height = floor + 'px';
     var rest = pg.getBoundingClientRect().height - floor;
+    if (rest <= 0) return;                  /* not laid out — leave the CSS */
     var room = (PDF_H * MM_PX) - rest - 2;  /* a hair, for rounding */
-    body.style.height = Math.max(floor, Math.floor(room)) + 'px';
+    var h = Math.max(floor, Math.floor(room));
+    body.style.height = h + 'px';
+    var twin = $('#printRoot .findbox .bbody');
+    if (twin) twin.style.height = h + 'px';
   }
 
   /* The findings box is a fixed height on the form, so the paragraph is
@@ -2380,7 +2400,7 @@
      through the middle of a sentence. */
   function breakOffsets(pg) {
     var top = pg.getBoundingClientRect().top, out = [];
-    var nodes = pg.querySelectorAll('.prow, .dsec, .ptext, .catline, tr, figure, p, li, .findbox, .signline, .pgfoot');
+    var nodes = pg.querySelectorAll('.prow, .dsec, .pline, .ptext, .catline, tr, figure, p, li, .findbox, .signline, .pgfoot');
     Array.prototype.forEach.call(nodes, function (n) {
       var r = n.getBoundingClientRect();
       if (r.height > 0) out.push(r.bottom - top);
@@ -2438,7 +2458,9 @@
               /* pull the cut back to the nearest block boundary */
               var limitCss = (y + h) / pxPerCss, best = 0;
               for (var b = 0; b < breaks.length; b++) {
-                if (breaks[b] <= limitCss && breaks[b] * pxPerCss > y + plan.strip * 0.35) {
+                /* only pull the cut back if little is lost by doing so —
+                   snapping to a boundary at 40% of the sheet wastes 60% */
+                if (breaks[b] <= limitCss && breaks[b] * pxPerCss > y + plan.strip * 0.82) {
                   best = breaks[b];
                 }
               }
@@ -2498,10 +2520,15 @@
       var html = buildDocument(pngs);
       $('#printRoot').innerHTML = html;
       $('#previewBox').innerHTML = html;
-      fitPageOne($('#printRoot'));
-      fitPageOne($('#previewBox'));
-      fitFindings($('#printRoot'));
+      fitPageOne();
       fitFindings($('#previewBox'));
+      /* the same reason: the printed copy cannot be measured while hidden,
+         so it is given whatever size the visible one settled on */
+      (function () {
+        var from = $('#previewBox .findbox .bbody');
+        var to = $('#printRoot .findbox .bbody');
+        if (from && to) to.style.fontSize = from.style.fontSize;
+      })();
       return pngs;
     });
   }
