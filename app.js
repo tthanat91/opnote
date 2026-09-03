@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cv';
+  var APP_BUILD = '2026-08-02cw';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1544,9 +1544,34 @@
   /* Zoomed in, the ink would be a blown-up version of the pixels drawn at
      100%. Painting the bitmap larger keeps the line sharp — but only up to
      a point, because a 6x bitmap on a Retina iPad is memory nobody has. */
+  /* An iPad canvas is one layer: any mark on it dirties the whole thing, and
+     the whole thing is then re-rasterised and re-uploaded to the GPU. So the
+     cost of a single pen stroke is set by the AREA of the canvas, not by how
+     much of it changed.
+
+     Scaling the bitmap with the zoom — 2x for the screen, times 1.94 for the
+     zoom, capped at 3.5 — made a stage of about 700 x 1015 CSS pixels into a
+     canvas of 2450 x 3550. Nearly nine million pixels, some thirty-five
+     megabytes, re-uploaded on every frame of every stroke. That is the pause
+     between letters, and it is why the earlier fixes barely helped: they were
+     shaving work that ran once per stroke while this ran on every frame
+     inside it.
+
+     The cap is now on total area rather than on the ratio. Sharpness while
+     zoomed is barely affected — and it does not touch the printed note at
+     all, which is re-rendered from the stored strokes at full resolution
+     when the PDF is built. */
+  var MAX_INK_PIXELS = 3.0e6;
+
   function inkResolution() {
+    var st = stageEl();
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    return Math.min(dpr * Math.max(1, view.k), 3.5);
+    var mult = Math.min(dpr * Math.max(1, view.k), 2.5);
+    var w = st ? (parseFloat(st.style.width) || 300) : 300;
+    var h = st ? (parseFloat(st.style.height) || 200) : 200;
+    var area = w * h * mult * mult;
+    if (area > MAX_INK_PIXELS) mult *= Math.sqrt(MAX_INK_PIXELS / area);
+    return Math.max(1, mult);
   }
 
   function rescaleInk() {
