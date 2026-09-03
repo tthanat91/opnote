@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02cs';
+  var APP_BUILD = '2026-08-02ct';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1742,9 +1742,18 @@
       }
     }, { passive: false });
 
+    /* belt and braces: the stylesheet stops the selection being drawn, these
+       stop it being started at all — Safari begins one on pointerdown before
+       any CSS has a say, and a started selection keeps costing on every move */
+    ['selectstart', 'dragstart', 'contextmenu'].forEach(function (ev) {
+      vp.addEventListener(ev, function (e) { e.preventDefault(); });
+      cv.addEventListener(ev, function (e) { e.preventDefault(); });
+    });
+
     cv.addEventListener('pointerdown', function (e) {
       var sh = drawTarget(); if (!sh) return;
       if (livePoints().length >= 2) return;      /* this is a gesture */
+      e.preventDefault();
       if (tool.mode === 'text') {
         var txt = window.prompt('ข้อความ / Text:');
         if (txt) {

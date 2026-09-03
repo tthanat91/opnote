@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02cs';
+  global.TEMPLATES_BUILD = '2026-08-02ct';
 
   global.DEFAULT_TEMPLATES = [
 

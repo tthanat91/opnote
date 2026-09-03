@@ -209,6 +209,13 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 /* The picture is seen through a fixed window and moves inside it. Both are
    sized in script, from the space the screen actually has — a portrait
    figure on a landscape iPad has to be fitted to the height, not the width. */
+/* A pen drag is a text-selection drag as far as the browser is concerned:
+   it highlights the labels around the canvas and the canvas itself, and that
+   selection work runs against every stroke. Turning selection off inside the
+   drawing window removes both the blue smear and the drag on the pen. */
+.drawback,.drawbox,.stageview,.stage,canvas.ink,.toolbar{
+  -webkit-user-select:none;user-select:none;
+  -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 .stageview{position:relative;margin:0 auto;overflow:hidden;touch-action:none;
   border:1px solid var(--line);border-radius:10px;background:#fff}
 .stage{position:absolute;left:0;top:0;transform-origin:0 0;
@@ -785,12 +792,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=cs"></script>
-<script src="figures.js?v=cs"></script>
-<script src="figures-original.js?v=cs"></script>
-<script src="letterhead.js?v=cs"></script>
-<script src="narrative.js?v=cs"></script>
-<script src="templates.js?v=cs"></script>
-<script src="app.js?v=cs"></script>
+<script src="config.js?v=ct"></script>
+<script src="figures.js?v=ct"></script>
+<script src="figures-original.js?v=ct"></script>
+<script src="letterhead.js?v=ct"></script>
+<script src="narrative.js?v=ct"></script>
+<script src="templates.js?v=ct"></script>
+<script src="app.js?v=ct"></script>
 </body>
 </html>
