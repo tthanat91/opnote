@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02do';
+  global.TEMPLATES_BUILD = '2026-08-02dp';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -144,7 +144,7 @@
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_vessels', 'หลอดเลือดที่ตัด', 'Vessels divided', 'checklist',
       'Ileocolic; Right colic; Middle colic — right branch; Middle colic — trunk', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_vessel_control', 'วิธีตัดหลอดเลือด', 'Vessel control', 'checklist',
-      'Energy device; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Suture ligation; Vascular stapler',
+      'Energy device; Single ligation; Double ligation; Transfixion (suture) ligation; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Vascular stapler',
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านขวา | Right-sided colectomy', 'cr_r_anast_site', 'ตำแหน่งการต่อลำไส้', 'Anastomosis performed', 'radio',
       'Intracorporeal; Extracorporeal', 'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy'),
@@ -269,7 +269,7 @@
       'Medial-to-lateral; Lateral-to-medial; Combined; Retroperitoneal-first',
       'cr_procedure = Abdominoperineal resection; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_vessel_control', 'วิธีตัดหลอดเลือด', 'Vessel control', 'checklist',
-      'Energy device; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Suture ligation; Vascular stapler',
+      'Energy device; Single ligation; Double ligation; Transfixion (suture) ligation; Metal clips; Hem-o-lok 5 mm; Hem-o-lok 10 mm; Vascular stapler',
       'cr_procedure = Abdominoperineal resection; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_sra', 'หลอดเลือด superior rectal', 'Superior rectal artery', 'radio',
       'Divided; Preserved', 'cr_procedure = Left hemicolectomy'),
@@ -472,7 +472,11 @@
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_steps', 'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
     f('fistula', 'รายละเอียดขั้นตอน | Operative steps', 'fi_postop', 'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),
 
-    /* ---------------- HAEMORRHOID ---------------- */
+    /* ---------------- HAEMORRHOID ----------------
+       Three operations are done here and no others: excisional
+       haemorrhoidectomy, radiofrequency ablation and laser haemorrhoidoplasty.
+       Stapled haemorrhoidopexy and Doppler-guided artery ligation have been
+       taken out — say the word and either comes straight back. */
     f('hemorrhoid', 'การประเมิน | Assessment', 'he_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
       'Prone jackknife; Lithotomy; Left lateral'),
     f('hemorrhoid', 'การประเมิน | Assessment', 'he_grade', 'ระดับของริดสีดวง', 'Goligher grade', 'radio',
@@ -486,47 +490,102 @@
       'Hypertrophied anal papilla; Anal stenosis; None'),
 
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
-      'Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); ' +
-      'Stapled hemorrhoidopexy (PPH); LigaSure / vessel-sealing hemorrhoidectomy; ' +
-      'Doppler-guided hemorrhoidal artery ligation (HAL / RAR); Rubber band ligation; ' +
-      'Sclerotherapy; Excision of thrombosed external pile; Lateral internal sphincterotomy; ' +
-      'Fissurectomy; Excision of skin tag; Other'),
-    f('hemorrhoid', 'หัตถการ | Procedure', 'he_piles_excised', 'จำนวนหัวที่ตัด', 'Number of piles excised', 'number'),
-    f('hemorrhoid', 'หัตถการ | Procedure', 'he_energy', 'เครื่องมือที่ใช้', 'Energy device', 'radio',
-      'Monopolar diathermy; LigaSure; Harmonic; Scissors / cold steel; Stapler; Laser'),
-    f('hemorrhoid', 'หัตถการ | Procedure', 'he_pedicle', 'การผูกขั้ว', 'Pedicle ligation', 'text'),
-    f('hemorrhoid', 'หัตถการ | Procedure', 'he_bridge', 'เหลือ mucosal bridge เพียงพอ', 'Adequate mucocutaneous bridges preserved', 'checkbox'),
-    f('hemorrhoid', 'หัตถการ | Procedure', 'he_packing', 'ใส่ anal packing', 'Anal packing inserted', 'checkbox'),
+      'Hemorrhoidectomy; Radiofrequency ablation (RFA); Laser hemorrhoidoplasty (LHP); ' +
+      'Rubber band ligation; Sclerotherapy; Excision of thrombosed external pile; ' +
+      'Lateral internal sphincterotomy; Fissurectomy; Excision of skin tag; Other'),
     f('hemorrhoid', 'หัตถการ | Procedure', 'he_analgesia', 'การระงับปวดเฉพาะที่', 'Local analgesia used', 'text'),
+    /* a checkbox could not tell "no packing" from "not recorded" */
+    f('hemorrhoid', 'หัตถการ | Procedure', 'he_packing_type', 'วัสดุที่ใส่ในทวารเมื่อจบผ่าตัด',
+      'Anal packing at the end of the operation', 'radio',
+      'Spongostan; Gauze pack; Spongostan and gauze; None'),
 
+    /* ---- excisional haemorrhoidectomy ---- */
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_hem_technique', 'เทคนิคการปิดแผล', 'Technique', 'radio',
+      'Open (Milligan-Morgan); Closed (Ferguson); Semi-closed', 'he_procedure = Hemorrhoidectomy'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_columns', 'จำนวนคอลัมน์ที่ตัด', 'Number of columns excised', 'number', '',
+      'he_procedure = Hemorrhoidectomy'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_energy', 'เครื่องมือที่ใช้ตัด', 'Dissecting instrument', 'radio',
+      'LigaSure / vessel sealer; Monopolar diathermy; Harmonic; Scissors / cold steel',
+      'he_procedure = Hemorrhoidectomy'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_pedicle_done', 'ผูกขั้วหลอดเลือด', 'Pedicle ligated', 'radio',
+      'Yes; No — sealed with the energy device only', 'he_procedure = Hemorrhoidectomy'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_pedicle_method', 'วิธีผูกขั้ว', 'Pedicle ligation technique', 'radio',
+      'Transfixion suture; Single ligature; Double ligature', 'he_pedicle_done = Yes'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_pedicle_material', 'ไหมที่ใช้ผูกขั้ว', 'Pedicle suture material', 'radio',
+      'Vicryl 2-0; Vicryl 3-0; Chromic catgut 2-0; Chromic catgut 3-0; Silk 2-0; Other',
+      'he_pedicle_done = Yes'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_hem_adjunct', 'หัตถการเพิ่มเติมหลังตัด',
+      'Additional procedure after excision', 'checklist',
+      'Ligation of a residual pile; Hemorrhoidoplasty; Energy-device ablation of residual tissue; None',
+      'he_procedure = Hemorrhoidectomy'),
 
-    /* ---- technique, shown only for the operation actually done ---- */
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pedicle_suture', 'ไหมผูกขั้ว', 'Pedicle suture', 'text', '',
-      'he_procedure = Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); LigaSure / vessel-sealing hemorrhoidectomy'),
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pedicle_method', 'วิธีผูกขั้ว', 'Pedicle ligation technique', 'radio',
-      'Transfixion suture; Simple ligature; Vessel sealed, no suture', 'he_procedure = Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); LigaSure / vessel-sealing hemorrhoidectomy'),
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_bridges', 'จำนวน mucocutaneous bridge ที่เหลือ', 'Mucocutaneous bridges preserved', 'number', '',
-      'he_procedure = Open hemorrhoidectomy (Milligan-Morgan); Closed hemorrhoidectomy (Ferguson); LigaSure / vessel-sealing hemorrhoidectomy'),
+    /* closing the mucosal defect — only if it was closed at all */
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_mucosa_technique', 'วิธีเย็บปิดเยื่อบุ', 'Mucosal closure technique', 'radio',
+      'Continuous; Continuous locked; Interrupted',
+      'he_hem_technique = Closed (Ferguson); Semi-closed'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_mucosa_material', 'ไหมเย็บเยื่อบุ', 'Mucosal suture material', 'radio',
+      'Vicryl 3-0; Vicryl 4-0; Vicryl Rapide 3-0; Chromic catgut 3-0; Chromic catgut 4-0; Other',
+      'he_hem_technique = Closed (Ferguson); Semi-closed'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_skin_same', 'เย็บผิวหนังแบบเดียวกับเยื่อบุหรือไม่',
+      'Cutaneous closure — same technique and material as the mucosa?', 'radio',
+      'Yes; No — different; Left open', 'he_hem_technique = Closed (Ferguson); Semi-closed'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_skin_technique', 'วิธีเย็บผิวหนัง', 'Cutaneous closure technique', 'radio',
+      'Continuous; Continuous locked; Interrupted', 'he_skin_same = No — different'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_skin_material', 'ไหมเย็บผิวหนัง', 'Cutaneous suture material', 'radio',
+      'Vicryl 3-0; Vicryl 4-0; Vicryl Rapide 3-0; Chromic catgut 3-0; Chromic catgut 4-0; Other',
+      'he_skin_same = No — different'),
 
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_size', 'ขนาด stapler', 'Circular stapler size', 'radio',
-      '32 mm; 33 mm; 34 mm', 'he_procedure = Stapled hemorrhoidopexy (PPH)'),
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_height', 'ระยะ purse-string เหนือ dentate line (ซม.)',
-      'Purse-string height above the dentate line (cm)', 'number', '', 'he_procedure = Stapled hemorrhoidopexy (PPH)'),
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_pph_reinforce', 'การเสริมแนวเย็บ', 'Staple line reinforced', 'radio',
-      'Yes; No', 'he_procedure = Stapled hemorrhoidopexy (PPH)'),
+    /* the two measurements that decide whether this anus will stenose */
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_bridge_1cm', 'เหลือ mucosal bridge > 1 ซม. ระหว่างคอลัมน์',
+      'Mucocutaneous bridge of more than 1 cm preserved between columns', 'radio',
+      'Yes; No', 'he_procedure = Hemorrhoidectomy'),
+    f('hemorrhoid', 'ตัดริดสีดวง | Hemorrhoidectomy', 'he_diameter_50', 'เหลือเส้นรอบวงทวารมากกว่า 50%',
+      'More than 50% of the anal circumference preserved', 'radio',
+      'Yes; No', 'he_procedure = Hemorrhoidectomy'),
 
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_hal_arteries', 'จำนวนหลอดเลือดที่ผูก', 'Number of arteries ligated', 'number', '',
-      'he_procedure = Doppler-guided hemorrhoidal artery ligation (HAL / RAR)'),
-    f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_hal_rar', 'ทำ rectoanal repair', 'Rectoanal repair (RAR) performed', 'radio',
-      'Yes; No', 'he_procedure = Doppler-guided hemorrhoidal artery ligation (HAL / RAR)'),
+    /* ---- radiofrequency ablation ---- */
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_device', 'เครื่องและหัวจี้', 'Generator and probe', 'text', '',
+      'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_power', 'กำลังไฟ (วัตต์)', 'Power setting (W)', 'number', '',
+      'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_columns', 'จำนวนคอลัมน์ที่จี้', 'Columns treated', 'number', '',
+      'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_points', 'จำนวนจุดต่อคอลัมน์', 'Application points per column', 'number', '',
+      'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_energy', 'พลังงานต่อคอลัมน์ (จูล)', 'Energy per column (J)', 'number', '',
+      'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_level', 'ตำแหน่งที่จี้', 'Level of application', 'radio',
+      'Above the dentate line; At the base of the pile; Both', 'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_endpoint', 'จุดสิ้นสุดการจี้', 'Endpoint', 'radio',
+      'Mucosal blanching; Visible shrinkage of the pile; Preset energy delivered',
+      'he_procedure = Radiofrequency ablation (RFA)'),
+    f('hemorrhoid', 'จี้ด้วยคลื่นวิทยุ | Radiofrequency ablation', 'he_rfa_mucopexy', 'ทำ mucopexy ร่วมด้วย', 'Mucopexy added', 'radio',
+      'Yes; No', 'he_procedure = Radiofrequency ablation (RFA)'),
 
+    /* ---- laser haemorrhoidoplasty ---- */
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_wavelength', 'ความยาวคลื่น', 'Wavelength', 'radio',
+      '1470 nm; 980 nm; Other', 'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_fibre', 'ชนิดเส้นใยนำแสง', 'Fibre type', 'radio',
+      'Radial; Bare', 'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_power', 'กำลังไฟ (วัตต์)', 'Power setting (W)', 'number', '',
+      'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_piles', 'จำนวนหัวที่ยิง', 'Piles treated', 'number', '',
+      'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_energy', 'พลังงานต่อหัว (จูล)', 'Energy per pile (J)', 'number', '',
+      'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_entry', 'ทางเข้าเส้นใย', 'Fibre entry', 'radio',
+      'Perianal skin puncture; Submucosal from the base of the pile',
+      'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+    f('hemorrhoid', 'เลเซอร์ | Laser hemorrhoidoplasty', 'he_laser_mucopexy', 'ทำ mucopexy ร่วมด้วย', 'Mucopexy added', 'radio',
+      'Yes; No', 'he_procedure = Laser hemorrhoidoplasty (LHP)'),
+
+    /* ---- the smaller anorectal procedures, unchanged ---- */
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_side', 'ตำแหน่งที่ตัดหูรูด', 'Sphincterotomy position', 'radio',
       'Left lateral (3 o\'clock); Right lateral (9 o\'clock)', 'he_procedure = Lateral internal sphincterotomy'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_technique', 'วิธีตัดหูรูด', 'Sphincterotomy technique', 'radio',
       'Open; Closed', 'he_procedure = Lateral internal sphincterotomy'),
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_lis_length', 'ความยาวที่ตัด (ซม.)', 'Length divided (cm)', 'number', '',
       'he_procedure = Lateral internal sphincterotomy'),
-
     f('hemorrhoid', 'เทคนิคการผ่าตัด | Operative technique', 'he_band_number', 'จำนวนยางที่รัด', 'Number of bands or injections', 'number', '',
       'he_procedure = Rubber band ligation; Sclerotherapy'),
 

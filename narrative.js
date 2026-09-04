@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02do',
+    build: '2026-08-02dp',
 
 
 
@@ -155,7 +155,9 @@
       hemorrhoid: [
         { group: 'gr', needs: ['he_grade', 'he_type'], text: 'There were {he_type|lc} hemorrhoids, {he_grade|lc}.' },
         { group: 'gr', needs: ['he_grade'], text: 'The hemorrhoids were {he_grade|lc}.' },
-        { needs: ['he_positions'], text: 'The piles lay at {he_positions|lc|and}.' },
+        { group: 'sites', needs: ['he_positions'], equals: 'Circumferential',
+          text: 'The piles were circumferential.' },
+        { group: 'sites', needs: ['he_positions'], text: 'The piles lay at {he_positions|lc|and}.' },
         { group: 'assoc', needs: ['he_associated'], equals: 'None', text: 'No associated anorectal pathology was found.' },
         { group: 'assoc', needs: ['he_associated'], text: 'Associated pathology was present: {he_associated|lc|and}.' }
       ],
@@ -234,6 +236,142 @@
        converted, and the ports were removed.
        ================================================================= */
     parts: {
+
+      /* ---- haemorrhoid: the parts either path uses ---- */
+      he_setup: [
+        { group: 'pos', needs: ['he_position', 'anaesthesia'],
+          text: 'Under {anaesthesia}, the patient was placed in the {he_position|lc} position and the perineum was prepared and draped.' },
+        { group: 'pos', needs: ['he_position'],
+          text: 'The patient was placed in the {he_position|lc} position and the perineum was prepared and draped.' }
+      ],
+
+      he_assess: [
+        { group: 'gr', needs: ['he_grade', 'he_type'],
+          text: 'Examination under anesthesia confirmed {he_type|lc} hemorrhoids, {he_grade|lc}.' },
+        { group: 'gr', needs: ['he_grade'], text: 'Examination under anesthesia confirmed {he_grade|lc} hemorrhoids.' },
+        { group: 'sites', needs: ['he_positions'], equals: 'Circumferential',
+          text: 'The piles were circumferential.' },
+        { group: 'sites', needs: ['he_positions'], text: 'Piles were present at {he_positions|lc|and}.' },
+        { needs: ['he_associated'], not: 'None',
+          text: 'Associated findings were {he_associated|lc|and}.' },
+        { needs: ['he_procedure'], text: 'The procedure performed was {he_procedure|lc|and}.' }
+      ],
+
+      he_close: [
+        { needs: ['he_analgesia'], text: 'Local analgesia was infiltrated: {he_analgesia}.' },
+        { group: 'pack', needs: ['he_packing_type'], not: 'None',
+          text: '{he_packing_type} was placed in the anal canal at the end of the procedure.' },
+        { group: 'pack', needs: ['he_packing_type'], equals: 'None',
+          text: 'No anal packing was used.' }
+      ],
+
+      /* ---- excisional haemorrhoidectomy ---- */
+      he_excision: [
+        { group: 'exc', needs: ['he_hem_technique', 'he_columns'],
+          text: 'A {he_hem_technique|lc} hemorrhoidectomy was performed, excising {he_columns} column(s).' },
+        { group: 'exc', needs: ['he_hem_technique'],
+          text: 'A {he_hem_technique|lc} hemorrhoidectomy was performed.' },
+        { group: 'exc', needs: ['he_columns'],
+          text: 'Hemorrhoidectomy was performed, excising {he_columns} column(s).' },
+
+        { needs: ['he_energy'],
+          text: 'Dissection of each pile from the underlying internal sphincter was carried out with {he_energy|lc}.' },
+
+        { group: 'ped', needs: ['he_pedicle_done', 'he_pedicle_method', 'he_pedicle_material'], equals: 'Yes',
+          text: 'Each vascular pedicle was secured with a {he_pedicle_method|lc} of {he_pedicle_material}.' },
+        { group: 'ped', needs: ['he_pedicle_done', 'he_pedicle_method'], equals: 'Yes',
+          text: 'Each vascular pedicle was secured with a {he_pedicle_method|lc}.' },
+        { group: 'ped', needs: ['he_pedicle_done'], equals: 'Yes',
+          text: 'Each vascular pedicle was ligated.' },
+        { group: 'ped', needs: ['he_pedicle_done'], not: 'Yes',
+          text: 'The pedicles were sealed with the energy device and no ligature was placed.' },
+
+        { needs: ['he_hem_adjunct'], not: 'None',
+          text: 'Further treatment after excision comprised {he_hem_adjunct|lc|and}.' },
+
+        { group: 'muc', needs: ['he_mucosa_technique', 'he_mucosa_material'],
+          text: 'The mucosal defect was closed with a {he_mucosa_technique|lc} suture of {he_mucosa_material}.' },
+        { group: 'muc', needs: ['he_mucosa_technique'],
+          text: 'The mucosal defect was closed with a {he_mucosa_technique|lc} suture.' },
+
+        { group: 'skin', needs: ['he_skin_same'], equals: 'Yes',
+          text: 'The cutaneous edge was closed in the same fashion and with the same material.' },
+        { group: 'skin', needs: ['he_skin_same', 'he_skin_technique', 'he_skin_material'], equals: 'No — different',
+          text: 'The cutaneous edge was closed with a {he_skin_technique|lc} suture of {he_skin_material}.' },
+        { group: 'skin', needs: ['he_skin_same', 'he_skin_technique'], equals: 'No — different',
+          text: 'The cutaneous edge was closed with a {he_skin_technique|lc} suture.' },
+        { group: 'skin', needs: ['he_skin_same'], equals: 'Left open',
+          text: 'The cutaneous wound was left open to granulate.' },
+
+        /* the two that decide whether this anus will stenose */
+        { group: 'br', needs: ['he_bridge_1cm'], equals: 'Yes',
+          text: 'A mucocutaneous bridge of more than 1 cm was preserved between every excised column.' },
+        { group: 'br', needs: ['he_bridge_1cm'], equals: 'No',
+          text: 'A mucocutaneous bridge of more than 1 cm could not be preserved between every column.' },
+        { group: 'dia', needs: ['he_diameter_50'], equals: 'Yes',
+          text: 'More than half of the anal circumference was left intact.' },
+        { group: 'dia', needs: ['he_diameter_50'], equals: 'No',
+          text: 'Less than half of the anal circumference remained intact, and the risk of stenosis was noted.' }
+      ],
+
+      /* ---- radiofrequency ablation ---- */
+      he_rfa: [
+        { group: 'rfa', needs: ['he_rfa_device', 'he_rfa_power'],
+          text: 'Radiofrequency ablation was carried out using {he_rfa_device} at {he_rfa_power} W.' },
+        { group: 'rfa', needs: ['he_rfa_power'],
+          text: 'Radiofrequency ablation was carried out at {he_rfa_power} W.' },
+        { group: 'rfa', needs: ['he_rfa_device'],
+          text: 'Radiofrequency ablation was carried out using {he_rfa_device}.' },
+
+        { needs: ['he_rfa_level'],
+          text: 'The probe was applied {he_rfa_level|lc}.' },
+        { group: 'dose', needs: ['he_rfa_columns', 'he_rfa_points', 'he_rfa_energy'],
+          text: '{he_rfa_columns} column(s) were treated at {he_rfa_points} point(s) each, delivering {he_rfa_energy} J per column.' },
+        { group: 'dose', needs: ['he_rfa_columns', 'he_rfa_energy'],
+          text: '{he_rfa_columns} column(s) were treated, delivering {he_rfa_energy} J per column.' },
+        { group: 'dose', needs: ['he_rfa_columns'],
+          text: '{he_rfa_columns} column(s) were treated.' },
+        { needs: ['he_rfa_endpoint'],
+          text: 'Treatment of each column was continued to the endpoint of {he_rfa_endpoint|lc}.' },
+        { needs: ['he_rfa_mucopexy'], equals: 'Yes',
+          text: 'A mucopexy was added to reduce the prolapsing component.' },
+        { needs: ['he_rfa_mucopexy'], equals: 'No',
+          text: 'No mucopexy was added.' }
+      ],
+
+      /* ---- laser haemorrhoidoplasty ---- */
+      he_laser: [
+        { group: 'las', needs: ['he_laser_wavelength', 'he_laser_fibre', 'he_laser_power'],
+          text: 'Laser hemorrhoidoplasty was performed with a {he_laser_wavelength} {he_laser_fibre|lc} fibre at {he_laser_power} W.' },
+        { group: 'las', needs: ['he_laser_wavelength', 'he_laser_power'],
+          text: 'Laser hemorrhoidoplasty was performed at {he_laser_wavelength} and {he_laser_power} W.' },
+        { group: 'las', needs: ['he_laser_wavelength'],
+          text: 'Laser hemorrhoidoplasty was performed at {he_laser_wavelength}.' },
+
+        { needs: ['he_laser_entry'],
+          text: 'The fibre was introduced through a {he_laser_entry|lc}.' },
+        { group: 'ldose', needs: ['he_laser_piles', 'he_laser_energy'],
+          text: '{he_laser_piles} pile(s) were treated with approximately {he_laser_energy} J each, the shots being spread through the submucosal cushion to avoid a single burn.' },
+        { group: 'ldose', needs: ['he_laser_piles'],
+          text: '{he_laser_piles} pile(s) were treated.' },
+        { needs: ['he_laser_mucopexy'], equals: 'Yes',
+          text: 'A mucopexy was added to reduce the prolapsing component.' },
+        { needs: ['he_laser_mucopexy'], equals: 'No',
+          text: 'No mucopexy was added.' }
+      ],
+
+      /* ---- the smaller anorectal procedures ---- */
+      he_minor: [
+        { group: 'lis', needs: ['he_lis_side', 'he_lis_technique', 'he_lis_length'],
+          text: 'A {he_lis_technique|lc} lateral internal sphincterotomy was performed at the {he_lis_side|lc}, dividing {he_lis_length} cm of the internal sphincter.' },
+        { group: 'lis', needs: ['he_lis_side', 'he_lis_technique'],
+          text: 'A {he_lis_technique|lc} lateral internal sphincterotomy was performed at the {he_lis_side|lc}.' },
+        { group: 'lis', needs: ['he_lis_side'],
+          text: 'A lateral internal sphincterotomy was performed at the {he_lis_side|lc}.' },
+        { needs: ['he_band_number'],
+          text: '{he_band_number} band(s) or injection(s) were applied to the residual piles above the dentate line.' }
+      ],
+
 
       /* ---- opening ------------------------------------------------- */
       setup: [
@@ -1290,6 +1428,21 @@
         ]
       },
       {
+        name: 'Hemorrhoid and minor anorectal procedures',
+        when: [
+          { key: 'he_procedure', any: ['Hemorrhoidectomy',
+            'Radiofrequency ablation (RFA)', 'Laser hemorrhoidoplasty (LHP)',
+            'Rubber band ligation', 'Sclerotherapy',
+            'Excision of thrombosed external pile', 'Lateral internal sphincterotomy',
+            'Fissurectomy', 'Excision of skin tag', 'Other'] }
+        ],
+        lines: [
+          { use: 'he_setup' }, { use: 'he_assess' },
+          { use: 'he_excision' }, { use: 'he_rfa' }, { use: 'he_laser' },
+          { use: 'he_minor' }, { use: 'he_close' }
+        ]
+      },
+      {
         /* Stoma surgery is its own category now, with its own fields — a
            stoma has no lesion to locate, no margin to measure and no
            lymphadenectomy, and asking those questions of it was noise. */
@@ -1435,29 +1588,15 @@
       { needs: ['fi_specimen'], text: 'Specimen sent: {fi_specimen}.' }
     ],
 
-    /* ---------------------------------------------------------------- */
+    /* ----------------------------------------------------------------
+       HAEMORRHOID — the fallback list, used when no operation block matches.
+       It names the same parts as the block below, so the two can never drift
+       into telling different stories about the same operation.
+       ---------------------------------------------------------------- */
     hemorrhoid: [
-      { group: 'pos', needs: ['he_position', 'anaesthesia'],
-        text: 'Under {anaesthesia}, the patient was placed in the {he_position|lc} position and the perineum was prepared and draped.' },
-      { group: 'pos', needs: ['he_position'],
-        text: 'The patient was placed in the {he_position|lc} position and the perineum was prepared and draped.' },
-
-      { group: 'gr', needs: ['he_grade', 'he_type'],
-        text: 'Examination confirmed {he_type|lc} hemorrhoids, {he_grade}.' },
-      { group: 'gr', needs: ['he_grade'], text: 'Examination confirmed {he_grade|lc} hemorrhoids.' },
-      { needs: ['he_positions'], text: 'Piles were present at {he_positions}.' },
-      { needs: ['he_associated'], not: 'None',
-        text: 'Associated findings: {he_associated}.' },
-
-      { needs: ['he_procedure'], text: 'The procedure performed was {he_procedure|lc}.' },
-      { needs: ['he_piles_excised'], text: '{he_piles_excised} pile(s) were excised.' },
-      { needs: ['he_energy'],
-        text: 'Division and hemostasis were achieved with {he_energy|lc}.' },
-      { needs: ['he_pedicle'], text: 'The pedicles were secured: {he_pedicle}.' },
-      { needs: ['he_bridge'], equals: 'Yes',
-        text: 'Adequate mucocutaneous bridges were preserved between the excision sites.' },
-      { needs: ['he_analgesia'], text: 'Local analgesia was infiltrated: {he_analgesia}.' },
-      { needs: ['he_packing'], equals: 'Yes', text: 'An anal pack was inserted.' }
+      { use: 'he_setup' }, { use: 'he_assess' },
+      { use: 'he_excision' }, { use: 'he_rfa' }, { use: 'he_laser' },
+      { use: 'he_minor' }, { use: 'he_close' }
     ],
 
     /* ---------------------------------------------------------------- */
