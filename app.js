@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02da';
+  var APP_BUILD = '2026-08-02db';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1402,6 +1402,7 @@
   }
 
   function openDraw(i, kind) {
+    selText = -1; movingText = null;
     S.drawKind = kind || 'sheet';
     S.active = i;
     var t = drawTarget();
@@ -1472,7 +1473,10 @@
     if (!st) return;
     var w = parseFloat(st.style.width) || st.offsetWidth;
     var h = parseFloat(st.style.height) || st.offsetHeight;
-    view.k = Math.min(6, Math.max(1, view.k));
+    /* 4x, not 6x: beyond that the bitmap the compositor can afford
+       is too soft to draw on, and 4x is already a 5 mm tract filling a third
+       of the screen */
+    view.k = Math.min(4, Math.max(1, view.k));
     /* the picture may not be dragged away from the window it sits in */
     view.x = Math.min(0, Math.max(w - w * view.k, view.x));
     view.y = Math.min(0, Math.max(h - h * view.k, view.y));
@@ -1491,7 +1495,7 @@
   /* Zoom about a point, so the tissue under the fingers stays under them. */
   function zoomAt(k, cx, cy) {
     var before = view.k;
-    view.k = Math.min(6, Math.max(1, k));
+    view.k = Math.min(4, Math.max(1, k));
     var f = view.k / before;
     view.x = cx - (cx - view.x) * f;
     view.y = cy - (cy - view.y) * f;
@@ -1561,17 +1565,36 @@
      zoomed is barely affected — and it does not touch the printed note at
      all, which is re-rendered from the stored strokes at full resolution
      when the PDF is built. */
-  var MAX_INK_PIXELS = 3.0e6;
+  /* Ball's Safari trace settled this: over the whole recording the script
+     accounted for 117 ms and COMPOSITING for 932 ms, with a median frame of
+     79 ms — under 13 frames a second. Forced layout was 7 ms, so the earlier
+     fixes worked; none of them could touch this, because the cost is the
+     compositor re-rasterising the canvas layer, not anything JavaScript does.
+
+     The canvas sits inside a stage that CSS scales by the zoom, so what the
+     compositor must produce each frame is the canvas area TIMES the zoom
+     squared. Budgeting by the canvas's own area therefore let the real cost
+     grow with the zoom: at 194% a 3 Mpx canvas became 11 Mpx on screen.
+
+     The budget is now on what the compositor actually paints. Zoomed in, the
+     bitmap is smaller and the GPU magnifies it — slightly softer while
+     zoomed, but the frame rate stops collapsing exactly when the surgeon has
+     zoomed in to write something small. The printed note is unaffected: it is
+     re-rendered from the stored strokes. */
+  var MAX_COMPOSITED_PIXELS = 3.0e6;
 
   function inkResolution() {
     var st = stageEl();
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var mult = Math.min(dpr * Math.max(1, view.k), 2.5);
+    var k = Math.max(1, view.k);
+    var mult = Math.min(dpr, 2.5);
     var w = st ? (parseFloat(st.style.width) || 300) : 300;
     var h = st ? (parseFloat(st.style.height) || 200) : 200;
-    var area = w * h * mult * mult;
-    if (area > MAX_INK_PIXELS) mult *= Math.sqrt(MAX_INK_PIXELS / area);
-    return Math.max(1, mult);
+    var onScreen = w * h * mult * mult * k * k;
+    if (onScreen > MAX_COMPOSITED_PIXELS) {
+      mult *= Math.sqrt(MAX_COMPOSITED_PIXELS / onScreen);
+    }
+    return Math.max(0.5, mult);
   }
 
   function rescaleInk() {
@@ -1618,13 +1641,59 @@
     c.restore();
   }
 
+  function textFont(t, w) {
+    /* slimmer than the old 600-weight Helvetica, and monospaced so a label
+       written over a diagram reads as an annotation rather than as part of it */
+    return '400 ' + Math.round(t.s * w / 1000) +
+      "px 'Courier New', Courier, 'Sarabun', monospace";
+  }
+
   function drawTextItem(c, t, w, h) {
     c.save();
     c.fillStyle = t.c;
-    c.font = '600 ' + Math.round(t.s * w / 1000) + 'px Helvetica, Arial, sans-serif';
+    c.font = textFont(t, w);
     c.textBaseline = 'middle';
     c.fillText(t.t, t.x * w, t.y * h);
     c.restore();
+  }
+
+  /* The box a text item occupies, in fractions of the picture — used both to
+     decide what a tap has landed on and to draw the selection outline. */
+  function textBox(t, w, h) {
+    if (!ctx) return null;
+    ctx.save();
+    ctx.font = textFont(t, w);
+    var tw = ctx.measureText(t.t).width;
+    ctx.restore();
+    var th = t.s * w / 1000 * 1.35;
+    return { x: t.x * w, y: t.y * h - th / 2, w: tw, h: th };
+  }
+
+  function textAt(target, u, v, w, h) {
+    var texts = target.texts || [];
+    for (var i = texts.length - 1; i >= 0; i--) {
+      var b = textBox(texts[i], w, h);
+      if (!b) continue;
+      var pad = 6;
+      if (u * w >= b.x - pad && u * w <= b.x + b.w + pad &&
+          v * h >= b.y - pad && v * h <= b.y + b.h + pad) return i;
+    }
+    return -1;
+  }
+
+  var selText = -1, movingText = null;
+
+  function selectedText() {
+    var t = drawTarget();
+    return (t && selText >= 0 && t.texts[selText]) ? t.texts[selText] : null;
+  }
+
+  function setSelectedText(i) {
+    selText = i;
+    var on = i >= 0;
+    var del = $('#toolDelText');
+    if (del) del.style.display = on ? '' : 'none';
+    redraw();
   }
 
   function redraw() {
@@ -1633,6 +1702,18 @@
     ctx.clearRect(0, 0, cv.width, cv.height);
     d.strokes.forEach(function (st) { drawStroke(ctx, st, cv.width, cv.height); });
     d.texts.forEach(function (t) { drawTextItem(ctx, t, cv.width, cv.height); });
+    var sel = selectedText();
+    if (sel) {
+      var b = textBox(sel, cv.width, cv.height);
+      if (b) {
+        ctx.save();
+        ctx.strokeStyle = '#0e7a6d';
+        ctx.lineWidth = Math.max(1, cv.width / 500);
+        ctx.setLineDash([cv.width / 90, cv.width / 140]);
+        ctx.strokeRect(b.x - 6, b.y - 4, b.w + 12, b.h + 8);
+        ctx.restore();
+      }
+    }
   }
 
   /* THE ONE THAT COST A SECOND.
@@ -1661,6 +1742,29 @@
      the new piece of the current stroke is painted, and only once per frame.
      A full redraw happens when the stroke ends, so what is exported is the
      same smoothed path as before. */
+  /* Text is painted after every stroke, so an eraser stroke could never
+     remove it — it was rubbed out and then drawn again on the next repaint,
+     which is why an erased label came back in the thumbnail. The eraser now
+     deletes any label it is dragged across. */
+  function eraseTextsUnder(target, stroke) {
+    if (!target || !stroke || !stroke.p.length) return;
+    var w = cv.width, h = cv.height;
+    var reach = Math.max(12, stroke.w * (w / 1000) * 1.2);
+    var gone = false;
+    for (var i = (target.texts || []).length - 1; i >= 0; i--) {
+      var b = textBox(target.texts[i], w, h);
+      if (!b) continue;
+      for (var j = 0; j < stroke.p.length; j++) {
+        var px = stroke.p[j][0] * w, py = stroke.p[j][1] * h;
+        if (px >= b.x - reach && px <= b.x + b.w + reach &&
+            py >= b.y - reach && py <= b.y + b.h + reach) {
+          target.texts.splice(i, 1); gone = true; break;
+        }
+      }
+    }
+    if (gone) { setSelectedText(-1); redraw(); }
+  }
+
   var inkPending = false;
 
   function drawTail() {
@@ -1731,7 +1835,7 @@
     var dist = Math.max(1, Math.hypot(dx, dy));
     var cx = (p[0].x + p[1].x) / 2, cy = (p[0].y + p[1].y) / 2;
     /* zoom about where the fingers started, then follow where they moved */
-    var k = Math.min(6, Math.max(1, gesture.k * (dist / gesture.dist)));
+    var k = Math.min(4, Math.max(1, gesture.k * (dist / gesture.dist)));
     var ax = gesture.cx - r.left, ay = gesture.cy - r.top;
     var f = k / gesture.k;
     view.k = k;
@@ -1798,14 +1902,26 @@
       if (livePoints().length >= 2) return;      /* this is a gesture */
       e.preventDefault();
       if (tool.mode === 'text') {
+        var p = pos(e);
+        /* a label written on a figure is a thing, not a permanent mark: tap
+           it to pick it up, drag to move it, and the colour, the size slider
+           and Delete then apply to it */
+        var hit = textAt(sh, p[0], p[1], cv.width, cv.height);
+        if (hit > -1) {
+          setSelectedText(hit);
+          movingText = { i: hit, dx: p[0] - sh.texts[hit].x, dy: p[1] - sh.texts[hit].y };
+          cv.setPointerCapture(e.pointerId);
+          return;
+        }
         var txt = window.prompt('ข้อความ / Text:');
         if (txt) {
-          var p = pos(e);
           sh.texts.push({ t: txt, x: p[0], y: p[1], c: tool.color, s: 26 + tool.width * 4 });
-          redraw(); saveInk();
-        }
+          setSelectedText(sh.texts.length - 1);
+          saveInk();
+        } else setSelectedText(-1);
         return;
       }
+      if (selText > -1) setSelectedText(-1);   /* drawing deselects */
       cv.setPointerCapture(e.pointerId);
       cvRect = cv.getBoundingClientRect();
       drawing = true;
@@ -1813,6 +1929,13 @@
       sh.strokes.push(cur);
     });
     cv.addEventListener('pointermove', function (e) {
+      if (movingText) {
+        var t = drawTarget(); if (!t) return;
+        var q = pos(e);
+        var it = t.texts[movingText.i];
+        if (it) { it.x = q[0] - movingText.dx; it.y = q[1] - movingText.dy; redraw(); }
+        return;
+      }
       if (!drawing || !cur) return;
       if (livePoints().length >= 2) { abandonStroke(drawTarget()); return; }
       /* an Apple Pencil reports far faster than the screen refreshes; taking
@@ -1826,8 +1949,10 @@
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
       cv.addEventListener(ev, function () {
+        if (movingText) { movingText = null; saveInk(); return; }
         if (!drawing) return;
         drawing = false;
+        if (cur && cur.e) eraseTextsUnder(drawTarget(), cur);
         if (cur) {
           delete cur.drawn;      /* a paint cursor, not part of the record */
           cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
@@ -3140,12 +3265,25 @@
     /* drawing toolbar */
     $$('#penColors button').forEach(function (b) {
       b.onclick = function () {
-        tool.color = b.dataset.color; tool.mode = 'pen';
+        tool.color = b.dataset.color;
         $$('#penColors button').forEach(function (x) { x.classList.toggle('on', x === b); });
+        var sel = selectedText();
+        if (sel) { sel.c = tool.color; redraw(); saveInk(); return; }
+        tool.mode = 'pen';
         $$('.toolbtn').forEach(function (x) { x.classList.remove('on'); });
       };
     });
-    $('#penSize').oninput = function () { tool.width = +this.value; };
+    $('#penSize').oninput = function () {
+      tool.width = +this.value;
+      var sel = selectedText();
+      if (sel) { sel.s = 26 + tool.width * 4; redraw(); saveInk(); }
+    };
+    $('#toolDelText').onclick = function () {
+      var t = drawTarget();
+      if (!t || selText < 0) return;
+      t.texts.splice(selText, 1);
+      setSelectedText(-1); saveInk();
+    };
     $('#toolZoomReset').onclick = function () {
       resetView(); applyView(); rescaleInk();
     };
