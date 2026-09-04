@@ -536,7 +536,9 @@ table.flow td{padding-top:4px;vertical-align:top}
 
 @media (max-width:640px){
   .plab{flex:0 0 46%}
-  .pg{width:100%;padding:8px}
+  /* the page keeps its real size on a phone and is scaled to fit by
+     fitPreview(); reflowing it to 100% showed a sheet that would never be
+     printed — different line breaks, different page breaks, different count */
   .brand small{display:none}
   /* On a phone the bars were taking a third of the screen before a single
      field appeared. They are chrome, not content: quiet, thin, and clearly
@@ -890,12 +892,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=dr"></script>
-<script src="figures.js?v=dr"></script>
-<script src="figures-original.js?v=dr"></script>
-<script src="letterhead.js?v=dr"></script>
-<script src="narrative.js?v=dr"></script>
-<script src="templates.js?v=dr"></script>
-<script src="app.js?v=dr"></script>
+<script src="config.js?v=ds"></script>
+<script src="figures.js?v=ds"></script>
+<script src="figures-original.js?v=ds"></script>
+<script src="letterhead.js?v=ds"></script>
+<script src="narrative.js?v=ds"></script>
+<script src="templates.js?v=ds"></script>
+<script src="app.js?v=ds"></script>
 </body>
 </html>

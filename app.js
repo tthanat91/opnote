@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02t';
+  var EXPECTED_BUILD = '2026-08-02u';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dr';
+  var APP_BUILD = '2026-08-02ds';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2225,6 +2225,10 @@
   function watchGeometry() {
     if (watchGeometry.done) return;
     watchGeometry.done = true;
+    /* turning the phone changes how much room the page has to be shown in */
+    ['resize', 'orientationchange'].forEach(function (ev) {
+      window.addEventListener(ev, fitPreview);
+    });
     ['resize', 'orientationchange', 'scroll'].forEach(function (ev) {
       window.addEventListener(ev, forgetRect, true);
     });
@@ -2933,7 +2937,10 @@
     if (!body) return;
     var floor = 40 * MM_PX;                 /* never squeeze it below this */
     body.style.height = floor + 'px';
-    var rest = pg.getBoundingClientRect().height - floor;
+    /* offsetHeight, not a bounding rectangle: the preview is scaled down to
+       fit a phone, and a rectangle reports the SCALED height, which would
+       size the findings box from a picture of the page rather than the page */
+    var rest = pg.offsetHeight - floor;
     if (rest <= 0) return;                  /* not laid out — leave the CSS */
     var room = (PDF_H * MM_PX) - rest - 2;  /* a hair, for rounding */
     var h = Math.max(floor, Math.floor(room));
@@ -3129,13 +3136,14 @@
       box.classList.remove('pdfmode');
       fitPageOne();
       fitFindings(box);
+      fitPreview();
     }
     return ensurePdfLibs().then(function () {
       /* rasterising while the embedded face is still loading would put the
          fallback font in the PDF — the very thing the font is here to stop */
       return (document.fonts && document.fonts.ready) ? document.fonts.ready : null;
     }).then(function () {
-      if (box) box.classList.add('pdfmode');
+      if (box) { clearPreviewScale(); box.classList.add('pdfmode'); }
       return refreshPreview();
     }).then(function () {
       var pages = $$('#previewBox .pg');
@@ -3165,6 +3173,36 @@
     });
   }
 
+  /* THE PREVIEW ON A PHONE.
+
+     It used to be reflowed to the width of the screen — .pg went to 100% —
+     so what the surgeon reviewed on an iPhone was not the sheet that would
+     come out of the printer: different line breaks, different page breaks,
+     a different number of pages. The page is now always a true 186 mm and is
+     simply shrunk to fit, the way a page preview should be. Scaling is a
+     transform, so the layout box keeps its full size; the negative bottom
+     margin takes back the space the shrunken page no longer occupies. */
+  function fitPreview() {
+    var box = $('#previewBox');
+    if (!box || box.classList.contains('pdfmode')) return;
+    var pgs = $$('#previewBox .pg');
+    if (!pgs.length) return;
+    var avail = box.clientWidth - 28;          /* its own padding, both sides */
+    var natural = pgs[0].offsetWidth || 1;
+    var k = Math.min(1, avail / natural);
+    pgs.forEach(function (pg) {
+      if (k >= 1) { pg.style.transform = ''; pg.style.marginBottom = ''; return; }
+      pg.style.transform = 'scale(' + k + ')';
+      pg.style.marginBottom = Math.round(-(1 - k) * pg.offsetHeight + 14) + 'px';
+    });
+  }
+
+  function clearPreviewScale() {
+    $$('#previewBox .pg').forEach(function (pg) {
+      pg.style.transform = ''; pg.style.marginBottom = '';
+    });
+  }
+
   function refreshPreview() {
     harvest();
     return exportAllPhotos().then(exportAllSheets).then(function (pngs) {
@@ -3180,6 +3218,7 @@
         var to = $('#printRoot .findbox .bbody');
         if (from && to) to.style.fontSize = from.style.fontSize;
       })();
+      fitPreview();          /* last: everything above measures the real page */
       return pngs;
     });
   }
