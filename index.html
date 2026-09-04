@@ -331,7 +331,7 @@ table.results td.act{white-space:nowrap}
 #printRoot{display:none}
 
 .pg{
-  background:#fff;width:186mm;min-height:270mm;margin:0 auto 14px;padding:4mm 6mm;
+  background:#fff;width:186mm;min-height:270mm;margin:0 auto 14px;padding:9mm 6mm;
   font-size:var(--fs,12px);line-height:1.4;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
 }
 .hosphead{display:flex;align-items:center;gap:8px;
@@ -408,6 +408,23 @@ button.mini.loading{opacity:1;position:relative}
 /* while a page is being photographed for the PDF it must look like paper,
    not like a card floating on the preview background */
 .pdfshot{box-shadow:none !important;margin:0 !important}
+/* WHY AN iPHONE PRODUCED SEVEN PAGES AND AN iPAD THREE.
+
+   The PDF is a photograph of the preview, and the preview is laid out at
+   whatever width the screen happens to have. On a phone every line wraps
+   two or three times over, the note grows to twice the height, and it is
+   sliced into twice as many sheets. The device was deciding the pagination.
+
+   While the PDF is being built the preview is forced to the geometry of the
+   paper — 186 mm wide, print's own type size — so an iPhone, an iPad and the
+   hospital PC all measure the same note and cut it in the same places. The
+   vertical padding is left off here because the margin is added per sheet
+   when the slices are placed, which is what gives a continuation page its
+   top and bottom white space. */
+#previewBox.pdfmode{overflow:visible !important;width:auto !important;max-width:none !important}
+#previewBox.pdfmode .pg{width:186mm !important;max-width:none !important;
+  padding:9mm 6mm !important;font-size:12.5px !important;margin:0 auto 8px !important;
+  background:#fff;box-shadow:none !important;transform:none !important}
 /* The usable width inside the box is about 163 mm — the page is 186 mm wide
    less its own padding, less the box padding. Three 56 mm views plus their
    margins came to 171 mm and wrapped onto a second row, which pushed the
@@ -465,14 +482,25 @@ table.flow td{padding-top:4px;vertical-align:top}
   /* The page box is 186 mm plus 6 mm of padding either side = 198 mm, and
      the printable width at 5 mm margins is 200 mm. Two millimetres of slack,
      deliberately, because "exactly" loses to rounding. */
-  @page{size:A4;margin:5mm}
+  /* THE URL AND THE PAGE NUMBER AT THE FOOT OF THE SHEET.
+
+     "https://colovjr.com/ · 4/9/2569 BE, 16:46 · Page 1 of 3" is printed by
+     the BROWSER, not by this page, and no rule in this stylesheet can reach
+     it — it lives in the margin box of the sheet. What can be done is to
+     leave no margin box for it to live in: with a page margin of zero the
+     browser has nowhere to put a header or a footer and omits both.
+
+     The 5 mm is not lost, it moves inside: the block is still 186 mm wide,
+     still centred with 12 mm of paper each side, and its text still starts
+     9 mm down. The printed result is unchanged apart from the footer. */
+  @page{size:A4;margin:0}
   body{background:#fff;font-size:12.5px}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
   /* Keep the printed box identical to the one on screen. When print used
      width:auto the two wrapped differently, so anything measured on screen —
      including how much room the findings box has — was not true of paper. */
-  .pg{width:186mm;min-height:0;margin:0 auto;padding:4mm 6mm;box-shadow:none;
+  .pg{width:186mm;min-height:0;margin:0 auto;padding:9mm 6mm;box-shadow:none;
       page-break-after:auto}
   /* No forced height on page 1.
 
@@ -862,12 +890,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=dq"></script>
-<script src="figures.js?v=dq"></script>
-<script src="figures-original.js?v=dq"></script>
-<script src="letterhead.js?v=dq"></script>
-<script src="narrative.js?v=dq"></script>
-<script src="templates.js?v=dq"></script>
-<script src="app.js?v=dq"></script>
+<script src="config.js?v=dr"></script>
+<script src="figures.js?v=dr"></script>
+<script src="figures-original.js?v=dr"></script>
+<script src="letterhead.js?v=dr"></script>
+<script src="narrative.js?v=dr"></script>
+<script src="templates.js?v=dr"></script>
+<script src="app.js?v=dr"></script>
 </body>
 </html>

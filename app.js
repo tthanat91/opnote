@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dq';
+  var APP_BUILD = '2026-08-02dr';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3013,7 +3013,15 @@
     return (safe || 'operative-note') + '.pdf';
   }
 
-  var PDF_W = 198, PDF_H = 285;   /* the page box, which is A4 less 6 mm */
+  /* The printed block and the white space around it, in millimetres. These
+     are now the SAME numbers the print stylesheet uses. The block is 186 mm
+     wide and carries its own 9 mm of white space top and bottom, so the sheet
+     is filled edge to edge and the margin comes from the block itself.
+
+     The old pair — 198 by 285 — was quietly enlarging a 186 mm render onto a
+     198 mm box, a 6.5% magnification, which is a good part of why a saved PDF
+     never quite looked like the printout of the same note. */
+  var PDF_W = 186, PDF_H = 297, PDF_Y = 0;
 
   /* Where a tall page may be cut without slicing through a line of text.
      Every block inside the page offers its bottom edge as a candidate; the
@@ -3097,7 +3105,7 @@
             var hmm = Math.min(PDF_H, (h / pxPerMm) * plan.fits);
             var wmm = PDF_W * (hmm / (h / pxPerMm));
             doc.addImage(strip.toDataURL('image/jpeg', 0.92), 'JPEG',
-              (210 - wmm) / 2, 5, wmm, hmm, undefined, 'FAST');
+              (210 - wmm) / 2, PDF_Y, wmm, hmm, undefined, 'FAST');
             added++;
             y += h;
           }
@@ -3113,18 +3121,29 @@
      and by the copy that is filed in Drive. They must not be allowed to
      drift: the whole point of keeping a PDF is that it is the same paper. */
   function buildPdfDoc(scale) {
+    var box = $('#previewBox');
+    /* the preview is measured AND rasterised at the size of the paper, so the
+       device the surgeon happens to be holding stops deciding the pagination */
+    function normal() {
+      if (!box) return;
+      box.classList.remove('pdfmode');
+      fitPageOne();
+      fitFindings(box);
+    }
     return ensurePdfLibs().then(function () {
       /* rasterising while the embedded face is still loading would put the
          fallback font in the PDF — the very thing the font is here to stop */
       return (document.fonts && document.fonts.ready) ? document.fonts.ready : null;
     }).then(function () {
+      if (box) box.classList.add('pdfmode');
       return refreshPreview();
     }).then(function () {
       var pages = $$('#previewBox .pg');
       if (!pages.length) throw new Error('nothing to print');
       var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
       return pagesToPdf(pages, doc, scale).then(function () { return doc; });
-    });
+    }).then(function (doc) { normal(); return doc; },
+      function (e) { normal(); throw e; });
   }
 
   /* a lower factor on a phone, where memory is tightest */
