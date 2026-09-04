@@ -234,6 +234,8 @@ canvas.ink{touch-action:none;cursor:crosshair}
   box-sizing:content-box;
   min-width:80px;max-width:70%;outline:none}
 #zoomTag{font-variant-numeric:tabular-nums}
+#penLog{font:11px/1.4 ui-monospace,Menlo,monospace;color:#0e7a6d;
+  background:#e8f5f2;border-radius:6px;padding:3px 7px;white-space:nowrap}
 .toolbtn.danger{border-color:#e2b4ae;color:#b3261e}
 .textbar{background:#eef6f4;border:1px solid var(--brand-2);border-radius:10px;
   padding:7px 9px;margin-bottom:8px;align-items:center}
@@ -617,6 +619,7 @@ table.flow td{padding-top:4px;vertical-align:top}
             <input type="range" id="penSize" min="1" max="10" value="3" title="ขนาดปากกา / pen size">
             <button type="button" class="toolbtn" id="toolZoomReset"
               title="กลับไปขนาดเต็มภาพ / fit the whole picture">⤢ <span id="zoomTag">100%</span></button>
+            <span id="penLog" style="display:none"></span>
             <button type="button" class="toolbtn on" id="toolPen">✏️ วาด · Draw</button>
             <button type="button" class="toolbtn" id="toolText">T ข้อความ · Text</button>
 
@@ -845,12 +848,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=dh"></script>
-<script src="figures.js?v=dh"></script>
-<script src="figures-original.js?v=dh"></script>
-<script src="letterhead.js?v=dh"></script>
-<script src="narrative.js?v=dh"></script>
-<script src="templates.js?v=dh"></script>
-<script src="app.js?v=dh"></script>
+<script src="config.js?v=di"></script>
+<script src="figures.js?v=di"></script>
+<script src="figures-original.js?v=di"></script>
+<script src="letterhead.js?v=di"></script>
+<script src="narrative.js?v=di"></script>
+<script src="templates.js?v=di"></script>
+<script src="app.js?v=di"></script>
 </body>
 </html>

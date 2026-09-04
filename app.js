@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dh';
+  var APP_BUILD = '2026-08-02di';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1529,6 +1529,7 @@
     scheduleRedraw();
     var tag = $('#zoomTag');
     if (tag) tag.textContent = Math.round(view.k * 100) + '%';
+    if (pen.on) penLogShow();
   }
 
   /* Zoom about a point, so the tissue under the fingers stays under them. */
@@ -1842,6 +1843,7 @@
 
     function done(keep) {
       box.style.display = 'none';
+      forgetRect();                   /* the keyboard has just closed */
       box.onblur = box.onkeydown = null;
       var cur2 = selectedText();
       if (!cur2) return;
@@ -2006,6 +2008,42 @@
     if (gone) { setSelectedText(-1); redraw(); }
   }
 
+  /* HOW LONG THE PEN ACTUALLY WAITS.
+
+     Three builds of guesswork have not shifted this, and a Safari trace taken
+     with the Inspector attached measures the Inspector as much as the app. So
+     the app now times itself, on the iPad, with nothing attached. Tap the
+     zoom percentage to show the readout. It reports two different things:
+
+       down->ink   how long the app took to get ink on the glass after the
+                   system told it the pencil had landed. This is ours.
+       lift->down  how long passed between the system telling us the pencil
+                   came up and telling us it went down again. This is the
+                   system's, and includes the time your hand was in the air.
+
+     If down->ink is a millisecond or two while lift->down is hundreds, then
+     the event itself is arriving late and no change to this code can help;
+     the answer lies in the canvas size or in iPadOS's own settings. */
+  var pen = { up: 0, down: 0, gap: 0, ink: 0, worst: 0, on: false };
+
+  function penLogEl() { return $('#penLog'); }
+
+  function penLogShow() {
+    var n = penLogEl();
+    if (!n) return;
+    n.textContent = pen.on
+      ? ('down\u2192ink ' + pen.ink.toFixed(1) + ' ms \u00b7 worst ' +
+         pen.worst.toFixed(1) + ' \u00b7 lift\u2192down ' + Math.round(pen.gap) + ' ms')
+      : '';
+    n.style.display = pen.on ? '' : 'none';
+  }
+
+  function penLogToggle() {
+    pen.on = !pen.on;
+    pen.worst = 0;
+    penLogShow();
+  }
+
   var inkPending = false;
 
   /* THE WAIT AFTER THE PENCIL COMES BACK DOWN.
@@ -2139,12 +2177,29 @@
     applyView();
   }
 
+  /* MY MISTAKE IN THE LAST BUILD. Caching the canvas rectangle and never
+     re-measuring it was right for the pen — nothing between two strokes can
+     move the canvas. It was wrong for the keyboard: when the on-screen
+     keyboard opens, iPadOS slides the page up, and it does so through the
+     VISUAL viewport, which fires no window scroll event at all. The cached
+     rectangle then pointed at where the canvas used to be, so every tap after
+     the first piece of typing landed somewhere else. Hence "the word typing
+     is worse".
+
+     The visual viewport is now watched as well, and — since a tap is a rare
+     event where one forced layout costs nothing — the text tool simply
+     measures afresh every time. Only the pen, which fires hundreds of times a
+     second, relies on the cache. */
   function watchGeometry() {
     if (watchGeometry.done) return;
     watchGeometry.done = true;
     ['resize', 'orientationchange', 'scroll'].forEach(function (ev) {
       window.addEventListener(ev, forgetRect, true);
     });
+    var vv = window.visualViewport;
+    if (vv) {
+      ['resize', 'scroll'].forEach(function (ev) { vv.addEventListener(ev, forgetRect); });
+    }
   }
 
   function bindPointer() {
@@ -2208,6 +2263,7 @@
       if (e.pointerType !== 'pen' && pinching()) return;   /* a gesture */
       e.preventDefault();
       if (tool.mode === 'text') {
+        forgetRect();                 /* a tap can afford to be sure */
         var p = pos(e), w = inkW(), h = inkH();
         var px = p[0] * w, py = p[1] * h;
 
@@ -2265,7 +2321,16 @@
       drawing = true;
       cur = { c: tool.color, w: tool.mode === 'eraser' ? tool.width * 5 : tool.width, e: tool.mode === 'eraser', p: [pos(e)] };
       sh.strokes.push(cur);
+      var t0 = pen.on ? (window.performance ? performance.now() : Date.now()) : 0;
       drawTail();          /* a mark under the nib before the hand has moved */
+      if (pen.on) {
+        var t1 = window.performance ? performance.now() : Date.now();
+        pen.down = t1;
+        pen.ink = t1 - t0;
+        if (pen.ink > pen.worst) pen.worst = pen.ink;
+        pen.gap = pen.up ? t0 - pen.up : 0;
+        penLogShow();
+      }
     });
     cv.addEventListener('pointermove', function (e) {
       if (movingText) {
@@ -2317,6 +2382,7 @@
            that is left is to stop pointing at the finished stroke. */
         if (cur) delete cur.drawn;   /* a paint cursor, not part of the record */
         cur = null;
+        if (pen.on) pen.up = window.performance ? performance.now() : Date.now();
         /* The rectangle was thrown away here, so the FIRST thing every new
            stroke did was force the browser to lay the whole page out again
            before a single pixel of ink could be painted. Nothing between one
@@ -3660,6 +3726,18 @@
     $('#toolZoomReset').onclick = function () {
       resetView(); applyView(); rescaleInk();
     };
+    /* the readout is deliberately hidden: press and hold the percentage */
+    (function () {
+      var z = $('#zoomTag'); if (!z) return;
+      var hold = null;
+      z.addEventListener('pointerdown', function (e) {
+        e.stopPropagation();
+        hold = setTimeout(penLogToggle, 700);
+      });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+        z.addEventListener(ev, function () { clearTimeout(hold); });
+      });
+    })();
     $('#toolPen').onclick = function () { tool.mode = 'pen'; markTool(this); };
     $('#toolEraser').onclick = function () { tool.mode = 'eraser'; markTool(this); };
     $('#toolText').onclick = function () { tool.mode = 'text'; markTool(this); };
