@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02df';
+  var APP_BUILD = '2026-08-02dg';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1731,7 +1731,11 @@
       corners: [put(x0, y0), put(x1, y0), put(x1, y1), put(x0, y1)],
       centre: put((x0 + x1) / 2, (y0 + y1) / 2),
       resize: put(x1, y1),                     /* bottom-right */
-      rotate: put((x0 + x1) / 2, y0 - b.h * 0.9)
+      rotate: put((x0 + x1) / 2, y0 - b.h * 0.9),
+      /* Something definite to take hold of. Dragging the letters themselves
+         still works, but it competes with tapping them to retype, and on a
+         short label there is little to aim at. */
+      move: put(x0 - b.h * 0.55, y0 - b.h * 0.55)
     };
   }
 
@@ -1801,13 +1805,31 @@
       vp.appendChild(i);
       return i;
     })();
+    /* Sit the box exactly where the label is. t.y is the label's CENTRE line,
+       so the box is centred on it once its real height is known, and the
+       padding and border are subtracted so the first letter starts where the
+       first letter will end up. The label's own angle is applied too. */
     var w = inkW(), h = inkH();
+    var fs = Math.max(13, Math.round(t.s * w / 1000));
     box.style.display = 'block';
-    box.style.left = Math.round(view.x + t.x * w) + 'px';
-    box.style.top = Math.round(view.y + t.y * h - (t.s * w / 1000) * 0.85) + 'px';
-    box.style.fontSize = Math.max(12, Math.round(t.s * w / 1000)) + 'px';
+    box.style.fontSize = fs + 'px';
+    box.style.fontWeight = t.b ? '700' : '400';
     box.style.color = t.c;
+    box.style.transform = 'none';
     box.value = t.t;
+    var lead = box.clientLeft + parseFloat(getComputedStyle(box).paddingLeft || 0);
+    var bh = box.offsetHeight || (fs * 1.2 + 10);
+    var lx = view.x + t.x * w - lead;
+    var ly = view.y + t.y * h - bh / 2;
+    /* never let it hide outside the window it is drawn in */
+    lx = Math.max(2, Math.min(lx, Math.max(2, vp.clientWidth - 90)));
+    ly = Math.max(2, Math.min(ly, Math.max(2, vp.clientHeight - bh - 2)));
+    box.style.left = Math.round(lx) + 'px';
+    box.style.top = Math.round(ly) + 'px';
+    if (t.r) {
+      box.style.transformOrigin = (lead + 1) + 'px 50%';
+      box.style.transform = 'rotate(' + t.r + 'rad)';
+    }
     box.focus();
     if (box.setSelectionRange) box.setSelectionRange(box.value.length, box.value.length);
 
@@ -1901,11 +1923,18 @@
         ctx.lineTo(fr.rotate.x, fr.rotate.y);
         ctx.stroke();
         ctx.fillStyle = '#ffffff';
-        [fr.resize, fr.rotate].forEach(function (p) {
+        [fr.resize, fr.rotate, fr.move].forEach(function (p) {
           ctx.beginPath();
           ctx.arc(p.x, p.y, hr, 0, Math.PI * 2);
           ctx.fill(); ctx.stroke();
         });
+        /* the cross inside the move handle */
+        ctx.beginPath();
+        ctx.moveTo(fr.move.x - hr * 0.55, fr.move.y);
+        ctx.lineTo(fr.move.x + hr * 0.55, fr.move.y);
+        ctx.moveTo(fr.move.x, fr.move.y - hr * 0.55);
+        ctx.lineTo(fr.move.x, fr.move.y + hr * 0.55);
+        ctx.stroke();
         ctx.restore();
       }
     }
@@ -2002,6 +2031,38 @@
     return out;
   }
 
+  /* WHY THE SECOND STROKE OF A "T" WOULD NOT START.
+     A pinch was declared whenever two entries sat in `live`, and entries were
+     removed only by a pointerup that reached the viewport. A palm whose
+     pointercancel never arrived, or a finger lifted off the edge of the glass,
+     therefore left a ghost behind for the rest of the session — and from then
+     on EVERY pen-down saw "two points", called it a gesture and threw the
+     stroke away. Nothing appears in a performance trace, because nothing runs:
+     the mark is simply discarded. Two defences:
+       - only fingers pinch. An Apple Pencil cannot, so a pen stroke is never
+         refused on these grounds again;
+       - a contact nobody has heard from in two seconds is a ghost, and is
+         forgotten before it can block anything. */
+  var GHOST_MS = 2000;
+
+  function sweepGhosts() {
+    var now = Date.now();
+    for (var k in live) {
+      if (live.hasOwnProperty(k) && now - (live[k].seen || 0) > GHOST_MS) delete live[k];
+    }
+  }
+
+  function touchPoints() {
+    sweepGhosts();
+    var out = [];
+    for (var k in live) {
+      if (live.hasOwnProperty(k) && live[k].t !== 'pen') out.push(live[k]);
+    }
+    return out;
+  }
+
+  function pinching() { return touchPoints().length >= 2; }
+
   function abandonStroke(target) {
     /* a second finger landing turns what had begun as a mark into a gesture,
        and the half-drawn line must not be left behind */
@@ -2046,7 +2107,16 @@
     applyView();
   }
 
+  function watchGeometry() {
+    if (watchGeometry.done) return;
+    watchGeometry.done = true;
+    ['resize', 'orientationchange', 'scroll'].forEach(function (ev) {
+      window.addEventListener(ev, forgetRect, true);
+    });
+  }
+
   function bindPointer() {
+    watchGeometry();
     cv.style.touchAction = 'none';
     var vp = cv.parentNode.parentNode;
     vp.style.touchAction = 'none';
@@ -2054,8 +2124,9 @@
     /* the gesture is watched on the window the picture sits in, so it keeps
        working when a finger strays off the picture itself */
     vp.addEventListener('pointerdown', function (e) {
-      live[e.pointerId] = { x: e.clientX, y: e.clientY, t: e.pointerType };
-      if (livePoints().length >= 2) {
+      sweepGhosts();
+      live[e.pointerId] = { x: e.clientX, y: e.clientY, t: e.pointerType, seen: Date.now() };
+      if (pinching()) {
         abandonStroke(drawTarget());
         gestureStart();
       }
@@ -2064,13 +2135,14 @@
       if (!live[e.pointerId]) return;
       live[e.pointerId].x = e.clientX;
       live[e.pointerId].y = e.clientY;
-      if (livePoints().length >= 2) { gestureMove(); e.preventDefault(); }
+      live[e.pointerId].seen = Date.now();
+      if (pinching()) { gestureMove(); e.preventDefault(); }
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
       vp.addEventListener(ev, function (e) {
-        var many = livePoints().length >= 2;
+        var many = pinching();
         delete live[e.pointerId];
-        if (livePoints().length < 2) {
+        if (!pinching()) {
           gesture = null;
           /* redraw the ink at the resolution the new zoom deserves */
           if (many) rescaleInk();
@@ -2101,7 +2173,7 @@
 
     cv.addEventListener('pointerdown', function (e) {
       var sh = drawTarget(); if (!sh) return;
-      if (livePoints().length >= 2) return;      /* this is a gesture */
+      if (e.pointerType !== 'pen' && pinching()) return;   /* a gesture */
       e.preventDefault();
       if (tool.mode === 'text') {
         var p = pos(e), w = inkW(), h = inkH();
@@ -2112,10 +2184,15 @@
         var sel = selectedText();
         if (sel) {
           var fr = textFrame(sel, w, h);
-          var grab = Math.max(10, w / 60);
+          var grab = Math.max(14, w / 40);   /* a handle you can hit with a thumb */
           if (fr && near({ x: px, y: py }, fr.rotate, grab)) {
             movingText = { i: selText, mode: 'rotate',
               a0: Math.atan2(py - sel.y * h, px - sel.x * w), r0: sel.r || 0 };
+            cv.setPointerCapture(e.pointerId); return;
+          }
+          if (fr && near({ x: px, y: py }, fr.move, grab)) {
+            movingText = { i: selText, mode: 'move',
+              dx: p[0] - sel.x, dy: p[1] - sel.y };
             cv.setPointerCapture(e.pointerId); return;
           }
           if (fr && near({ x: px, y: py }, fr.resize, grab)) {
@@ -2173,7 +2250,7 @@
         return;
       }
       if (!drawing || !cur) return;
-      if (livePoints().length >= 2) { abandonStroke(drawTarget()); return; }
+      if (e.pointerType !== 'pen' && pinching()) { abandonStroke(drawTarget()); return; }
       /* an Apple Pencil reports far faster than the screen refreshes; taking
          the coalesced events keeps the curve smooth without painting each */
       var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
@@ -2184,8 +2261,13 @@
         else setTimeout(drawTail, 16);
       }
     });
+    /* Safari takes the capture away when a contact ends abnormally; without
+       this the entry would linger and become one of the ghosts above. */
+    cv.addEventListener('lostpointercapture', function (e) { delete live[e.pointerId]; });
+
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
-      cv.addEventListener(ev, function () {
+      cv.addEventListener(ev, function (e) {
+        delete live[e.pointerId];
         if (movingText) { movingText = null; saveInk(); return; }
         if (!drawing) return;
         drawing = false;
@@ -2195,7 +2277,12 @@
           cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
         }
         cur = null;
-        forgetRect();
+        /* The rectangle was thrown away here, so the FIRST thing every new
+           stroke did was force the browser to lay the whole page out again
+           before a single pixel of ink could be painted. Nothing between one
+           stroke and the next can move the canvas — the window is fixed, the
+           page cannot scroll, and zooming needs two fingers. It is measured
+           again when the view, the size or the orientation actually change. */
         /* No repaint here. drawTail has already painted this stroke, and
            redrawing every stroke on the sheet each time the pen lifts is the
            last of the per-stroke costs — the one felt between letters, where
