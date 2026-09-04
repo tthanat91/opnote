@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02di';
+  var APP_BUILD = '2026-08-02dj';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1412,6 +1412,7 @@
     /* "remove this figure sheet" would delete the wrong thing on a photo */
     $('#toolDeleteSheet').style.display = S.drawKind === 'photo' ? 'none' : '';
     $('#drawModal').classList.remove('hidden');
+    pageZoomable(false);        /* see closeDraw: this is the pen-lift wait */
     /* a photograph has whatever shape the camera gave it, and a note reopened
        from the Sheet has not been measured yet */
     if (S.drawKind === 'photo' && !S.photos[i].w) {
@@ -1423,8 +1424,38 @@
     } else mountCanvas();
   }
 
+  /* WHAT WAS HOLDING THE SECOND STROKE BACK.
+
+     The page declares `width=device-width, initial-scale=1` and nothing more,
+     so Safari keeps double-tap-to-zoom switched on for the whole document.
+     When a contact ends, the gesture recogniser has to wait to find out
+     whether a SECOND contact is coming close behind it — because two quick
+     taps in the same place means "magnify the page", not "draw". That wait is
+     a few hundred milliseconds, and while it lasts the next pointerdown is
+     held. It is invisible to a performance trace because nothing is running:
+     the event has not been delivered yet.
+
+     Drawing a "t" is the worst possible case. Down, up, then straight back
+     down a few millimetres away — precisely the shape of a double tap.
+
+     touch-action:none on the canvas governs panning and pinching within that
+     element; it does not retire a document-level gesture. So for as long as
+     the drawing window is open, and only then, the page declares itself
+     unzoomable and the recogniser has nothing left to wait for. The
+     declaration is put back on the way out, so the rest of the form can still
+     be magnified by anyone who needs to. */
+  var VIEWPORT_PLAIN = 'width=device-width, initial-scale=1, viewport-fit=cover';
+  var VIEWPORT_DRAW = VIEWPORT_PLAIN + ', maximum-scale=1, user-scalable=no';
+
+  function pageZoomable(yes) {
+    var m = document.querySelector('meta[name="viewport"]');
+    if (m) m.setAttribute('content', yes ? VIEWPORT_PLAIN : VIEWPORT_DRAW);
+    document.body.classList.toggle('drawing', !yes);
+  }
+
   function closeDraw() {
     var wasPhoto = S.drawKind === 'photo', ix = S.active;
+    pageZoomable(true);
     $('#drawModal').classList.add('hidden');
     saveDraftNow();
     renderSheetTabs();          /* the previews pick up what was just drawn */
