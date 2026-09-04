@@ -223,6 +223,11 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
    ancestors too, and a page that cannot scroll has nothing to disambiguate */
 body.drawing{overflow:hidden;touch-action:none;overscroll-behavior:none}
 .drawback,.drawbox{touch-action:none}
+/* the last of the selection machinery: nothing inside the drawing window is
+   text as far as WebKit is concerned, so there is no word to double-tap */
+.drawback *{-webkit-user-select:none !important;user-select:none !important;
+  -webkit-touch-callout:none !important}
+.drawback .inkedit{-webkit-user-select:text !important;user-select:text !important}
 .stageview{contain:layout paint;position:relative;margin:0 auto;overflow:hidden;touch-action:none;
   border:1px solid var(--line);border-radius:10px;background:#fff}
 /* only the background picture is transformed — it is a static image, which
@@ -852,12 +857,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=dj"></script>
-<script src="figures.js?v=dj"></script>
-<script src="figures-original.js?v=dj"></script>
-<script src="letterhead.js?v=dj"></script>
-<script src="narrative.js?v=dj"></script>
-<script src="templates.js?v=dj"></script>
-<script src="app.js?v=dj"></script>
+<script src="config.js?v=dk"></script>
+<script src="figures.js?v=dk"></script>
+<script src="figures-original.js?v=dk"></script>
+<script src="letterhead.js?v=dk"></script>
+<script src="narrative.js?v=dk"></script>
+<script src="templates.js?v=dk"></script>
+<script src="app.js?v=dk"></script>
 </body>
 </html>

@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dj';
+  var APP_BUILD = '2026-08-02dk';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1873,6 +1873,7 @@
     if (box.setSelectionRange) box.setSelectionRange(box.value.length, box.value.length);
 
     function done(keep) {
+      box.blur();
       box.style.display = 'none';
       forgetRect();                   /* the keyboard has just closed */
       box.onblur = box.onkeydown = null;
@@ -2289,9 +2290,44 @@
       cv.addEventListener(ev, function (e) { e.preventDefault(); });
     });
 
+    /* THE CUT / COPY / PASTE MENU IS THE ANSWER.
+
+       Ball saw it: crossing a "t", the callout appears and the stroke does
+       not. That callout is iOS's double-tap-to-select-a-word. Two contacts
+       close together in space and time are a double tap, and WebKit decides
+       what a double tap MEANT at the end of the second one — so it holds the
+       second pointerdown while it works out whether you are writing or
+       selecting.
+
+       Nothing in Pointer Events can call this off. user-select:none stops the
+       highlight being painted, touch-action:none governs panning and pinching
+       inside the element, and neither retires the selection gesture. Only
+       preventDefault on the underlying TOUCH event does: in WebKit that
+       cancels every default behaviour for the whole touch sequence — the
+       callout, the word selection, the double-tap zoom and the rubber band.
+       Pointer events are dispatched regardless, so the drawing is untouched.
+
+       touchend is deliberately left alone. Bringing the keyboard up for a
+       label depends on the gesture that focuses the field being intact, and
+       the callout is already dead by then. */
+    ['touchstart', 'touchmove'].forEach(function (ev) {
+      cv.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+      vp.addEventListener(ev, function (e) {
+        if (e.target === cv || e.target === vp) e.preventDefault();
+      }, { passive: false });
+    });
+    /* Safari's own pinch, which is not a touch event and not a pointer one */
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+      cv.addEventListener(ev, function (e) { e.preventDefault(); });
+      vp.addEventListener(ev, function (e) { e.preventDefault(); });
+    });
+
     cv.addEventListener('pointerdown', function (e) {
       var sh = drawTarget(); if (!sh) return;
       if (e.pointerType !== 'pen' && pinching()) return;   /* a gesture */
+      /* a range left behind by something else keeps the callout coming back */
+      var sel = window.getSelection && window.getSelection();
+      if (sel && sel.rangeCount && !sel.isCollapsed) sel.removeAllRanges();
       e.preventDefault();
       if (tool.mode === 'text') {
         forgetRect();                 /* a tap can afford to be sure */
