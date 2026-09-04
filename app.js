@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02de';
+  var APP_BUILD = '2026-08-02df';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1718,7 +1718,8 @@
   function textFrame(t, w, h) {
     var b = textBox(t, w, h);
     if (!b) return null;
-    var pad = 6 * (w / 1000) * 4;
+    var pad = 6 * (w / 1000) * 7;   /* generous: it is easier to nudge a
+                                       label than to hit it exactly */
     var ox = t.x * w, oy = t.y * h, r = t.r || 0;
     var cos = Math.cos(r), sin = Math.sin(r);
     function put(dx, dy) {
@@ -1746,7 +1747,7 @@
     var dx = px - ox, dy = py - oy;
     var lx = dx * Math.cos(r) - dy * Math.sin(r);
     var ly = dx * Math.sin(r) + dy * Math.cos(r);
-    var pad = 6 * (w / 1000) * 4;
+    var pad = 6 * (w / 1000) * 7;
     return lx >= -pad && lx <= b.w + pad && ly >= -b.h / 2 - pad && ly <= b.h / 2 + pad;
   }
 
@@ -1785,14 +1786,53 @@
     if (u) u.classList.toggle('on', !!t.u);
   }
 
+  /* Typing into a box on the picture, not answering a dialog. window.prompt
+     blocks the whole page — it was 1535 of the 1690 samples in one of Ball's
+     traces — and it is the wrong gesture: a label should be typed where it
+     sits, with the keyboard coming up as it does anywhere else. */
+  function openTextEditor(create) {
+    var t = selectedText();
+    if (!t) return;
+    var vp = viewportEl();
+    if (!vp) return;
+    var box = $('.inkedit', vp) || (function () {
+      var i = el('input', 'inkedit');
+      i.type = 'text';
+      vp.appendChild(i);
+      return i;
+    })();
+    var w = inkW(), h = inkH();
+    box.style.display = 'block';
+    box.style.left = Math.round(view.x + t.x * w) + 'px';
+    box.style.top = Math.round(view.y + t.y * h - (t.s * w / 1000) * 0.85) + 'px';
+    box.style.fontSize = Math.max(12, Math.round(t.s * w / 1000)) + 'px';
+    box.style.color = t.c;
+    box.value = t.t;
+    box.focus();
+    if (box.setSelectionRange) box.setSelectionRange(box.value.length, box.value.length);
+
+    function done(keep) {
+      box.style.display = 'none';
+      box.onblur = box.onkeydown = null;
+      var cur2 = selectedText();
+      if (!cur2) return;
+      if (keep && box.value.trim()) { cur2.t = box.value; redraw(); saveInk(); }
+      else if (create) { deleteSelectedText(); }
+      else if (keep) { deleteSelectedText(); }   /* emptied means removed */
+    }
+    box.onblur = function () { done(true); };
+    box.onkeydown = function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); done(true); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); done(false); }
+    };
+  }
+
   function editSelectedText(field, delta) {
     var t = selectedText();
     if (!t) return;
     if (field === 'words') {
-      var v = window.prompt('ข้อความ / Text:', t.t);
-      if (v === null) return;
-      if (!v.trim()) { deleteSelectedText(); return; }
-      t.t = v;
+      openTextEditor(false);
+      return;
     } else if (field === 'size') {
       t.s = Math.max(10, Math.min(160, (t.s || 30) + delta));
     } else if (field === 'rotate') {
@@ -2095,13 +2135,14 @@
           cv.setPointerCapture(e.pointerId);
           return;
         }
-        var txt = window.prompt('ข้อความ / Text:');
-        if (txt) {
-          sh.texts.push({ t: txt, x: p[0], y: p[1], c: tool.color,
-            s: 26 + tool.width * 4, r: 0, b: false, u: false });
-          setSelectedText(sh.texts.length - 1);
-          saveInk();
-        } else setSelectedText(-1);
+        /* A tap that misses lets go of what was held. Creating a label on
+           every miss is what made a fumbled attempt to move one produce a
+           new one instead. */
+        if (selText > -1) { setSelectedText(-1); return; }
+        sh.texts.push({ t: '', x: p[0], y: p[1], c: tool.color,
+          s: 26 + tool.width * 4, r: 0, b: false, u: false });
+        setSelectedText(sh.texts.length - 1);
+        openTextEditor(true);
         return;
       }
       if (selText > -1) setSelectedText(-1);   /* drawing deselects */
@@ -3019,8 +3060,15 @@
      The ink is written out when the drawing window closes, and every few
      seconds in between as insurance against a crash. */
   function saveInk() {
+    /* writeDraft serialises the whole note — photographs included — into
+       localStorage, which on a note with four photographs is the only thing
+       left on this path that could block for half a second. It used to be
+       scheduled 4 s after the last stroke, which is exactly the gap between
+       strokes when someone is thinking. The ink is committed when the drawing
+       window closes; this is only the insurance against a crash, so it can
+       wait until the pen has been still for a good while. */
     clearTimeout(draftTimer);
-    draftTimer = setTimeout(writeDraft, 4000);
+    draftTimer = setTimeout(writeDraft, 20000);
   }
 
   function saveDraftNow() {
