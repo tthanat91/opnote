@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dc';
+  var APP_BUILD = '2026-08-02dd';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -706,7 +706,18 @@
     var spec = repeatSpec(f.key);
     var box = el('div', 'repeatbox');
 
-    function redraw() {
+    var redrawPending = false;
+
+  function scheduleRedraw() {
+    if (!ctx || redrawPending) return;
+    redrawPending = true;
+    (window.requestAnimationFrame || setTimeout)(function () {
+      redrawPending = false;
+      redraw();
+    }, 16);
+  }
+
+  function redraw() {
       box.innerHTML = '';
       var rows = repeatRows(f.key);
       rows.forEach(function (row, ix) {
@@ -1521,8 +1532,12 @@
     clampView();
     st.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
     forgetRect();
-    /* the canvas did not move, but what it must draw did */
-    if (ctx) redraw();
+    /* The canvas did not move, but what it must draw did — and a pinch calls
+       this on EVERY pointermove, which in the last build meant a full repaint
+       of every stroke per move event. gestureMove -> applyView -> redraw was
+       the second most common stack in Ball's trace. One repaint per animation
+       frame is all a screen can show. */
+    scheduleRedraw();
     var tag = $('#zoomTag');
     if (tag) tag.textContent = Math.round(view.k * 100) + '%';
   }
@@ -1616,7 +1631,12 @@
      zoomed, but the frame rate stops collapsing exactly when the surgeon has
      zoomed in to write something small. The printed note is unaffected: it is
      re-rendered from the stored strokes. */
-  var MAX_COMPOSITED_PIXELS = 3.0e6;
+  /* Every mark dirties the whole canvas, and the whole canvas is then handed
+     to the GPU. At 3 Mpx that is 12 MB a frame, which an iPad cannot sustain:
+     compositing was still 1.6 s of Ball's second trace, with a median frame
+     of 93 ms. Half the pixels is half the upload, and on a figure drawn over
+     with a pen the difference is not visible. */
+  var MAX_COMPOSITED_PIXELS = 1.6e6;
 
   /* The canvas is the viewport, never the zoomed picture, so its size no
      longer has anything to do with the zoom. Device pixels, capped so that a
@@ -1691,8 +1711,10 @@
     c.restore();
   }
 
-  /* The box a text item occupies, in fractions of the picture — used both to
-     decide what a tap has landed on and to draw the selection outline. */
+  /* A label is an object, the way a text box in a slide is: a frame you can
+     drag by its middle, resize by the corner and turn by the handle above it.
+     Everything below works in canvas pixels; the label itself stores only a
+     position as a fraction of the picture, a size, and an angle. */
   function textBox(t, w, h) {
     if (!ctx) return null;
     ctx.save();
@@ -1703,14 +1725,46 @@
     return { x: t.x * w, y: t.y * h - th / 2, w: tw, h: th };
   }
 
+  /* the four corners and the two handles, after the label's own rotation */
+  function textFrame(t, w, h) {
+    var b = textBox(t, w, h);
+    if (!b) return null;
+    var pad = 6 * (w / 1000) * 4;
+    var ox = t.x * w, oy = t.y * h, r = t.r || 0;
+    var cos = Math.cos(r), sin = Math.sin(r);
+    function put(dx, dy) {
+      return { x: ox + dx * cos - dy * sin, y: oy + dx * sin + dy * cos };
+    }
+    var x0 = -pad, x1 = b.w + pad, y0 = -b.h / 2 - pad, y1 = b.h / 2 + pad;
+    return {
+      box: b, pad: pad,
+      corners: [put(x0, y0), put(x1, y0), put(x1, y1), put(x0, y1)],
+      centre: put((x0 + x1) / 2, (y0 + y1) / 2),
+      resize: put(x1, y1),                     /* bottom-right */
+      rotate: put((x0 + x1) / 2, y0 - b.h * 0.9)
+    };
+  }
+
+  function near(p, q, r) {
+    return (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y) <= r * r;
+  }
+
+  /* is (px,py) inside the label's frame, allowing for its rotation? */
+  function inFrame(t, w, h, px, py) {
+    var b = textBox(t, w, h);
+    if (!b) return false;
+    var r = -(t.r || 0), ox = t.x * w, oy = t.y * h;
+    var dx = px - ox, dy = py - oy;
+    var lx = dx * Math.cos(r) - dy * Math.sin(r);
+    var ly = dx * Math.sin(r) + dy * Math.cos(r);
+    var pad = 6 * (w / 1000) * 4;
+    return lx >= -pad && lx <= b.w + pad && ly >= -b.h / 2 - pad && ly <= b.h / 2 + pad;
+  }
+
   function textAt(target, u, v, w, h) {
     var texts = target.texts || [];
     for (var i = texts.length - 1; i >= 0; i--) {
-      var b = textBox(texts[i], w, h);
-      if (!b) continue;
-      var pad = 6;
-      if (u * w >= b.x - pad && u * w <= b.x + b.w + pad &&
-          v * h >= b.y - pad && v * h <= b.y + b.h + pad) return i;
+      if (inFrame(texts[i], w, h, u * w, v * h)) return i;
     }
     return -1;
   }
@@ -1781,13 +1835,30 @@
     d.texts.forEach(function (t) { drawTextItem(ctx, t, w, h); });
     var sel = selectedText();
     if (sel) {
-      var b = textBox(sel, w, h);
-      if (b) {
+      var fr = textFrame(sel, w, h);
+      if (fr) {
+        var lw = Math.max(1, w / 600), hr = Math.max(6, w / 90);
         ctx.save();
         ctx.strokeStyle = '#0e7a6d';
-        ctx.lineWidth = Math.max(1, w / 500);
+        ctx.lineWidth = lw;
         ctx.setLineDash([w / 90, w / 140]);
-        ctx.strokeRect(b.x - 6, b.y - 4, b.w + 12, b.h + 8);
+        ctx.beginPath();
+        ctx.moveTo(fr.corners[0].x, fr.corners[0].y);
+        for (var ci = 1; ci < 4; ci++) ctx.lineTo(fr.corners[ci].x, fr.corners[ci].y);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        /* the stalk up to the rotate handle */
+        ctx.beginPath();
+        ctx.moveTo((fr.corners[0].x + fr.corners[1].x) / 2, (fr.corners[0].y + fr.corners[1].y) / 2);
+        ctx.lineTo(fr.rotate.x, fr.rotate.y);
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        [fr.resize, fr.rotate].forEach(function (p) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, hr, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+        });
         ctx.restore();
       }
     }
@@ -1986,16 +2057,34 @@
       if (livePoints().length >= 2) return;      /* this is a gesture */
       e.preventDefault();
       if (tool.mode === 'text') {
-        var p = pos(e);
-        /* a label written on a figure is a thing, not a permanent mark: tap
-           it to pick it up, drag to move it, and the colour, the size slider
-           and Delete then apply to it */
-        var hit = textAt(sh, p[0], p[1], inkW(), inkH());
+        var p = pos(e), w = inkW(), h = inkH();
+        var px = p[0] * w, py = p[1] * h;
+
+        /* the handles of the label already selected come first: they sit
+           outside its frame, so they must be tested before anything else */
+        var sel = selectedText();
+        if (sel) {
+          var fr = textFrame(sel, w, h);
+          var grab = Math.max(10, w / 60);
+          if (fr && near({ x: px, y: py }, fr.rotate, grab)) {
+            movingText = { i: selText, mode: 'rotate',
+              a0: Math.atan2(py - sel.y * h, px - sel.x * w), r0: sel.r || 0 };
+            cv.setPointerCapture(e.pointerId); return;
+          }
+          if (fr && near({ x: px, y: py }, fr.resize, grab)) {
+            movingText = { i: selText, mode: 'resize', s0: sel.s,
+              d0: Math.max(1, Math.hypot(px - sel.x * w, py - sel.y * h)) };
+            cv.setPointerCapture(e.pointerId); return;
+          }
+        }
+
+        var hit = textAt(sh, p[0], p[1], w, h);
         if (hit > -1) {
           /* tapping the one already selected means "let me change the words" */
           if (hit === selText) { editSelectedText('words'); return; }
           setSelectedText(hit);
-          movingText = { i: hit, dx: p[0] - sh.texts[hit].x, dy: p[1] - sh.texts[hit].y };
+          movingText = { i: hit, mode: 'move',
+            dx: p[0] - sh.texts[hit].x, dy: p[1] - sh.texts[hit].y };
           cv.setPointerCapture(e.pointerId);
           return;
         }
@@ -2018,9 +2107,21 @@
     cv.addEventListener('pointermove', function (e) {
       if (movingText) {
         var t = drawTarget(); if (!t) return;
-        var q = pos(e);
         var it = t.texts[movingText.i];
-        if (it) { it.x = q[0] - movingText.dx; it.y = q[1] - movingText.dy; redraw(); }
+        if (!it) return;
+        var q = pos(e), w2 = inkW(), h2 = inkH();
+        var qx = q[0] * w2, qy = q[1] * h2;
+        if (movingText.mode === 'rotate') {
+          it.r = movingText.r0 +
+            (Math.atan2(qy - it.y * h2, qx - it.x * w2) - movingText.a0);
+        } else if (movingText.mode === 'resize') {
+          var d = Math.max(1, Math.hypot(qx - it.x * w2, qy - it.y * h2));
+          it.s = Math.max(10, Math.min(200, movingText.s0 * (d / movingText.d0)));
+        } else {
+          it.x = q[0] - movingText.dx;
+          it.y = q[1] - movingText.dy;
+        }
+        scheduleRedraw();
         return;
       }
       if (!drawing || !cur) return;
