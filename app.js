@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02p';
+  var EXPECTED_BUILD = '2026-08-02q';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dk';
+  var APP_BUILD = '2026-08-02dl';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3109,11 +3109,11 @@
     }, Promise.resolve());
   }
 
-  function savePdf() {
-    harvest();
-    if (!requireComplete('print')) return;
-    toast('กำลังสร้าง PDF … / Building the PDF …');
-    ensurePdfLibs().then(function () {
+  /* One way of building the document, used by the button the surgeon presses
+     and by the copy that is filed in Drive. They must not be allowed to
+     drift: the whole point of keeping a PDF is that it is the same paper. */
+  function buildPdfDoc(scale) {
+    return ensurePdfLibs().then(function () {
       /* rasterising while the embedded face is still loading would put the
          fallback font in the PDF — the very thing the font is here to stop */
       return (document.fonts && document.fonts.ready) ? document.fonts.ready : null;
@@ -3123,12 +3123,22 @@
       var pages = $$('#previewBox .pg');
       if (!pages.length) throw new Error('nothing to print');
       var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
-      /* a lower factor on a phone, where memory is tightest */
-      var scale = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.5));
-      return pagesToPdf(pages, doc, scale).then(function () {
-        doc.save(pdfFileName());
-        toast('บันทึกไฟล์ PDF แล้ว / PDF saved', 'ok');
-      });
+      return pagesToPdf(pages, doc, scale).then(function () { return doc; });
+    });
+  }
+
+  /* a lower factor on a phone, where memory is tightest */
+  function pdfScale() {
+    return Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.5));
+  }
+
+  function savePdf() {
+    harvest();
+    if (!requireComplete('print')) return;
+    toast('กำลังสร้าง PDF … / Building the PDF …');
+    buildPdfDoc(pdfScale()).then(function (doc) {
+      doc.save(pdfFileName());
+      toast('บันทึกไฟล์ PDF แล้ว / PDF saved', 'ok');
     }).catch(function (e) {
       toast('สร้าง PDF ไม่สำเร็จ ต้องต่ออินเทอร์เน็ตครั้งแรก / ' +
         'Could not build the PDF — the first time needs a network connection. ' +
@@ -3152,6 +3162,64 @@
         if (from && to) to.style.fontSize = from.style.fontSize;
       })();
       return pngs;
+    });
+  }
+
+  /* =================== the filed copy =================== */
+
+  /* WHY A PDF IS KEPT AT ALL.
+
+     The offline file on the hospital computer does not fetch a finished
+     document; it fetches the field values and RE-RENDERS the note from its
+     own copy of the templates. If that copy is even slightly behind, what
+     comes out of the printer is not word for word what the surgeon approved.
+     For a medical-legal record that is a real defect, and no amount of
+     discipline about copying files around removes it.
+
+     So a PDF of the note as it was approved is filed in Drive beside the
+     figures, replaced whenever the note is saved again, and the old one goes
+     to the bin exactly as a superseded figure does. Nothing about printing
+     changes: the hospital computer still prints natively, which gives crisp
+     text rather than a photograph of text. The PDF is the record, and the
+     fallback when a rebuild is not possible.
+
+     Two rules it must obey:
+       - it never delays or endangers the save. The note is safely in the
+         Sheet before this starts, and every failure here is silent apart
+         from one quiet line.
+       - it is filed at a lower resolution than the copy the surgeon
+         downloads. A note with four photographs at printing resolution is
+         several megabytes, and it has to reach Apps Script as base64, which
+         is a third larger again. */
+  var ARCHIVE_SCALE = 1.6;
+
+  function archivePdf(id) {
+    if (!scriptUrl || !id) return Promise.resolve();
+    if (('onLine' in navigator) && navigator.onLine === false) return Promise.resolve();
+    var tag = $('#pdfState');
+    if (tag) {
+      tag.style.display = '';
+      tag.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e01\u0e47\u0e1a PDF\u2026 / filing PDF\u2026';
+    }
+    return buildPdfDoc(ARCHIVE_SCALE).then(function (doc) {
+      var url = doc.output('datauristring');
+      return api('POST', { action: 'pdf', id: id, name: pdfFileName(), dataUrl: url });
+    }).then(function (r) {
+      if (tag) {
+        var good = r && r.ok;
+        tag.textContent = good
+          ? '\u0e40\u0e01\u0e47\u0e1a PDF \u0e41\u0e25\u0e49\u0e27 / PDF filed'
+          : '\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e01\u0e47\u0e1a PDF / PDF not filed';
+        setTimeout(function () { tag.style.display = 'none'; }, good ? 4000 : 9000);
+      }
+    }).catch(function () {
+      /* The note is already saved. A PDF that could not be built or sent is
+         worth one quiet line and nothing more — it will be filed on the next
+         save, and the note can always be rebuilt from its field values. */
+      if (tag) {
+        tag.textContent = '\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e01\u0e47\u0e1a PDF / PDF not filed';
+        setTimeout(function () { tag.style.display = 'none'; }, 9000);
+      }
     });
   }
 
@@ -3220,6 +3288,8 @@
         S.mode = 'edit';
         toast('บันทึกเรียบร้อย / Saved to Google Sheet', 'ok');
         localStorage.removeItem(LS.draft);
+        /* only now, and never in a way that can undo any of the above */
+        archivePdf(pl.id);
       });
     }).catch(function (e) {
       /* This said the note had been kept on the device while keeping nothing.
@@ -3370,6 +3440,12 @@
           '</td><td>' + esc(n.an || '') + '</td><td>' + esc(n.patient_name || '') +
           '</td><td>' + esc(n.categoryLabel || n.category || '') + '</td><td>' + esc(n.operation || '') + '</td>' +
           '<td class="act"><button class="mini" data-open="' + esc(n.id) + '">เปิด/ดูพิมพ์<br>Open</button>' +
+          /* the copy filed when the note was approved, offered beside the
+             rebuild rather than in place of it: printing natively gives
+             crisp text, and this is here for the record and for the day a
+             rebuild is not possible */
+          (n.pdfUrl ? '<a class="mini pdf" target="_blank" rel="noopener" href="' +
+            esc(n.pdfUrl) + '" title="ไฟล์ที่เก็บไว้ตอนบันทึก / the copy filed on saving">PDF<br>Archive</a>' : '') +
           ((can && !SITE.printOnly) ? '<button class="mini go" data-edit="' + esc(n.id) + '">แก้ไข<br>Edit</button>'
             : (SITE.printOnly ? '' : '<span class="mini off" title="เกิน 30 วัน">ล็อกแล้ว<br>Locked</span>')) +
           '</td></tr>';
