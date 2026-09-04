@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02dp';
+  global.TEMPLATES_BUILD = '2026-08-02dq';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -477,15 +477,17 @@
        haemorrhoidectomy, radiofrequency ablation and laser haemorrhoidoplasty.
        Stapled haemorrhoidopexy and Doppler-guided artery ligation have been
        taken out — say the word and either comes straight back. */
-    f('hemorrhoid', 'การประเมิน | Assessment', 'he_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
-      'Prone jackknife; Lithotomy; Left lateral'),
-    f('hemorrhoid', 'การประเมิน | Assessment', 'he_grade', 'ระดับของริดสีดวง', 'Goligher grade', 'radio',
+    f('hemorrhoid', 'สิ่งตรวจพบ | Operative findings', 'he_urgency', 'ความเร่งด่วน', 'Urgency', 'radio',
+      'Elective; Emergency'),
+    f('hemorrhoid', 'สิ่งตรวจพบ | Operative findings', 'he_position', 'ท่าผู้ป่วย', 'Patient position', 'radio',
+      'Prone jackknife; Prone split-leg; Lithotomy'),
+    f('hemorrhoid', 'สิ่งตรวจพบ | Operative findings', 'he_grade', 'ระดับของริดสีดวง', 'Goligher grade', 'radio',
       'Grade I; Grade II; Grade III; Grade IV; External only; Thrombosed external'),
-    f('hemorrhoid', 'การประเมิน | Assessment', 'he_type', 'ชนิด', 'Type', 'radio',
-      'Internal; External; Mixed / interno-external'),
-    f('hemorrhoid', 'การประเมิน | Assessment', 'he_positions', 'ตำแหน่งหัวริดสีดวง', 'Position of piles', 'checklist',
+    f('hemorrhoid', 'สิ่งตรวจพบ | Operative findings', 'he_type', 'ชนิด', 'Type', 'radio',
+      'Internal; External; Combined'),
+    f('hemorrhoid', 'สิ่งตรวจพบ | Operative findings', 'he_positions', 'ตำแหน่งหัวริดสีดวง', 'Position of piles', 'checklist',
       '3 o\'clock; 7 o\'clock; 11 o\'clock; 1 o\'clock; 5 o\'clock; 9 o\'clock; Circumferential'),
-    f('hemorrhoid', 'การประเมิน | Assessment', 'he_associated', 'พยาธิสภาพร่วม', 'Associated pathology', 'checklist',
+    f('hemorrhoid', 'สิ่งตรวจพบ | Operative findings', 'he_associated', 'พยาธิสภาพร่วม', 'Associated pathology', 'checklist',
       'Anal fissure; Skin tag; Anal fistula; Perianal abscess; Rectal prolapse; ' +
       'Hypertrophied anal papilla; Anal stenosis; None'),
 

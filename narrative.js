@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02dp',
+    build: '2026-08-02dq',
 
 
 
@@ -239,6 +239,10 @@
 
       /* ---- haemorrhoid: the parts either path uses ---- */
       he_setup: [
+        { needs: ['he_urgency'], equals: 'Emergency',
+          text: 'The operation was performed as an emergency.' },
+        { needs: ['he_urgency'], equals: 'Elective',
+          text: 'The operation was performed electively.' },
         { group: 'pos', needs: ['he_position', 'anaesthesia'],
           text: 'Under {anaesthesia}, the patient was placed in the {he_position|lc} position and the perineum was prepared and draped.' },
         { group: 'pos', needs: ['he_position'],
