@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dg';
+  var APP_BUILD = '2026-08-02dh';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1658,6 +1658,13 @@
   function drawStroke(c, st, w, h) {
     if (!st.p.length) return;
     c.save();
+    if (st.p.length === 1) {
+      c.globalCompositeOperation = st.e ? 'destination-out' : 'source-over';
+      c.fillStyle = st.c;
+      c.beginPath();
+      c.arc(st.p[0][0] * w, st.p[0][1] * h, Math.max(1, st.w * (w / 1000)) / 2, 0, Math.PI * 2);
+      c.fill(); c.restore(); return;
+    }
     c.globalCompositeOperation = st.e ? 'destination-out' : 'source-over';
     c.strokeStyle = st.c;
     c.lineWidth = Math.max(1, st.w * (w / 1000));
@@ -1955,14 +1962,18 @@
 
   function forgetRect() { cvRect = null; }
 
+  /* Rounded here rather than in one sweep when the pen lifts: the same work,
+     a thousandth at a time, on the frames that have room for it instead of
+     the one instant that has none. 1/10 000 of the picture is a fifth of a
+     pixel, so nothing visible is lost. */
   function pos(e) {
     var r = cvRect || (cvRect = cv.getBoundingClientRect());
     /* the canvas is the window, so undo the pan and the zoom to get back to
        the fraction of the PICTURE the pen is over */
     var b = baseSize();
     return [
-      ((e.clientX - r.left) - view.x) / (b.w * view.k),
-      ((e.clientY - r.top) - view.y) / (b.h * view.k)
+      Math.round(((e.clientX - r.left) - view.x) / (b.w * view.k) * 1e4) / 1e4,
+      Math.round(((e.clientY - r.top) - view.y) / (b.h * view.k) * 1e4) / 1e4
     ];
   }
 
@@ -1997,28 +2008,49 @@
 
   var inkPending = false;
 
+  /* THE WAIT AFTER THE PENCIL COMES BACK DOWN.
+
+     Nothing was painted until (a) a second point had arrived and (b) the
+     browser granted an animation frame. Batching by frame is right in the
+     middle of a stroke — a Pencil reports four times faster than the screen
+     refreshes — but it is wrong at the start of one, where it means the mark
+     waits for a frame that has just been committed. Crossing the bar of a "T"
+     is exactly that case: down, and nothing there yet.
+
+     So the first touch is painted THERE AND THEN, and so is the first segment
+     after it. Only once the stroke is under way does it fall back to one
+     paint per frame. */
   function drawTail() {
     inkPending = false;
-    if (!ctx || !cur || cur.p.length < 2) return;
+    if (!ctx || !cur || !cur.p.length) return;
     inkTransform();
     var w = inkW(), h = inkH();
-    var from = Math.max(1, cur.drawn || 1);
-    if (from >= cur.p.length) return;
+    var lw = Math.max(1, cur.w * (w / 1000));
     ctx.save();
     ctx.globalCompositeOperation = cur.e ? 'destination-out' : 'source-over';
     ctx.strokeStyle = cur.c;
-    ctx.lineWidth = Math.max(1, cur.w * (w / 1000));
+    ctx.fillStyle = cur.c;
+    ctx.lineWidth = lw;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    var a0 = cur.p[from - 1];
-    ctx.moveTo(a0[0] * w, a0[1] * h);
-    for (var i = from; i < cur.p.length; i++) {
-      var a = cur.p[i - 1], b = cur.p[i];
-      ctx.quadraticCurveTo(a[0] * w, a[1] * h, (a[0] + b[0]) / 2 * w, (a[1] + b[1]) / 2 * h);
+    if (!cur.drawn) {
+      ctx.beginPath();
+      ctx.arc(cur.p[0][0] * w, cur.p[0][1] * h, lw / 2, 0, Math.PI * 2);
+      ctx.fill();
+      cur.drawn = 1;
     }
-    ctx.stroke();
+    var from = cur.drawn;
+    if (from < cur.p.length) {
+      ctx.beginPath();
+      var a0 = cur.p[from - 1];
+      ctx.moveTo(a0[0] * w, a0[1] * h);
+      for (var i = from; i < cur.p.length; i++) {
+        var a = cur.p[i - 1], b = cur.p[i];
+        ctx.quadraticCurveTo(a[0] * w, a[1] * h, (a[0] + b[0]) / 2 * w, (a[1] + b[1]) / 2 * h);
+      }
+      ctx.stroke();
+      cur.drawn = cur.p.length;
+    }
     ctx.restore();
-    cur.drawn = cur.p.length;
   }
 
   /* Every finger and pen currently on the glass. Two or more of them mean
@@ -2224,10 +2256,16 @@
       }
       if (selText > -1) setSelectedText(-1);   /* drawing deselects */
       cv.setPointerCapture(e.pointerId);
-      cvRect = cv.getBoundingClientRect();
+      /* This measured the canvas afresh on EVERY pen-down — the forced page
+         layout I thought I had removed by dropping forgetRect() from the pen
+         lift, put back three lines later by overwriting the cache anyway. The
+         cache is now trusted: it is emptied only when something that can
+         actually move the canvas happens. */
+      if (!cvRect) cvRect = cv.getBoundingClientRect();
       drawing = true;
       cur = { c: tool.color, w: tool.mode === 'eraser' ? tool.width * 5 : tool.width, e: tool.mode === 'eraser', p: [pos(e)] };
       sh.strokes.push(cur);
+      drawTail();          /* a mark under the nib before the hand has moved */
     });
     cv.addEventListener('pointermove', function (e) {
       if (movingText) {
@@ -2255,6 +2293,8 @@
          the coalesced events keeps the curve smooth without painting each */
       var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
       for (var i = 0; i < evs.length; i++) cur.p.push(pos(evs[i]));
+      if (cur.drawn < 2) { drawTail(); return; }   /* the opening of a stroke
+                                                     does not wait for a frame */
       if (!inkPending) {
         inkPending = true;
         if (window.requestAnimationFrame) window.requestAnimationFrame(drawTail);
@@ -2272,10 +2312,10 @@
         if (!drawing) return;
         drawing = false;
         if (cur && cur.e) eraseTextsUnder(drawTarget(), cur);
-        if (cur) {
-          delete cur.drawn;      /* a paint cursor, not part of the record */
-          cur.p = cur.p.map(function (q) { return [+q[0].toFixed(4), +q[1].toFixed(4)]; });
-        }
+        /* Everything that used to happen here is gone. The points are already
+           rounded, the ink is already painted, and no repaint is needed. All
+           that is left is to stop pointing at the finished stroke. */
+        if (cur) delete cur.drawn;   /* a paint cursor, not part of the record */
         cur = null;
         /* The rectangle was thrown away here, so the FIRST thing every new
            stroke did was force the browser to lay the whole page out again
