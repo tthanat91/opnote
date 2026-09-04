@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ds';
+  var APP_BUILD = '2026-08-02dt';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3021,14 +3021,15 @@
   }
 
   /* The printed block and the white space around it, in millimetres. These
-     are now the SAME numbers the print stylesheet uses. The block is 186 mm
-     wide and carries its own 9 mm of white space top and bottom, so the sheet
-     is filled edge to edge and the margin comes from the block itself.
+     are now the SAME numbers the print stylesheet uses. The block is 198 mm
+     wide and carries its own 6 mm of white space all round, leaving 6 mm of
+     bare paper each side — a 12 mm border rather than the 18 mm that made a
+     printout look nothing like the preview beside it.
 
      The old pair — 198 by 285 — was quietly enlarging a 186 mm render onto a
      198 mm box, a 6.5% magnification, which is a good part of why a saved PDF
      never quite looked like the printout of the same note. */
-  var PDF_W = 186, PDF_H = 297, PDF_Y = 0;
+  var PDF_W = 198, PDF_H = 297, PDF_Y = 0;
 
   /* Where a tall page may be cut without slicing through a line of text.
      Every block inside the page offers its bottom edge as a candidate; the

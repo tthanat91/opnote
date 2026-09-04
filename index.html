@@ -331,7 +331,7 @@ table.results td.act{white-space:nowrap}
 #printRoot{display:none}
 
 .pg{
-  background:#fff;width:186mm;min-height:270mm;margin:0 auto 14px;padding:9mm 6mm;
+  background:#fff;width:198mm;min-height:270mm;margin:0 auto 14px;padding:6mm;
   font-size:var(--fs,12px);line-height:1.4;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
 }
 .hosphead{display:flex;align-items:center;gap:8px;
@@ -422,8 +422,8 @@ button.mini.loading{opacity:1;position:relative}
    when the slices are placed, which is what gives a continuation page its
    top and bottom white space. */
 #previewBox.pdfmode{overflow:visible !important;width:auto !important;max-width:none !important}
-#previewBox.pdfmode .pg{width:186mm !important;max-width:none !important;
-  padding:9mm 6mm !important;font-size:12.5px !important;margin:0 auto 8px !important;
+#previewBox.pdfmode .pg{width:198mm !important;max-width:none !important;
+  padding:6mm !important;font-size:12.5px !important;margin:0 auto 8px !important;
   background:#fff;box-shadow:none !important;transform:none !important}
 /* The usable width inside the box is about 163 mm — the page is 186 mm wide
    less its own padding, less the box padding. Three 56 mm views plus their
@@ -500,7 +500,19 @@ table.flow td{padding-top:4px;vertical-align:top}
   /* Keep the printed box identical to the one on screen. When print used
      width:auto the two wrapped differently, so anything measured on screen —
      including how much room the findings box has — was not true of paper. */
-  .pg{width:186mm;min-height:0;margin:0 auto;padding:9mm 6mm;box-shadow:none;
+  /* HOW WIDE THE BLOCK SITS ON THE PAPER.
+
+     186 mm centred on A4 leaves 12 mm of bare paper each side, and the block
+     then holds another 6 mm of its own padding — so the text began 18 mm in,
+     which is the fat border Ball measured. The preview shows only the white
+     block, so that outer 12 mm was invisible there and the two looked like
+     different documents.
+
+     198 mm leaves 6 mm of paper, and 6 mm of padding inside it: text starts
+     12 mm from the edge instead of 18, top and bottom come down from 9 mm to
+     6, and 6 mm is still clear of the 4–5 mm strip no laser printer can reach.
+     Screen, print and PDF all use this one number. */
+  .pg{width:198mm;min-height:0;margin:0 auto;padding:6mm;box-shadow:none;
       page-break-after:auto}
   /* No forced height on page 1.
 
@@ -892,12 +904,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=ds"></script>
-<script src="figures.js?v=ds"></script>
-<script src="figures-original.js?v=ds"></script>
-<script src="letterhead.js?v=ds"></script>
-<script src="narrative.js?v=ds"></script>
-<script src="templates.js?v=ds"></script>
-<script src="app.js?v=ds"></script>
+<script src="config.js?v=dt"></script>
+<script src="figures.js?v=dt"></script>
+<script src="figures-original.js?v=dt"></script>
+<script src="letterhead.js?v=dt"></script>
+<script src="narrative.js?v=dt"></script>
+<script src="templates.js?v=dt"></script>
+<script src="app.js?v=dt"></script>
 </body>
 </html>
