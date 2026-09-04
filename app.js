@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dd';
+  var APP_BUILD = '2026-08-02de';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -706,18 +706,7 @@
     var spec = repeatSpec(f.key);
     var box = el('div', 'repeatbox');
 
-    var redrawPending = false;
-
-  function scheduleRedraw() {
-    if (!ctx || redrawPending) return;
-    redrawPending = true;
-    (window.requestAnimationFrame || setTimeout)(function () {
-      redrawPending = false;
-      redraw();
-    }, 16);
-  }
-
-  function redraw() {
+    function redraw() {
       box.innerHTML = '';
       var rows = repeatRows(f.key);
       rows.forEach(function (row, ix) {
@@ -1824,6 +1813,24 @@
     setSelectedText(-1); saveInk();
   }
 
+  var redrawPending = false;
+
+  /* Coalesced to one repaint per animation frame. Defined out here beside the
+     real redraw — it was first written next to the OTHER function called
+     redraw, the one nested inside the repeating-block control, where it was
+     invisible to everything that needed it and drawing stopped working
+     altogether. */
+  function scheduleRedraw() {
+    if (!ctx || redrawPending) return;
+    redrawPending = true;
+    if (window.requestAnimationFrame) {
+      /* called through window: extracted and called bare it throws in Safari */
+      window.requestAnimationFrame(function () { redrawPending = false; redraw(); });
+    } else {
+      setTimeout(function () { redrawPending = false; redraw(); }, 16);
+    }
+  }
+
   function redraw() {
     var d = drawTarget();
     if (!ctx || !d) return;
@@ -2132,7 +2139,8 @@
       for (var i = 0; i < evs.length; i++) cur.p.push(pos(evs[i]));
       if (!inkPending) {
         inkPending = true;
-        (window.requestAnimationFrame || setTimeout)(drawTail, 16);
+        if (window.requestAnimationFrame) window.requestAnimationFrame(drawTail);
+        else setTimeout(drawTail, 16);
       }
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
