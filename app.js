@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02q';
+  var EXPECTED_BUILD = '2026-08-02r';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dl';
+  var APP_BUILD = '2026-08-02dm';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3202,11 +3202,17 @@
       tag.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e01\u0e47\u0e1a PDF\u2026 / filing PDF\u2026';
     }
     return buildPdfDoc(ARCHIVE_SCALE).then(function (doc) {
-      var url = doc.output('datauristring');
+      /* jsPDF returns data:application/pdf;filename=generated.pdf;base64,...
+         The filename parameter is of no use to anybody here and it is what
+         the script's data-URL pattern choked on, so it goes before sending —
+         both ends are now tolerant, which is how it should have been. */
+      var url = doc.output('datauristring').replace(/;filename=[^;,]*/, '');
       return api('POST', { action: 'pdf', id: id, name: pdfFileName(), dataUrl: url });
     }).then(function (r) {
       if (tag) {
         var good = r && r.ok;
+        /* a failure that says nothing is a failure nobody can fix */
+        tag.title = good ? '' : ((r && r.error) || 'no reply from the script');
         tag.textContent = good
           ? '\u0e40\u0e01\u0e47\u0e1a PDF \u0e41\u0e25\u0e49\u0e27 / PDF filed'
           : '\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e01\u0e47\u0e1a PDF / PDF not filed';
