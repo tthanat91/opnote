@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02db';
+  var APP_BUILD = '2026-08-02dc';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1466,13 +1466,46 @@
 
   function resetView() { view.k = 1; view.x = 0; view.y = 0; }
 
-  function stageEl() { return cv && cv.parentNode; }
+  /* THE REFACTOR THE TRACE ASKED FOR.
+
+     The canvas used to live inside the stage, so CSS scaled it with the zoom
+     and the compositor had to re-rasterise a magnified layer on every frame:
+     932 ms of compositing against 117 ms of script, 13 frames a second.
+
+     Now the canvas is a sibling of the stage, always exactly the size of the
+     window you look through, never transformed. Only the background picture
+     is scaled, and a static image scales on the GPU for nothing. The zoom is
+     applied when DRAWING instead — the strokes are stored as fractions of the
+     picture, so it costs one setTransform per repaint.
+
+     The canvas is therefore the same handful of pixels whatever the zoom. */
+  function stageEl() { return $('.stage', $('#canvasHost')); }
+  function viewportEl() { return $('.stageview', $('#canvasHost')); }
+
+  /* the picture's size on screen at zoom 1 — which is the viewport */
+  function baseSize() {
+    var st = stageEl();
+    return {
+      w: st ? (parseFloat(st.style.width) || st.offsetWidth || 300) : 300,
+      h: st ? (parseFloat(st.style.height) || st.offsetHeight || 200) : 200
+    };
+  }
+
+  /* Put the canvas into picture space: a stroke stored as 0..1 lands where the
+     zoom and pan say it should, and the line thickens with the zoom because
+     the drawing itself is being magnified. */
+  function inkTransform() {
+    var d = inkResolution();
+    ctx.setTransform(d, 0, 0, d, view.x * d, view.y * d);
+  }
+
+  function inkW() { return baseSize().w * view.k; }
+  function inkH() { return baseSize().h * view.k; }
 
   function clampView() {
     var st = stageEl();
     if (!st) return;
-    var w = parseFloat(st.style.width) || st.offsetWidth;
-    var h = parseFloat(st.style.height) || st.offsetHeight;
+    var b = baseSize(), w = b.w, h = b.h;
     /* 4x, not 6x: beyond that the bitmap the compositor can afford
        is too soft to draw on, and 4x is already a 5 mm tract filling a third
        of the screen */
@@ -1488,6 +1521,8 @@
     clampView();
     st.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
     forgetRect();
+    /* the canvas did not move, but what it must draw did */
+    if (ctx) redraw();
     var tag = $('#zoomTag');
     if (tag) tag.textContent = Math.round(view.k * 100) + '%';
   }
@@ -1514,8 +1549,8 @@
     stage.style.backgroundSize = '100% 100%';
     stage.style.backgroundRepeat = 'no-repeat';
     cv = el('canvas', 'ink');
-    stage.appendChild(cv);
     vp.appendChild(stage);
+    vp.appendChild(cv);          /* beside the stage, not inside it */
     host.appendChild(vp);
     resetView();
     sizeCanvas(t);
@@ -1583,41 +1618,28 @@
      re-rendered from the stored strokes. */
   var MAX_COMPOSITED_PIXELS = 3.0e6;
 
+  /* The canvas is the viewport, never the zoomed picture, so its size no
+     longer has anything to do with the zoom. Device pixels, capped so that a
+     large iPad in landscape does not hand the compositor more than it can
+     paint in a frame. */
   function inkResolution() {
-    var st = stageEl();
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var k = Math.max(1, view.k);
-    var mult = Math.min(dpr, 2.5);
-    var w = st ? (parseFloat(st.style.width) || 300) : 300;
-    var h = st ? (parseFloat(st.style.height) || 200) : 200;
-    var onScreen = w * h * mult * mult * k * k;
-    if (onScreen > MAX_COMPOSITED_PIXELS) {
-      mult *= Math.sqrt(MAX_COMPOSITED_PIXELS / onScreen);
-    }
-    return Math.max(0.5, mult);
+    var b = baseSize();
+    var mult = Math.min(window.devicePixelRatio || 1, 2);
+    var px = b.w * b.h * mult * mult;
+    if (px > MAX_COMPOSITED_PIXELS) mult *= Math.sqrt(MAX_COMPOSITED_PIXELS / px);
+    return Math.max(1, mult);
   }
 
-  function rescaleInk() {
-    var st = stageEl();
-    if (!st || !cv) return;
-    var mult = inkResolution();
-    var w = Math.max(2, Math.round((parseFloat(st.style.width) || 300) * mult));
-    if (Math.abs(w - cv.width) < 8) return;      /* not worth reallocating */
-    cv.width = w;
-    cv.height = Math.max(2, Math.round((parseFloat(st.style.height) || 200) * mult));
-    ctx = cv.getContext('2d');
-    forgetRect();
-    redraw();
-  }
+  function rescaleInk() { /* nothing to do: the canvas no longer follows the zoom */ }
 
   function sizeCanvas(t) {
-    var stage = cv.parentNode;
+    var stage = stageEl();
     fitStage(stage, t);
-    /* the CSS size, not the transformed size: the transform is what makes it
-       bigger on screen, and the bitmap follows separately in rescaleInk */
-    var mult = inkResolution();
-    cv.width = Math.max(2, Math.round(parseFloat(stage.style.width) * mult));
-    cv.height = Math.max(2, Math.round(parseFloat(stage.style.height) * mult));
+    var b = baseSize(), mult = inkResolution();
+    cv.style.width = b.w + 'px';
+    cv.style.height = b.h + 'px';
+    cv.width = Math.max(2, Math.round(b.w * mult));
+    cv.height = Math.max(2, Math.round(b.h * mult));
     ctx = cv.getContext('2d');
     forgetRect();
     applyView();
@@ -1644,16 +1666,28 @@
   function textFont(t, w) {
     /* slimmer than the old 600-weight Helvetica, and monospaced so a label
        written over a diagram reads as an annotation rather than as part of it */
-    return '400 ' + Math.round(t.s * w / 1000) +
+    return (t.b ? '700 ' : '400 ') + Math.round(t.s * w / 1000) +
       "px 'Courier New', Courier, 'Sarabun', monospace";
   }
 
   function drawTextItem(c, t, w, h) {
+    var size = t.s * w / 1000;
     c.save();
+    c.translate(t.x * w, t.y * h);
+    if (t.r) c.rotate(t.r);              /* radians, 0 unless rotated */
     c.fillStyle = t.c;
     c.font = textFont(t, w);
     c.textBaseline = 'middle';
-    c.fillText(t.t, t.x * w, t.y * h);
+    c.fillText(t.t, 0, 0);
+    if (t.u) {
+      var tw = c.measureText(t.t).width;
+      c.strokeStyle = t.c;
+      c.lineWidth = Math.max(1, size / 14);
+      c.beginPath();
+      c.moveTo(0, size * 0.42);
+      c.lineTo(tw, size * 0.42);
+      c.stroke();
+    }
     c.restore();
   }
 
@@ -1688,28 +1722,71 @@
     return (t && selText >= 0 && t.texts[selText]) ? t.texts[selText] : null;
   }
 
+  /* Everything you can do to a label, in one place that appears only when a
+     label is selected. Buried in the main toolbar these read as drawing
+     tools; here they plainly belong to the thing with the dashed box round
+     it. */
   function setSelectedText(i) {
     selText = i;
-    var on = i >= 0;
-    var del = $('#toolDelText');
-    if (del) del.style.display = on ? '' : 'none';
+    var bar = $('#textBar');
+    if (bar) bar.style.display = i >= 0 ? '' : 'none';
+    syncTextBar();
     redraw();
+  }
+
+  function syncTextBar() {
+    var t = selectedText();
+    if (!t) return;
+    var b = $('#txtBold'), u = $('#txtUnder');
+    if (b) b.classList.toggle('on', !!t.b);
+    if (u) u.classList.toggle('on', !!t.u);
+  }
+
+  function editSelectedText(field, delta) {
+    var t = selectedText();
+    if (!t) return;
+    if (field === 'words') {
+      var v = window.prompt('ข้อความ / Text:', t.t);
+      if (v === null) return;
+      if (!v.trim()) { deleteSelectedText(); return; }
+      t.t = v;
+    } else if (field === 'size') {
+      t.s = Math.max(10, Math.min(160, (t.s || 30) + delta));
+    } else if (field === 'rotate') {
+      t.r = ((t.r || 0) + delta * Math.PI / 180);
+    } else if (field === 'bold') {
+      t.b = !t.b;
+    } else if (field === 'under') {
+      t.u = !t.u;
+    }
+    syncTextBar();
+    redraw(); saveInk();
+  }
+
+  function deleteSelectedText() {
+    var target = drawTarget();
+    if (!target || selText < 0) return;
+    target.texts.splice(selText, 1);
+    setSelectedText(-1); saveInk();
   }
 
   function redraw() {
     var d = drawTarget();
     if (!ctx || !d) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height);
-    d.strokes.forEach(function (st) { drawStroke(ctx, st, cv.width, cv.height); });
-    d.texts.forEach(function (t) { drawTextItem(ctx, t, cv.width, cv.height); });
+    inkTransform();
+    var w = inkW(), h = inkH();
+    d.strokes.forEach(function (st) { drawStroke(ctx, st, w, h); });
+    d.texts.forEach(function (t) { drawTextItem(ctx, t, w, h); });
     var sel = selectedText();
     if (sel) {
-      var b = textBox(sel, cv.width, cv.height);
+      var b = textBox(sel, w, h);
       if (b) {
         ctx.save();
         ctx.strokeStyle = '#0e7a6d';
-        ctx.lineWidth = Math.max(1, cv.width / 500);
-        ctx.setLineDash([cv.width / 90, cv.width / 140]);
+        ctx.lineWidth = Math.max(1, w / 500);
+        ctx.setLineDash([w / 90, w / 140]);
         ctx.strokeRect(b.x - 6, b.y - 4, b.w + 12, b.h + 8);
         ctx.restore();
       }
@@ -1733,7 +1810,13 @@
 
   function pos(e) {
     var r = cvRect || (cvRect = cv.getBoundingClientRect());
-    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+    /* the canvas is the window, so undo the pan and the zoom to get back to
+       the fraction of the PICTURE the pen is over */
+    var b = baseSize();
+    return [
+      ((e.clientX - r.left) - view.x) / (b.w * view.k),
+      ((e.clientY - r.top) - view.y) / (b.h * view.k)
+    ];
   }
 
   /* Why drawing lagged: every pointermove redrew EVERY stroke on the sheet
@@ -1748,7 +1831,7 @@
      deletes any label it is dragged across. */
   function eraseTextsUnder(target, stroke) {
     if (!target || !stroke || !stroke.p.length) return;
-    var w = cv.width, h = cv.height;
+    var w = inkW(), h = inkH();
     var reach = Math.max(12, stroke.w * (w / 1000) * 1.2);
     var gone = false;
     for (var i = (target.texts || []).length - 1; i >= 0; i--) {
@@ -1770,7 +1853,8 @@
   function drawTail() {
     inkPending = false;
     if (!ctx || !cur || cur.p.length < 2) return;
-    var w = cv.width, h = cv.height;
+    inkTransform();
+    var w = inkW(), h = inkH();
     var from = Math.max(1, cur.drawn || 1);
     if (from >= cur.p.length) return;
     ctx.save();
@@ -1906,8 +1990,10 @@
         /* a label written on a figure is a thing, not a permanent mark: tap
            it to pick it up, drag to move it, and the colour, the size slider
            and Delete then apply to it */
-        var hit = textAt(sh, p[0], p[1], cv.width, cv.height);
+        var hit = textAt(sh, p[0], p[1], inkW(), inkH());
         if (hit > -1) {
+          /* tapping the one already selected means "let me change the words" */
+          if (hit === selText) { editSelectedText('words'); return; }
           setSelectedText(hit);
           movingText = { i: hit, dx: p[0] - sh.texts[hit].x, dy: p[1] - sh.texts[hit].y };
           cv.setPointerCapture(e.pointerId);
@@ -1915,7 +2001,8 @@
         }
         var txt = window.prompt('ข้อความ / Text:');
         if (txt) {
-          sh.texts.push({ t: txt, x: p[0], y: p[1], c: tool.color, s: 26 + tool.width * 4 });
+          sh.texts.push({ t: txt, x: p[0], y: p[1], c: tool.color,
+            s: 26 + tool.width * 4, r: 0, b: false, u: false });
           setSelectedText(sh.texts.length - 1);
           saveInk();
         } else setSelectedText(-1);
@@ -3278,12 +3365,14 @@
       var sel = selectedText();
       if (sel) { sel.s = 26 + tool.width * 4; redraw(); saveInk(); }
     };
-    $('#toolDelText').onclick = function () {
-      var t = drawTarget();
-      if (!t || selText < 0) return;
-      t.texts.splice(selText, 1);
-      setSelectedText(-1); saveInk();
-    };
+    $('#txtWords').onclick = function () { editSelectedText('words'); };
+    $('#txtBigger').onclick = function () { editSelectedText('size', 6); };
+    $('#txtSmaller').onclick = function () { editSelectedText('size', -6); };
+    $('#txtRotL').onclick = function () { editSelectedText('rotate', -15); };
+    $('#txtRotR').onclick = function () { editSelectedText('rotate', 15); };
+    $('#txtBold').onclick = function () { editSelectedText('bold'); };
+    $('#txtUnder').onclick = function () { editSelectedText('under'); };
+    $('#txtDelete').onclick = deleteSelectedText;
     $('#toolZoomReset').onclick = function () {
       resetView(); applyView(); rescaleInk();
     };

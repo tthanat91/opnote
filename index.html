@@ -221,11 +221,17 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
    into the calculation */
 .stageview{contain:layout paint;position:relative;margin:0 auto;overflow:hidden;touch-action:none;
   border:1px solid var(--line);border-radius:10px;background:#fff}
+/* only the background picture is transformed — it is a static image, which
+   the GPU scales for nothing. The canvas is a sibling, never scaled. */
 .stage{position:absolute;left:0;top:0;transform-origin:0 0;
   background:#fff no-repeat;touch-action:none;will-change:transform}
-canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+canvas.ink{position:absolute;left:0;top:0}
+canvas.ink{touch-action:none;cursor:crosshair}
 #zoomTag{font-variant-numeric:tabular-nums}
 .toolbtn.danger{border-color:#e2b4ae;color:#b3261e}
+.textbar{background:#eef6f4;border:1px solid var(--brand-2);border-radius:10px;
+  padding:7px 9px;margin-bottom:8px;align-items:center}
+.textbar b{font-size:.82rem;margin-right:4px}
 
 /* iOS gives date and time inputs their own intrinsic height and centres the
    value, so they stood taller than the text fields beside them and overlapped
@@ -607,12 +613,24 @@ table.flow td{padding-top:4px;vertical-align:top}
               title="กลับไปขนาดเต็มภาพ / fit the whole picture">⤢ <span id="zoomTag">100%</span></button>
             <button type="button" class="toolbtn on" id="toolPen">✏️ วาด · Draw</button>
             <button type="button" class="toolbtn" id="toolText">T ข้อความ · Text</button>
-            <button type="button" class="toolbtn danger" id="toolDelText"
-              style="display:none">🗑 ลบข้อความ · Delete text</button>
+
             <button type="button" class="toolbtn" id="toolEraser">◻︎ ลบ · Erase</button>
             <button type="button" class="toolbtn" id="toolUndo">↩︎ ย้อน · Undo</button>
             <button type="button" class="toolbtn" id="toolClear">ล้าง · Clear</button>
             <button type="button" class="toolbtn" id="toolDeleteSheet">🗑 ลบแผ่น · Delete sheet</button>
+          </div>
+          <!-- appears only while a label is selected; these act on that
+               label, not on the pen -->
+          <div class="toolbar textbar" id="textBar" style="display:none">
+            <b>ข้อความที่เลือก · Selected label</b>
+            <button type="button" class="toolbtn" id="txtWords">✎ แก้คำ · Edit</button>
+            <button type="button" class="toolbtn" id="txtSmaller">A− เล็กลง</button>
+            <button type="button" class="toolbtn" id="txtBigger">A+ ใหญ่ขึ้น</button>
+            <button type="button" class="toolbtn" id="txtRotL">↺ หมุนซ้าย</button>
+            <button type="button" class="toolbtn" id="txtRotR">↻ หมุนขวา</button>
+            <button type="button" class="toolbtn" id="txtBold"><b>B</b> หนา</button>
+            <button type="button" class="toolbtn" id="txtUnder"><u>U</u> ขีดเส้นใต้</button>
+            <button type="button" class="toolbtn danger" id="txtDelete">🗑 ลบ · Delete</button>
           </div>
           <div id="canvasHost"></div>
           <p class="muted drawhint" style="margin:6px 0 0">
@@ -819,12 +837,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=db"></script>
-<script src="figures.js?v=db"></script>
-<script src="figures-original.js?v=db"></script>
-<script src="letterhead.js?v=db"></script>
-<script src="narrative.js?v=db"></script>
-<script src="templates.js?v=db"></script>
-<script src="app.js?v=db"></script>
+<script src="config.js?v=dc"></script>
+<script src="figures.js?v=dc"></script>
+<script src="figures-original.js?v=dc"></script>
+<script src="letterhead.js?v=dc"></script>
+<script src="narrative.js?v=dc"></script>
+<script src="templates.js?v=dc"></script>
+<script src="app.js?v=dc"></script>
 </body>
 </html>
