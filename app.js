@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dy';
+  var APP_BUILD = '2026-08-02dz';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3066,10 +3066,10 @@
 
      Growing it to the full 285 mm produced a blank second sheet whenever the
      print dialog was using the browser's own margins rather than "None":
-     Safari then offers about 272 mm, a 285 mm block overflows it by 13 mm of
-     its own bottom padding, and that whitespace is given a sheet of its own.
-     The user cannot be relied upon to set the margins, and a blank page in a
-     medical record is not a thing to leave to a checkbox.
+     Safari then offers about 272 mm, a 285 mm block overflows it, and that
+     whitespace is given a sheet of its own. The user cannot be relied upon to
+     set the margins, and a blank page in a medical record is not a thing to
+     leave to a checkbox.
 
      268 mm fits inside Safari's default margins and still fills 90% of the
      sheet — the printed MR 08.1 runs to about 264 mm of content, so this is

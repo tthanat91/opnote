@@ -331,7 +331,10 @@ table.results td.act{white-space:nowrap}
 #printRoot{display:none}
 
 .pg{
-  background:#fff;width:198mm;min-height:270mm;margin:0 auto 14px;padding:6mm;
+  /* 0 6mm, matching print and the PDF exactly: the top and bottom white
+     space is the page's margin, not the block's, so a measurement taken here
+     is true of every sheet and not only of the first. */
+  background:#fff;width:198mm;min-height:270mm;margin:0 auto 14px;padding:0 6mm;
   font-size:var(--fs,13.5px);line-height:1.45;color:#000;box-shadow:0 2px 10px rgba(0,0,0,.12);
 }
 .hosphead{display:flex;align-items:center;gap:8px;
@@ -499,16 +502,25 @@ table.flow td{padding-top:4px;vertical-align:top}
      deliberately, because "exactly" loses to rounding. */
   /* THE URL AND THE PAGE NUMBER AT THE FOOT OF THE SHEET.
 
-     "https://colovjr.com/ · 4/9/2569 BE, 16:46 · Page 1 of 3" is printed by
-     the BROWSER, not by this page, and no rule in this stylesheet can reach
-     it — it lives in the margin box of the sheet. What can be done is to
-     leave no margin box for it to live in: with a page margin of zero the
-     browser has nowhere to put a header or a footer and omits both.
+     The URL and "Page 1 of 3" are printed by the BROWSER, into the margin
+     box of the sheet, and no rule here can reach them. Removing the margin
+     box altogether does stop Chrome printing them — but not Safari, which
+     obeys its own Headers & Footers switch whatever the page says. So that
+     was a trick that cost more than it bought.
 
-     The 5 mm is not lost, it moves inside: the block is still 186 mm wide,
-     still centred with 12 mm of paper each side, and its text still starts
-     9 mm down. The printed result is unchanged apart from the footer. */
-  @page{size:A4;margin:0}
+     What it cost was the bottom margin of every CONTINUATION sheet. A page
+     margin is applied by the browser to each sheet in turn; padding on the
+     block is applied once, at the top and bottom of the whole block. With no
+     page margin, sheet two of the narrative ran to the very edge of the
+     paper — Ball's step 20 sat on the bottom rule of the sheet.
+
+     6 mm top and bottom, nothing at the sides: every sheet, first or last,
+     now gets the same white space, and it is the same 6 mm the PDF adds when
+     it places each slice. Left and right stay at zero because the block is
+     198 mm and centres itself. The browser footer is turned off in the print
+     dialog, once per device — 6 mm is too little for most browsers to fit
+     one in regardless. */
+  @page{size:A4;margin:6mm 0}
   body{background:#fff;font-size:13.5px}
   .app,.toast,.stepnav{display:none !important}
   #printRoot{display:block}
@@ -527,7 +539,7 @@ table.flow td{padding-top:4px;vertical-align:top}
      12 mm from the edge instead of 18, top and bottom come down from 9 mm to
      6, and 6 mm is still clear of the 4–5 mm strip no laser printer can reach.
      Screen, print and PDF all use this one number. */
-  .pg{width:198mm;min-height:0;margin:0 auto;padding:6mm;box-shadow:none;
+  .pg{width:198mm;min-height:0;margin:0 auto;padding:0 6mm;box-shadow:none;
       page-break-after:auto}
   /* No forced height on page 1.
 
@@ -919,12 +931,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=dy"></script>
-<script src="figures.js?v=dy"></script>
-<script src="figures-original.js?v=dy"></script>
-<script src="letterhead.js?v=dy"></script>
-<script src="narrative.js?v=dy"></script>
-<script src="templates.js?v=dy"></script>
-<script src="app.js?v=dy"></script>
+<script src="config.js?v=dz"></script>
+<script src="figures.js?v=dz"></script>
+<script src="figures-original.js?v=dz"></script>
+<script src="letterhead.js?v=dz"></script>
+<script src="narrative.js?v=dz"></script>
+<script src="templates.js?v=dz"></script>
+<script src="app.js?v=dz"></script>
 </body>
 </html>
