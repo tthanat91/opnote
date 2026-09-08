@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02u';
+  var EXPECTED_BUILD = '2026-08-02w';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dt';
+  var APP_BUILD = '2026-08-02dv';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -89,6 +89,7 @@
     return {
       id: null,
       createdAt: null,
+      savedBy: '',
       category: 'colorectal',
       data: {},
       sheets: [],
@@ -2902,12 +2903,26 @@
       imagesHTML(pngs, inBoxCount(pngs)) +
       accessBlock() +
       stepsBlock() +
+      /* The name under the line is the person who wrote the note, not the
+         operating surgeon — they are often not the same, and it is the writer
+         who is attesting to the account. Taken from the note itself where it
+         has one, so a reprint years later is still signed by its author and
+         not by whoever happens to be holding the iPad. */
       '<div class="signline"><span>ลงชื่อ ..........................................................</span>' +
-      '<span>(' + esc(valueOf('surgeon')) + ')</span></div>' +
+      '<span>(' + esc(noteAuthor()) + ')</span></div>' +
       '<div class="pgfoot"><span></span><span>' + esc(prefs.formCode) + '</span></div>' +
       '</td></tr></tbody></table></section>';
 
     return p1 + p2;
+  }
+
+  function noteAuthor() {
+    /* savedBy arrives as "ธนัท ตันตินาม (53828)"; the licence number has no
+       business on a signature line */
+    var who = String(S.savedBy || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (who && !/^(shared passcode|open access)$/i.test(who)) return who;
+    if (me && me.name) return me.name;
+    return valueOf('recorder') || valueOf('surgeon');
   }
 
   /* The findings box belongs at the foot of page 1, and page 1 belongs on one
@@ -3092,7 +3107,15 @@
           var y = 0;
           while (y < canvas.height) {
             var h = Math.min(plan.strip, canvas.height - y);
-            if (plan.sheets > 1 && h === plan.strip && y + h < canvas.height) {
+            /* THE 6 MM STRIP ON A SHEET OF ITS OWN.
+
+               Snapping a cut back to a block boundary shortens the strip, and
+               what it shortens by has to go somewhere: on Ball's four-page
+               PDF the last sheet held 5.9 mm of a 396 mm page. If everything
+               that is left would fit on this sheet, it belongs on this sheet —
+               there is nothing to snap to and no reason to look. */
+            if (canvas.height - y <= sliceMax) h = canvas.height - y;
+            else if (plan.sheets > 1 && h === plan.strip && y + h < canvas.height) {
               /* pull the cut back to the nearest block boundary */
               var limitCss = (y + h) / pxPerCss, best = 0;
               for (var b = 0; b < breaks.length; b++) {
@@ -3351,6 +3374,7 @@
       return api('POST', pl).then(function (r) {
         if (!r || !r.ok) throw new Error((r && r.error) || 'save failed');
         S.mode = 'edit';
+        if (!S.savedBy && me) S.savedBy = me.name || '';
         toast('บันทึกเรียบร้อย / Saved to Google Sheet', 'ok');
         localStorage.removeItem(LS.draft);
         /* only now, and never in a way that can undo any of the above */
@@ -3571,6 +3595,7 @@
       var n = r.note;
       S = newNote();
       S.id = n.id; S.createdAt = n.createdAt;
+      S.savedBy = n.savedBy || '';      /* whose name goes under the line */
       S.category = n.category || 'colorectal';
       S.data = n.data || {};
       var ink = n.sheets || [];

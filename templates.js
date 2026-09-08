@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02dt';
+  global.TEMPLATES_BUILD = '2026-08-02dv';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -204,14 +204,20 @@
       'Clinical only; ICG fluorescence; Not assessed',
       'cr_procedure = Right hemicolectomy; Extended right hemicolectomy; Transverse colectomy; Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy; Restorative proctocolectomy with IPAA'),
 
-    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text'),
+    /* "no drain" is a decision, and a decision belongs in the note. Asked
+       first, and the three questions about the drain follow only if there
+       was one. */
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_placed', 'ใส่ท่อระบายหรือไม่', 'Drain placed', 'radio',
+      'Yes; No'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text', '',
+      'cr_drain_placed = Yes'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'radio',
       'Cul-de-sac (pelvis); Right paracolic gutter; Left paracolic gutter; Subhepatic; ' +
-      'Subphrenic; Adjacent to the anastomosis; Other'),
+      'Subphrenic; Adjacent to the anastomosis; Other', 'cr_drain_placed = Yes'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_exit', 'ตำแหน่งที่ผิวหนัง', 'Drain exit through the skin', 'radio',
       'Left lower quadrant port site; Right lower quadrant port site; ' +
       'Left upper quadrant port site; Right upper quadrant port site; ' +
-      'Separate stab incision; Through the extraction wound; Other'),
+      'Separate stab incision; Through the extraction wound; Other', 'cr_drain_placed = Yes'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_sheath_material', 'ไหมเย็บชั้น sheath', 'Fascia / sheath — suture', 'text'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_closure_sheath_fashion', 'วิธีเย็บ sheath', 'Fascia / sheath — technique', 'radio',
       'Continuous; Interrupted; Continuous with interrupted reinforcement'),

@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02dt',
+    build: '2026-08-02dv',
 
 
 
@@ -604,6 +604,8 @@
         { text: 'Hemostasis was confirmed and the abdomen irrigated with «warm saline».' }
       ],
       drain: [
+        { group: 'drain', needs: ['cr_drain_placed'], equals: 'No',
+          text: 'No drain was left.' },
         { group: 'drain', needs: ['cr_drain', 'cr_drain_site', 'cr_drain_exit'], not: 'None',
           text: 'A {cr_drain|lc} was placed in the {cr_drain_site|lc|and}, brought out through the {cr_drain_exit|lc}.' },
         { group: 'drain', needs: ['cr_drain', 'cr_drain_site'], not: 'None',
