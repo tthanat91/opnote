@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dw';
+  var APP_BUILD = '2026-08-02dx';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2952,10 +2952,26 @@
     if (!body) return;
     var floor = 40 * MM_PX;                 /* never squeeze it below this */
     body.style.height = floor + 'px';
+
+    /* WHY PAGE 1 ENDED THREE QUARTERS OF THE WAY DOWN THE SHEET.
+
+       .pg carries min-height:270mm so that an empty preview still looks like
+       a sheet of paper. That floor was also what this function measured: with
+       230 mm of content the page still reported 270 mm, so the room left for
+       the findings box came out as 53 mm instead of 93 mm, the box stayed
+       small, and the note stopped short with 60 mm of white below the footer —
+       nothing like the printed form, where the findings fill the lower half.
+
+       The floor is lifted for the duration of the measurement and put back
+       afterwards. What is measured is then the content itself, and the box
+       grows until the page reaches the bottom of the sheet. */
+    var prevMin = pg.style.minHeight;
+    pg.style.minHeight = '0px';
     /* offsetHeight, not a bounding rectangle: the preview is scaled down to
        fit a phone, and a rectangle reports the SCALED height, which would
        size the findings box from a picture of the page rather than the page */
     var rest = pg.offsetHeight - floor;
+    pg.style.minHeight = prevMin;
     if (rest <= 0) return;                  /* not laid out — leave the CSS */
     var room = (PDF_H * MM_PX) - rest - 2;  /* a hair, for rounding */
     var h = Math.max(floor, Math.floor(room));
