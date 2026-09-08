@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ee';
+  var APP_BUILD = '2026-08-02ef';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3077,13 +3077,18 @@
      268 mm fits inside Safari's default margins and still fills 90% of the
      sheet — the printed MR 08.1 runs to about 264 mm of content, so this is
      the proportion of the paper form it is copying. */
-  /* 256, not 268. Safari sets Thai a little looser than the rasteriser does,
-     so the same page one runs 3–4% taller when it is PRINTED than when it is
-     measured — and the findings box, which may not be split, was bumped whole
-     onto sheet two, leaving the first sheet two thirds empty and the note a
-     page longer. The margin of error has to live somewhere, and a slightly
-     shorter page one costs nothing next to a page one that falls apart. */
-  var PAGE1_H = 256;
+  /* Page one fills its sheet, which is the whole of it: 285 mm of block
+     between the 6 mm of white above and below.
+
+     It was held down to 256 while the browser still printed the HTML itself —
+     Safari sets Thai a few percent looser than the rasteriser does, the same
+     page ran taller when printed than when measured, and the findings box,
+     which may not be split, was bumped whole onto sheet two. That margin of
+     error paid for a rendering that no longer happens: printing is done from
+     the document now, and the only thing that lays out page one is the thing
+     that measured it. So the 30 mm it was giving away goes back to the
+     findings box, where the surgeon's own account of the operation lives. */
+  var PAGE1_H = PDF_H;
 
   /* Where a tall page may be cut without slicing through a line of text.
      Every block inside the page offers its bottom edge as a candidate; the
