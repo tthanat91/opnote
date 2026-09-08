@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dx';
+  var APP_BUILD = '2026-08-02dy';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2973,7 +2973,7 @@
     var rest = pg.offsetHeight - floor;
     pg.style.minHeight = prevMin;
     if (rest <= 0) return;                  /* not laid out — leave the CSS */
-    var room = (PDF_H * MM_PX) - rest - 2;  /* a hair, for rounding */
+    var room = (PAGE1_H * MM_PX) - rest - 2;  /* a hair, for rounding */
     var h = Math.max(floor, Math.floor(room));
     body.style.height = h + 'px';
     var twin = $('#printRoot .findbox .bbody');
@@ -3061,6 +3061,20 @@
      198 mm box, a 6.5% magnification, which is a good part of why a saved PDF
      never quite looked like the printout of the same note. */
   var PDF_W = 198, PDF_H = 285, PDF_Y = 6;
+
+  /* HOW TALL PAGE ONE IS ALLOWED TO BE, and why it is not 285.
+
+     Growing it to the full 285 mm produced a blank second sheet whenever the
+     print dialog was using the browser's own margins rather than "None":
+     Safari then offers about 272 mm, a 285 mm block overflows it by 13 mm of
+     its own bottom padding, and that whitespace is given a sheet of its own.
+     The user cannot be relied upon to set the margins, and a blank page in a
+     medical record is not a thing to leave to a checkbox.
+
+     268 mm fits inside Safari's default margins and still fills 90% of the
+     sheet — the printed MR 08.1 runs to about 264 mm of content, so this is
+     the proportion of the paper form it is copying. */
+  var PAGE1_H = 268;
 
   /* Where a tall page may be cut without slicing through a line of text.
      Every block inside the page offers its bottom edge as a candidate; the
