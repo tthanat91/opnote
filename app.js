@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02dv';
+  var APP_BUILD = '2026-08-02dw';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3044,7 +3044,7 @@
      The old pair — 198 by 285 — was quietly enlarging a 186 mm render onto a
      198 mm box, a 6.5% magnification, which is a good part of why a saved PDF
      never quite looked like the printout of the same note. */
-  var PDF_W = 198, PDF_H = 297, PDF_Y = 0;
+  var PDF_W = 198, PDF_H = 285, PDF_Y = 6;
 
   /* Where a tall page may be cut without slicing through a line of text.
      Every block inside the page offers its bottom edge as a candidate; the
@@ -3075,11 +3075,35 @@
 
      Kept separate from the drawing so the arithmetic can be tested on its
      own, which is how the 61 px sliver would have been caught. */
+  /* WHY TWO SHEETS EACH CARRIED 200 MM AND ENDED IN 97 MM OF WHITE.
+
+     The height was divided EVENLY between the sheets it needed — 400 mm over
+     two sheets gave two strips of 200 mm — which balances the pages but wastes
+     a third of every one of them, and looks nothing like the printout beside
+     it, where each sheet is filled before the next is begun.
+
+     Now a page that fits, or is within 12% of fitting, is shrunk onto one
+     sheet; anything longer is cut at the full height of a sheet and fills it.
+     A short last page is no longer a worry: the slicing loop hands the whole
+     remainder to the current sheet as soon as it will fit on it, so there is
+     no tail to balance away. */
   function sheetPlan(height, sliceMax) {
+    if (height <= sliceMax * 1.12) {
+      return { sheets: 1, strip: height, fits: Math.min(1, sliceMax / height) };
+    }
     var sheets = Math.ceil(height / sliceMax);
-    if (sheets > 1 && (height / (sheets - 1)) <= sliceMax * 1.12) sheets -= 1;
-    var strip = Math.ceil(height / sheets);
-    return { sheets: sheets, strip: strip, fits: Math.min(1, sliceMax / strip) };
+    /* If shrinking by no more than 12% saves a whole sheet, do that and
+       divide evenly — 6100 px over two sheets is two nearly-full pages, and
+       far better than two full ones and a 5 mm tail. */
+    if (sheets > 1 && (height / (sheets - 1)) <= sliceMax * 1.12) {
+      sheets -= 1;
+      var strip = Math.ceil(height / sheets);
+      return { sheets: sheets, strip: strip, fits: Math.min(1, sliceMax / strip) };
+    }
+    /* Otherwise fill each sheet before starting the next, the way the printer
+       does. Dividing evenly here is what left Ball with two sheets carrying
+       200 mm apiece and 97 mm of white below each. */
+    return { sheets: sheets, strip: sliceMax, fits: 1 };
   }
 
   /* One page at a time. An iPad will run out of memory if three A4 canvases
@@ -3116,16 +3140,23 @@
                there is nothing to snap to and no reason to look. */
             if (canvas.height - y <= sliceMax) h = canvas.height - y;
             else if (plan.sheets > 1 && h === plan.strip && y + h < canvas.height) {
-              /* pull the cut back to the nearest block boundary */
+              /* Pull the cut back to the nearest block boundary. Ball's PDF
+                 was sliced through the middle of a sentence because no
+                 boundary fell inside the narrow window this used to look in,
+                 and it then cut wherever the arithmetic landed. Losing a
+                 little of the sheet is always better than losing half a line,
+                 so the window is widened until a boundary is found. */
               var limitCss = (y + h) / pxPerCss, best = 0;
-              for (var b = 0; b < breaks.length; b++) {
-                /* only pull the cut back if little is lost by doing so —
-                   snapping to a boundary at 40% of the sheet wastes 60% */
-                if (breaks[b] <= limitCss && breaks[b] * pxPerCss > y + plan.strip * 0.82) {
-                  best = breaks[b];
+              [0.82, 0.5, 0].forEach(function (frac) {
+                if (best) return;
+                for (var b = 0; b < breaks.length; b++) {
+                  if (breaks[b] <= limitCss && breaks[b] * pxPerCss > y + plan.strip * frac) {
+                    best = breaks[b];
+                  }
                 }
-              }
-              if (best) h = Math.round(best * pxPerCss) - y;
+              });
+              var cut = best ? Math.round(best * pxPerCss) - y : 0;
+              if (cut > 0) h = cut;
             }
             var strip = document.createElement('canvas');
             strip.width = canvas.width; strip.height = h;

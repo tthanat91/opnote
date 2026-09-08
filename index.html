@@ -422,8 +422,11 @@ button.mini.loading{opacity:1;position:relative}
    when the slices are placed, which is what gives a continuation page its
    top and bottom white space. */
 #previewBox.pdfmode{overflow:visible !important;width:auto !important;max-width:none !important}
+/* No vertical padding here: the 6 mm top and bottom is added when each slice
+   is PLACED on its sheet, so a continuation page gets the same white space as
+   the first one instead of starting hard against the edge of the paper. */
 #previewBox.pdfmode .pg{width:198mm !important;max-width:none !important;
-  padding:6mm !important;font-size:12.5px !important;margin:0 auto 8px !important;
+  padding:0 6mm !important;font-size:12.5px !important;margin:0 auto 8px !important;
   background:#fff;box-shadow:none !important;transform:none !important}
 /* The usable width inside the box is about 163 mm — the page is 186 mm wide
    less its own padding, less the box padding. Three 56 mm views plus their
@@ -464,7 +467,14 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
 .imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
 .imgtab td{width:25%;vertical-align:top;padding:0}
 .imgtab figure{margin:0;text-align:center}
-.imgtab figure img{width:100%;max-width:100%;max-height:42mm;object-fit:contain}
+/* A HEIGHT, NOT A CEILING.
+
+   max-height let every picture keep its own proportions, so a tall specimen
+   photograph came out 42 mm and a wide one 26 mm, and the row ended ragged.
+   Giving them all the same height and letting object-fit letterbox inside it
+   lines the row up top and bottom, whatever shape the camera gave them. */
+.imgtab figure img{width:100%;max-width:100%;height:42mm;
+  object-fit:contain;object-position:center}
 .imgtab figcaption{font-size:9.5px;color:#555;margin-top:2px}
 .imgtab.photos figure img{border:1px solid #999}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
@@ -539,7 +549,7 @@ table.flow td{padding-top:4px;vertical-align:top}
     break-inside:auto;page-break-inside:auto}
   table.flow td{vertical-align:top}
   /* smaller figures fit more per sheet and break less often */
-  .imgtab figure img{max-height:34mm}
+  .imgtab figure img{height:34mm}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
@@ -904,12 +914,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=dv"></script>
-<script src="figures.js?v=dv"></script>
-<script src="figures-original.js?v=dv"></script>
-<script src="letterhead.js?v=dv"></script>
-<script src="narrative.js?v=dv"></script>
-<script src="templates.js?v=dv"></script>
-<script src="app.js?v=dv"></script>
+<script src="config.js?v=dw"></script>
+<script src="figures.js?v=dw"></script>
+<script src="figures-original.js?v=dw"></script>
+<script src="letterhead.js?v=dw"></script>
+<script src="narrative.js?v=dw"></script>
+<script src="templates.js?v=dw"></script>
+<script src="app.js?v=dw"></script>
 </body>
 </html>
