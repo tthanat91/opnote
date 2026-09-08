@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ed';
+  var APP_BUILD = '2026-08-02ee';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3253,56 +3253,19 @@
     return Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.5));
   }
 
-  /* PRINTING THE DOCUMENT INSTEAD OF THE WEB PAGE.
+  /* PRINTING IS DONE FROM THE DOCUMENT, NOT FROM THE PAGE.
 
-     Six builds were spent trying to make Safari's own printing match the
-     PDF, and each fix uncovered the next. The reason is structural rather
-     than a run of bad luck: Save and Archive draw the note ONCE, into an
-     image, and place it on the sheet themselves. Print handed the same HTML
-     to Safari, which sets Thai a few percent looser, paginates by its own
-     rules and obeys its own dialog. The two were never going to agree.
+     Six builds were spent trying to make Safari's own printing match the PDF,
+     and each fix uncovered the next. The reason was structural: Save and
+     Archive draw the note ONCE, into an image, and place it on the sheet
+     themselves, while Print handed the same HTML to a layout engine that sets
+     Thai a few percent looser and paginates by its own rules.
 
-     So Print now builds the very same PDF that Save and Archive build, and
-     prints that. One document, three ways of getting at it. Nothing is left
-     to the print dialog: no headers, no footers, no scale, no margins.
-
-     The tab is opened on the press, not when the file is ready. A window
-     opened later, out of a promise, is a popup and Safari blocks it. */
-  var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-  function printNote() {
-    harvest();
-    if (!requireComplete('print')) return;
-    var tab = IS_IOS ? window.open('', '_blank') : null;
-    toast('\u0e01\u0e33\u0e25\u0e31\u0e07\u0e08\u0e31\u0e14\u0e40\u0e2d\u0e01\u0e2a\u0e32\u0e23\u2026 / Preparing the document\u2026');
-    buildPdfDoc(pdfScale()).then(function (doc) {
-      var url = doc.output('bloburl');
-      if (tab && !tab.closed) { tab.location = url; return; }
-      printBlob(url);
-    }).catch(function (e) {
-      if (tab && !tab.closed) tab.close();
-      toast('\u0e2a\u0e31\u0e48\u0e07\u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08 / Could not prepare the document. ' +
-        (e && e.message ? '(' + e.message + ')' : ''), 'warn');
-    });
-  }
-
-  function printBlob(url) {
-    var f = $('#printFrame');
-    if (!f) {
-      f = document.createElement('iframe');
-      f.id = 'printFrame';
-      f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;' +
-        'opacity:0;border:0';
-      document.body.appendChild(f);
-    }
-    f.onload = function () {
-      try { f.contentWindow.focus(); f.contentWindow.print(); }
-      catch (e) { window.open(url, '_blank'); }
-    };
-    f.src = url;
-  }
-
+     So there is no printing here at all any more. One button builds the
+     document — the very same file that is filed in Drive — and the device
+     prints, shares or keeps it from there. Nothing is left to a print dialog:
+     no headers, no footers, no scale, no margins, and no second rendering
+     that could disagree with the first. */
   function savePdf() {
     harvest();
     if (!requireComplete('print')) return;
@@ -4128,7 +4091,6 @@
     $('#photoInput').onchange = function () { addPhotos(this.files); this.value = ''; };
 
     /* review actions */
-    $('#btnPrint').onclick = printNote;
     $('#btnPdf').onclick = savePdf;
     $('#btnSave').onclick = function () {
       harvest();
