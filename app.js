@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ef';
+  var APP_BUILD = '2026-08-02eg';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1341,6 +1341,70 @@
     };
   }
 
+  /* WHICH SIDE OF THE TABLE YOU ARE STANDING ON.
+
+     The axial anorectal diagram is drawn in the lithotomy convention:
+     anterior at the top, the patient's right on the viewer's left. Operate
+     prone jackknife and you are looking at the same anus from the opposite
+     side — posterior is uppermost and right and left have swapped. Ball was
+     crossing out the four printed letters and writing the others beside them.
+
+     Only this figure has the problem. The coronal and sagittal views have a
+     head and a foot and cannot be mistaken; a photograph is whatever the
+     camera saw. So the button appears for these two keys and nothing else. */
+  var AP_PAIR = { orig_anal_clock: 'orig_anal_clock_prone',
+                  orig_anal_clock_prone: 'orig_anal_clock' };
+
+  function flipTarget() {
+    if (S.drawKind === 'photo') return null;
+    var sh = activeSheet();
+    return (sh && AP_PAIR[sh.fig]) ? sh : null;
+  }
+
+  function syncFlipButton() {
+    var b = $('#toolFlipAP');
+    if (!b) return;
+    var sh = flipTarget();
+    b.style.display = sh ? '' : 'none';
+    if (!sh) return;
+    /* say which way it will go, not which way it is */
+    b.textContent = sh.fig === 'orig_anal_clock' ? '\u21c5 A\u2192P' : '\u21c5 P\u2192A';
+  }
+
+  function flipAP() {
+    var sh = flipTarget();
+    if (!sh) return;
+    sh.fig = AP_PAIR[sh.fig];
+
+    /* The marks turn with the labels. A tract drawn at the top of a lithotomy
+       view is anterior; leave it there once anterior has moved to the foot of
+       the picture and the note now says posterior — which is a different
+       operation. Turning the ink through half a circle keeps what was drawn
+       meaning what it meant, and flipping back undoes it exactly. */
+    var turned = 0;
+    (sh.strokes || []).forEach(function (st) {
+      st.p = st.p.map(function (q) {
+        return [Math.round((1 - q[0]) * 1e4) / 1e4, Math.round((1 - q[1]) * 1e4) / 1e4];
+      });
+      turned++;
+    });
+    (sh.texts || []).forEach(function (t) {
+      t.x = Math.round((1 - t.x) * 1e4) / 1e4;
+      t.y = Math.round((1 - t.y) * 1e4) / 1e4;
+      t.r = (t.r || 0) + Math.PI;
+      turned++;
+    });
+
+    setSelectedText(-1);
+    syncFlipButton();
+    mountCanvas();
+    renderSheetTabs();
+    saveDraft();
+    toast(turned
+      ? '\u0e2a\u0e25\u0e31\u0e1a\u0e14\u0e49\u0e32\u0e19\u0e2b\u0e19\u0e49\u0e32/\u0e2b\u0e25\u0e31\u0e07 \u0e41\u0e25\u0e30\u0e2b\u0e21\u0e38\u0e19\u0e23\u0e2d\u0e22\u0e27\u0e32\u0e14\u0e15\u0e32\u0e21 / Anterior and posterior swapped, and your marks turned with them.'
+      : '\u0e2a\u0e25\u0e31\u0e1a\u0e14\u0e49\u0e32\u0e19\u0e2b\u0e19\u0e49\u0e32/\u0e2b\u0e25\u0e31\u0e07 \u0e41\u0e25\u0e49\u0e27 / Anterior and posterior swapped.', 'ok');
+  }
+
   function hasInk(o) {
     return !!o && (((o.strokes || []).length) || ((o.texts || []).length));
   }
@@ -1414,6 +1478,7 @@
     $('#toolDeleteSheet').style.display = S.drawKind === 'photo' ? 'none' : '';
     $('#drawModal').classList.remove('hidden');
     pageZoomable(false);        /* see closeDraw: this is the pen-lift wait */
+    syncFlipButton();
     /* a photograph has whatever shape the camera gave it, and a note reopened
        from the Sheet has not been measured yet */
     if (S.drawKind === 'photo' && !S.photos[i].w) {
@@ -4059,6 +4124,7 @@
         z.addEventListener(ev, function () { clearTimeout(hold); });
       });
     })();
+    $('#toolFlipAP').onclick = flipAP;
     $('#toolPen').onclick = function () { tool.mode = 'pen'; markTool(this); };
     $('#toolEraser').onclick = function () { tool.mode = 'eraser'; markTool(this); };
     $('#toolText').onclick = function () { tool.mode = 'text'; markTool(this); };
