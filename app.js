@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ei';
+  var APP_BUILD = '2026-08-02ej';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3086,25 +3086,55 @@
      None of this changes the height of the box, so page one is the height it
      was and the PDF — which photographs this very box — inherits the result. */
   var FIND_LEAD_MAX = 1.8;
-  var FIG_BASE_W = 52, FIG_BASE_H = 38;   /* mm, as the stylesheet has them */
-  var FIG_GROW_MAX = 1.5;
-  var FIG_GROW_STEPS = [1.15, 1.3, 1.5];
-  var FIND_SLACK_PX = 38;                 /* about 10 mm: below this, leave it */
+  var FIND_SLACK_MM = 8;                  /* below this, leave well alone */
+
+  /* How large a diagram may become, as a multiple of the size the stylesheet
+     gives it. A single floated figure may double: at 104 x 76 mm it takes
+     rather more than half the width, which leaves the paragraph beside it a
+     measure of about sixty characters — the width text is actually
+     comfortable to read at, instead of the ninety-five it has now.
+
+     The three-view anorectal set is held to a quarter more. Three of them
+     must stay side by side in one row, and the row is the limit, not the
+     box. */
+  var FIG_KIND = {
+    solo: { w: 52, h: 38, vars: ['--imgw', '--imgh'], steps: [1.2, 1.45, 1.7, 2.0] },
+    set:  { w: 44, h: 44, vars: ['--figw', '--figh'], steps: [1.1, 1.18, 1.25] }
+  };
+
+  /* THE MEASUREMENT THAT WAS ALWAYS ZERO.
+
+     scrollHeight is defined never to be less than clientHeight. On a box with
+     room to spare it therefore reports the BOX, not the text inside it — so
+     "how much room is left" came out as nothing every single time, the
+     diagram never grew and the paragraph was never centred. The leading did
+     open, because that loop only asks whether the text still fits, and by the
+     same rule it always appeared to.
+
+     Releasing the height for the length of one measurement gives the true
+     height of the content. */
+  function naturalHeight(box) {
+    var fixed = box.style.height;
+    box.style.height = 'auto';
+    var h = box.offsetHeight;
+    box.style.height = fixed;
+    return h;
+  }
 
   function fitFindings(root) {
     var box = root.querySelector('.findbox .bbody');
     if (!box) return;
     var find = box.parentNode;
     if (!find || !/findbox/.test(find.className || '')) find = null;
-    /* a single floated diagram can grow; the three-up set is already as wide
-       as its row permits, and making it taller would only letterbox it */
-    var solo = !!box.querySelector('figure.fig') && !box.querySelector('.figset');
+    var set = !!box.querySelector('.figset');
+    var kind = set ? FIG_KIND.set : (box.querySelector('figure.fig') ? FIG_KIND.solo : null);
     var basePad = 6;                      /* the 6px the stylesheet gives it */
+    var slackPx = FIND_SLACK_MM * MM_PX;
 
     function setFig(scale) {
-      if (!find || !solo) return;
-      find.style.setProperty('--imgw', (FIG_BASE_W * scale).toFixed(1) + 'mm');
-      find.style.setProperty('--imgh', (FIG_BASE_H * scale).toFixed(1) + 'mm');
+      if (!find || !kind) return;
+      find.style.setProperty(kind.vars[0], (kind.w * scale).toFixed(1) + 'mm');
+      find.style.setProperty(kind.vars[1], (kind.h * scale).toFixed(1) + 'mm');
     }
 
     /* lay the text out at a given figure size and report whether it fits */
@@ -3114,36 +3144,42 @@
       box.style.lineHeight = 1.45;
       var size = 12.5;
       box.style.fontSize = size + 'px';
-      while (box.scrollHeight > box.clientHeight + 1 && size > 7.5) {
+      while (naturalHeight(box) > box.clientHeight + 1 && size > 7.5) {
         size -= 0.25;
         box.style.fontSize = size + 'px';
       }
-      return box.scrollHeight <= box.clientHeight + 1;
+      return naturalHeight(box) <= box.clientHeight + 1;
     }
 
     var scale = 1;
     if (!layout(1)) return;               /* will not fit even at 7.5 px */
-    if (solo) {
-      for (var i = 0; i < FIG_GROW_STEPS.length; i++) {
-        if (FIG_GROW_STEPS[i] > FIG_GROW_MAX) break;
-        if (box.clientHeight - box.scrollHeight < FIND_SLACK_PX) break;
-        if (layout(FIG_GROW_STEPS[i])) scale = FIG_GROW_STEPS[i];
+
+    /* 1. the room goes to the diagram first. A larger picture of the
+          operation is worth something to whoever reads this note next;
+          forty millimetres of blank paper is worth nothing. */
+    if (kind) {
+      for (var i = 0; i < kind.steps.length; i++) {
+        if (box.clientHeight - naturalHeight(box) < slackPx) break;
+        if (layout(kind.steps[i])) scale = kind.steps[i];
         else { layout(scale); break; }    /* that step was one too many */
       }
     }
 
+    /* 2. the leading opens to take up what is left, and stops at 1.8: past
+          that the lines read as separate sentences rather than a paragraph */
     var lead = 1.45;
     while (lead < FIND_LEAD_MAX) {
       var next = Math.min(FIND_LEAD_MAX, lead + 0.05);
       box.style.lineHeight = next;
-      if (box.scrollHeight > box.clientHeight + 1) {
+      if (naturalHeight(box) > box.clientHeight + 1) {
         box.style.lineHeight = lead;
         break;
       }
       lead = next;
     }
 
-    var slack = box.clientHeight - box.scrollHeight;
+    /* 3. whatever remains is split above and below */
+    var slack = box.clientHeight - naturalHeight(box);
     if (slack > 2) box.style.paddingTop = Math.round(basePad + slack / 2) + 'px';
   }
 
@@ -3489,7 +3525,7 @@
           /* the diagram's size is part of the same fit */
           var fb = from.parentNode, tb = to.parentNode;
           if (fb && tb) {
-            ['--imgw', '--imgh'].forEach(function (v) {
+            ['--imgw', '--imgh', '--figw', '--figh'].forEach(function (v) {
               var val = fb.style.getPropertyValue(v);
               if (val) tb.style.setProperty(v, val);
             });
