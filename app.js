@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02eg';
+  var APP_BUILD = '2026-08-02ei';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3049,15 +3049,102 @@
      shrunk to fit rather than the box being stretched to hold it. A box that
      grows pushes the page 1 footer onto a sheet of its own — the blank second
      page — and the printed form should look the same whatever was written. */
+  /* SETTING THE FINDINGS TO THE BOX IT IS GIVEN.
+
+     The box is a fixed height at the foot of page one. Four lines of findings
+     used to sit hard against its top edge and leave two thirds of it empty,
+     which reads as though something is missing rather than as though little
+     was found.
+
+     What NOT to do about that is worth stating, because both were tempting:
+
+       - do not enlarge the type. A findings paragraph set larger than the
+         field labels above it does not look generous, it looks like a
+         mistake. 12.5 px is the form's size and it stays the form's size.
+       - do not stretch the leading to the corners. Past about 1.8 the lines
+         stop reading as a paragraph and start reading as a list of unrelated
+         sentences; the eye loses the thread between one line and the next.
+         Leading is for holding text together, not for filling space.
+
+     What is actually right for a short finding is to give the room to the
+     DIAGRAM. A larger picture of the operation is worth something to whoever
+     reads this note next; forty millimetres of blank paper is worth nothing.
+     So the figure grows into the slack first, and only what is left over
+     after that is taken up by leading and centring.
+
+     Four passes, each one measured rather than assumed:
+
+       1. the diagram grows, while the text still fits, to at most half again
+          its size. Only where a single figure floats beside the text — the
+          three-up anorectal set is already as large as its row allows;
+       2. the type shrinks until the text fits at all. Unchanged, and the one
+          pass that may never be skipped;
+       3. the leading opens to take up what is left, stopping at 1.8;
+       4. whatever room remains is split above and below, so the block sits in
+          the middle of the box.
+
+     None of this changes the height of the box, so page one is the height it
+     was and the PDF — which photographs this very box — inherits the result. */
+  var FIND_LEAD_MAX = 1.8;
+  var FIG_BASE_W = 52, FIG_BASE_H = 38;   /* mm, as the stylesheet has them */
+  var FIG_GROW_MAX = 1.5;
+  var FIG_GROW_STEPS = [1.15, 1.3, 1.5];
+  var FIND_SLACK_PX = 38;                 /* about 10 mm: below this, leave it */
+
   function fitFindings(root) {
     var box = root.querySelector('.findbox .bbody');
     if (!box) return;
-    var size = 12.5;
-    box.style.fontSize = size + 'px';
-    while (box.scrollHeight > box.clientHeight + 1 && size > 7.5) {
-      size -= 0.25;
-      box.style.fontSize = size + 'px';
+    var find = box.parentNode;
+    if (!find || !/findbox/.test(find.className || '')) find = null;
+    /* a single floated diagram can grow; the three-up set is already as wide
+       as its row permits, and making it taller would only letterbox it */
+    var solo = !!box.querySelector('figure.fig') && !box.querySelector('.figset');
+    var basePad = 6;                      /* the 6px the stylesheet gives it */
+
+    function setFig(scale) {
+      if (!find || !solo) return;
+      find.style.setProperty('--imgw', (FIG_BASE_W * scale).toFixed(1) + 'mm');
+      find.style.setProperty('--imgh', (FIG_BASE_H * scale).toFixed(1) + 'mm');
     }
+
+    /* lay the text out at a given figure size and report whether it fits */
+    function layout(scale) {
+      setFig(scale);
+      box.style.paddingTop = basePad + 'px';
+      box.style.lineHeight = 1.45;
+      var size = 12.5;
+      box.style.fontSize = size + 'px';
+      while (box.scrollHeight > box.clientHeight + 1 && size > 7.5) {
+        size -= 0.25;
+        box.style.fontSize = size + 'px';
+      }
+      return box.scrollHeight <= box.clientHeight + 1;
+    }
+
+    var scale = 1;
+    if (!layout(1)) return;               /* will not fit even at 7.5 px */
+    if (solo) {
+      for (var i = 0; i < FIG_GROW_STEPS.length; i++) {
+        if (FIG_GROW_STEPS[i] > FIG_GROW_MAX) break;
+        if (box.clientHeight - box.scrollHeight < FIND_SLACK_PX) break;
+        if (layout(FIG_GROW_STEPS[i])) scale = FIG_GROW_STEPS[i];
+        else { layout(scale); break; }    /* that step was one too many */
+      }
+    }
+
+    var lead = 1.45;
+    while (lead < FIND_LEAD_MAX) {
+      var next = Math.min(FIND_LEAD_MAX, lead + 0.05);
+      box.style.lineHeight = next;
+      if (box.scrollHeight > box.clientHeight + 1) {
+        box.style.lineHeight = lead;
+        break;
+      }
+      lead = next;
+    }
+
+    var slack = box.clientHeight - box.scrollHeight;
+    if (slack > 2) box.style.paddingTop = Math.round(basePad + slack / 2) + 'px';
   }
 
   /* =================== PDF file ===================
@@ -3393,7 +3480,21 @@
       (function () {
         var from = $('#previewBox .findbox .bbody');
         var to = $('#printRoot .findbox .bbody');
-        if (from && to) to.style.fontSize = from.style.fontSize;
+        /* the leading and the top padding are as much a part of the fit as the
+           type size; copying only one of the three left the twin unbalanced */
+        if (from && to) {
+          to.style.fontSize = from.style.fontSize;
+          to.style.lineHeight = from.style.lineHeight;
+          to.style.paddingTop = from.style.paddingTop;
+          /* the diagram's size is part of the same fit */
+          var fb = from.parentNode, tb = to.parentNode;
+          if (fb && tb) {
+            ['--imgw', '--imgh'].forEach(function (v) {
+              var val = fb.style.getPropertyValue(v);
+              if (val) tb.style.setProperty(v, val);
+            });
+          }
+        }
       })();
       fitPreview();          /* last: everything above measures the real page */
       return pngs;
