@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02em',
+    build: '2026-08-02en',
 
 
 
@@ -265,15 +265,17 @@
       ta_ps1: [
         { needs: ['cr_tme_route'],
           text: 'A gauze was packed above the marked line to absorb mucus and exfoliated tumour cells. A first purse-string was placed at the submucosal depth with 2-0 Prolene on a 26 mm needle, each bite entering where the last had exited so that no gap remained. The platform was removed and the suture tied from outside; traction on both threads confirmed that the lumen was completely closed.' },
-        { group: 'wash', needs: ['cr_l_washout_volume', 'cr_l_washout_solution'],
-          text: 'The transanal field was irrigated with {cr_l_washout_volume} mL of {cr_l_washout_solution|lc}, the contaminated instruments were discarded and all gloves were changed.' },
-        { group: 'wash', needs: ['cr_tme_route'],
-          text: 'The transanal field was irrigated thoroughly, the contaminated instruments were discarded and all gloves were changed.' }
+        /* 200 mL of plain saline each round, not 400 of saline with povidone.
+           Fixed prose rather than a reading of cr_l_washout_volume: that field
+           is the rectal washout before transection, a different event in a
+           different operation, and borrowing it meant the two could disagree. */
+        { needs: ['cr_tme_route'],
+          text: 'The transanal field was irrigated with 200 mL of normal saline, the contaminated instruments were discarded and all gloves were changed.' }
       ],
 
       ta_rectotomy: [
         { needs: ['cr_tme_route'],
-          text: 'Rectotomy was carried out in stages. The marked points were joined and the rectum incised circumferentially to the submucosa, cauterising slowly to control the submucosal bleeding. The incision was then carried through the inner circular muscle until the outer longitudinal muscle was exposed circumferentially, keeping the plane perpendicular to the lumen so as not to burrow along the rectal wall. A second purse-string was placed at the circular muscle, outside the first, tied from outside, and the field irrigated again.' }
+          text: 'Rectotomy was carried out in stages. The marked points were joined and the rectum incised circumferentially to the submucosa, cauterising slowly to control the submucosal bleeding. The incision was then carried through the inner circular muscle until the outer longitudinal muscle was exposed circumferentially, keeping the plane perpendicular to the lumen so as not to burrow along the rectal wall. A second purse-string was placed at the circular muscle, outside the first, tied from outside, and the field irrigated with a further 200 mL of normal saline.' }
       ],
 
       ta_dissect: [
