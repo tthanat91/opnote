@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02el',
+    build: '2026-08-02em',
 
 
 
@@ -255,7 +255,7 @@
         { group: 'team', needs: ['cr_tme_route'], equals: 'TaTME (one-team)',
           text: 'The mesorectal excision was performed transanally, the abdominal and transanal phases being carried out in sequence by one team.' },
         { needs: ['cr_tme_route'],
-          text: 'A Lone Star retractor was applied to expose the anal canal and a GelPOINT Path transanal access platform was inserted, with a 12 mm camera port at 12 o’clock and 8 mm working ports at 5 and 8 o’clock. Insufflation was by AirSeal at 15 mmHg.' },
+          text: 'A Lone Star retractor was applied to expose the anal canal and a GelPOINT Path transanal access platform was inserted, with a 12 mm camera port at 12 o’clock and 8 mm working ports at 5 and 8 o’clock. Pneumopelvis was established with an AirSeal recirculating carbon dioxide insufflator at a flow of 40 L/min and a pressure of 15 mmHg, which holds the rectum open and clears the smoke without the bellowing that ordinary suction causes in a closed field.' },
         { needs: ['cr_l_clamp'], equals: 'Endoscopic bulldog clamp',
           text: 'An endoscopic bulldog clamp was placed across the sigmoid colon before the pelvis was insufflated, to keep the proximal bowel from distending.' },
         { needs: ['cr_f_av_distance'],
