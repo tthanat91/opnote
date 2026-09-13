@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ej';
+  global.TEMPLATES_BUILD = '2026-08-02el';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -324,6 +324,54 @@
       'None; Partial; Subtotal; Total', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_level', 'ระดับรอยต่อจากขอบทวาร (ซม.)', 'Anastomotic level from the anal verge (cm)', 'number', '',
       'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis'),
+
+    /* ---------------- TRANSANAL TME ----------------
+       Ball performs this the same way every time, to Masaaki Ito's method,
+       so almost none of it is a question. The platform, the Lone Star, the
+       AirSeal at 15 mmHg, the submucosal first purse-string of 2-0 Prolene
+       with no gap between bites, the traction test before tying, the 400 mL
+       of saline and povidone, the discarded instruments and changed gloves,
+       the staged rectotomy, the second purse-string outside the first, the
+       sweet space at 1 and 11 then 5 and 7, the recto-urethral muscle taken
+       by hooking rather than pushing, the rectosacral fascia at S4, the
+       peritoneal reflection left until last, the specimen delivered through
+       the abdomen — all of that is invariant, and it is written into the
+       narrative rather than asked for on the screen.
+
+       What genuinely varies is below, and it is six questions. Everything
+       else the operation needs is already in this form: the endo-bulldog is
+       cr_l_clamp, the irrigation is cr_l_washout, the circular stapler is
+       cr_l_circular, the doughnuts cr_l_doughnuts, the leak test
+       cr_leak_test, the ICG cr_perfusion, the ileostomy cr_diverting, and
+       whether the neurovascular bundles came through it is cr_rect_nerve. */
+    f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_tme_route', 'เส้นทางเลาะ TME', 'TME route', 'radio',
+      'Transabdominal only; TaTME (two-team); TaTME (one-team)', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
+
+    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_epf_plane', 'ระนาบที่เลาะเทียบ endopelvic fascia',
+      'Dissection plane at the endopelvic fascia', 'radio',
+      'Above the endopelvic fascia (standard TME plane); ' +
+      'Below the endopelvic fascia, including the hypogastric fascia; ' +
+      'Below the fascia past the tumour, then above it', 'cr_tme_route = TaTME (two-team); TaTME (one-team)'),
+    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_meet', 'จุดที่ทะลุถึงช่องท้องก่อน',
+      'Where the abdominal cavity was reached first', 'radio',
+      'Anterior; Lateral; Posterior', 'cr_tme_route = TaTME (two-team); TaTME (one-team)'),
+    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_anast', 'วิธีต่อลำไส้', 'Anastomosis technique', 'radio',
+      'Abdominal double purse-string circular stapled anastomosis; ' +
+      'Transanal pull-through circular stapled anastomosis; ' +
+      'Hand-sewn coloanal anastomosis', 'cr_tme_route = TaTME (two-team); TaTME (one-team)'),
+    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_reinforce', 'เย็บเสริมรอบรอยต่อ',
+      'Circumferential reinforcement suture', 'radio',
+      'Yes; No — the anastomosis was judged secure',
+      'cr_ta_anast = Abdominal double purse-string circular stapled anastomosis; Transanal pull-through circular stapled anastomosis'),
+    /* an explicit "none" is the point of this one: the registry's own figures
+       are 7.8% plane misidentification, 1.5% organ injury, 0.7% urethral
+       injury, and a note that says none is worth more than one that is silent */
+    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_events', 'เหตุการณ์ระหว่างเลาะทางทวาร',
+      'Events during the transanal phase', 'checklist',
+      'None; Wrong plane, recognised and corrected; Urethral injury; CO2 embolism; Other',
+      'cr_tme_route = TaTME (two-team); TaTME (one-team)'),
+    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_events_other', 'ระบุเหตุการณ์อื่น', 'Other event — specify', 'text', '',
+      'cr_ta_events = Other'),
 
     /* ---------------- PERINEAL PHASE ---------------- */
     f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_position', 'ท่าในช่วงฝีเย็บ', 'Position for the perineal phase', 'radio',

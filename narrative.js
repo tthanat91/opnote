@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02ej',
+    build: '2026-08-02el',
 
 
 
@@ -236,6 +236,115 @@
        converted, and the ports were removed.
        ================================================================= */
     parts: {
+
+      /* ================= TRANSANAL TME (Masaaki Ito, NCC East) =========
+         Ball performs this the same way every time, so the technique is
+         written out here rather than asked for on the screen. Only what
+         genuinely varies is quoted from a field.
+
+         The invariants below are his, from the National Cancer Center East:
+         the submucosal first purse-string with no gap between bites, the
+         traction test before tying, the irrigation and the change of gloves,
+         the staged rectotomy, the second purse-string outside the first, the
+         sweet space at 1 and 11 before 5 and 7, the recto-urethral muscle
+         taken by hooking rather than pushing, the peritoneal reflection left
+         until last, and the specimen delivered through the abdomen. */
+      ta_setup: [
+        { group: 'team', needs: ['cr_tme_route'], equals: 'TaTME (two-team)',
+          text: 'The mesorectal excision was performed transanally, with the abdominal and transanal teams working simultaneously.' },
+        { group: 'team', needs: ['cr_tme_route'], equals: 'TaTME (one-team)',
+          text: 'The mesorectal excision was performed transanally, the abdominal and transanal phases being carried out in sequence by one team.' },
+        { needs: ['cr_tme_route'],
+          text: 'A Lone Star retractor was applied to expose the anal canal and a GelPOINT Path transanal access platform was inserted, with a 12 mm camera port at 12 o’clock and 8 mm working ports at 5 and 8 o’clock. Insufflation was by AirSeal at 15 mmHg.' },
+        { needs: ['cr_l_clamp'], equals: 'Endoscopic bulldog clamp',
+          text: 'An endoscopic bulldog clamp was placed across the sigmoid colon before the pelvis was insufflated, to keep the proximal bowel from distending.' },
+        { needs: ['cr_f_av_distance'],
+          text: 'With the rectum distended the lower edge of the tumour lay {cr_f_av_distance} cm from the anal verge, and the distal margin was marked circumferentially below it.' }
+      ],
+
+      ta_ps1: [
+        { needs: ['cr_tme_route'],
+          text: 'A gauze was packed above the marked line to absorb mucus and exfoliated tumour cells. A first purse-string was placed at the submucosal depth with 2-0 Prolene on a 26 mm needle, each bite entering where the last had exited so that no gap remained. The platform was removed and the suture tied from outside; traction on both threads confirmed that the lumen was completely closed.' },
+        { group: 'wash', needs: ['cr_l_washout_volume', 'cr_l_washout_solution'],
+          text: 'The transanal field was irrigated with {cr_l_washout_volume} mL of {cr_l_washout_solution|lc}, the contaminated instruments were discarded and all gloves were changed.' },
+        { group: 'wash', needs: ['cr_tme_route'],
+          text: 'The transanal field was irrigated thoroughly, the contaminated instruments were discarded and all gloves were changed.' }
+      ],
+
+      ta_rectotomy: [
+        { needs: ['cr_tme_route'],
+          text: 'Rectotomy was carried out in stages. The marked points were joined and the rectum incised circumferentially to the submucosa, cauterising slowly to control the submucosal bleeding. The incision was then carried through the inner circular muscle until the outer longitudinal muscle was exposed circumferentially, keeping the plane perpendicular to the lumen so as not to burrow along the rectal wall. A second purse-string was placed at the circular muscle, outside the first, tied from outside, and the field irrigated again.' }
+      ],
+
+      ta_dissect: [
+        { needs: ['cr_tme_route'],
+          text: 'The longitudinal muscle was incised at 1 and 11 o’clock to enter the sweet space on either side of the midline, avoiding the thicker muscle at 12 o’clock. The recto-urethral muscle was then divided by hooking from either side rather than by pushing, keeping the dissection away from the urethra, and the dorsal surface of the prostate was widely exposed. Denonvilliers’ fascia was incised and the plane carried on towards the seminal vesicles.' },
+        { needs: ['cr_tme_route'],
+          text: 'Posteriorly the longitudinal muscle was incised at 5 and 7 o’clock to enter the sweet space, and the rectococcygeal muscle at 6 o’clock was divided.' },
+        { group: 'epf', needs: ['cr_ta_epf_plane'], equals: 'Above the endopelvic fascia (standard TME plane)',
+          text: 'The dissection was carried above the endopelvic fascia, in the standard mesorectal plane.' },
+        { group: 'epf', needs: ['cr_ta_epf_plane'], equals: 'Below the endopelvic fascia, including the hypogastric fascia',
+          text: 'The dissection was carried below the endopelvic fascia, taking the hypogastric fascia with the specimen and exposing the surface of the levator ani, to secure the circumferential margin.' },
+        { group: 'epf', needs: ['cr_ta_epf_plane'], equals: 'Below the fascia past the tumour, then above it',
+          text: 'The dissection was carried below the endopelvic fascia to secure the circumferential margin alongside the tumour, and returned above the fascia once the tumour had been passed, to protect the fourth pelvic splanchnic nerve.' },
+        { needs: ['cr_tme_route'],
+          text: 'The rectosacral fascia was incised at the S4 level and the dissection turned ventrally along the sacral fold, away from the median sacral vein.' },
+        { group: 'nvb', needs: ['cr_rect_nerve'], equals: 'Complete, bilateral',
+          text: 'Laterally, the rectal branches of both neurovascular bundles and the pelvic splanchnic nerves were seen and preserved intact.' },
+        { group: 'nvb', needs: ['cr_rect_nerve'], equals: 'Partial',
+          text: 'Laterally, the neurovascular bundles were partly preserved.' },
+        { group: 'nvb', needs: ['cr_rect_nerve'], equals: 'Sacrificed for oncological clearance',
+          text: 'Laterally, the neurovascular bundle was taken with the specimen for oncological clearance.' }
+      ],
+
+      ta_meet: [
+        { needs: ['cr_ta_meet'],
+          text: 'The peritoneal reflection was left intact until the anterior and posterior planes were established, and was then opened {cr_ta_meet|lc}ly, where the two dissections met.' }
+      ],
+
+      /* cr_extraction already offers Transanal (NOSE), and the first version of
+         this part ignored it: it stated the abdominal route whatever the field
+         said, so a transanal extraction would have produced a note that
+         contradicted its own form. The reason NCC prefer the abdomen — a
+         purse-string torn by traction, and tumour cells spilled with it — is
+         only worth writing when that is in fact the route taken. */
+      ta_extract: [
+        { group: 'ex', needs: ['cr_extraction'], equals: 'Transanal (NOSE)',
+          text: 'The specimen was delivered transanally through the access platform, taking care not to drag it against the rectal stump.' },
+        { group: 'ex', needs: ['cr_extraction', 'cr_r_extraction_length'],
+          text: 'The specimen was delivered through a {cr_r_extraction_length} cm {cr_extraction|lc} incision under a wound protector, rather than through the anus, so as not to tear the purse-string or spill tumour cells.' },
+        { group: 'ex', needs: ['cr_extraction'],
+          text: 'The specimen was delivered through a {cr_extraction|lc} incision under a wound protector, rather than through the anus, so as not to tear the purse-string or spill tumour cells.' },
+        { group: 'ex', needs: ['cr_tme_route'],
+          text: 'The specimen was delivered through the abdominal incision rather than through the anus, so as not to tear the purse-string or spill tumour cells.' }
+      ],
+
+      ta_anast: [
+        { group: 'an', needs: ['cr_ta_anast'], equals: 'Abdominal double purse-string circular stapled anastomosis',
+          text: 'The platform was reseated 1 to 2 cm from the cut edge and a full-thickness purse-string placed in the rectal stump, taking a bite at each hour of the clock 5 mm from the edge; traction on both threads confirmed complete closure. A guide tube was passed and the circular stapler railroaded up from below, the anvil docked from the abdomen and the double purse-string tied down onto it before firing.' },
+        { group: 'an', needs: ['cr_ta_anast'], equals: 'Transanal pull-through circular stapled anastomosis',
+          text: 'Exposure of the rectal stump from above was not sufficient to dock the anvil, so the pull-through method was used: the anvil was grasped through the untied purse-string and drawn down transanally, mated with the stapler, and the purse-string tied down onto it before firing.' },
+        { group: 'an', needs: ['cr_ta_anast'], equals: 'Hand-sewn coloanal anastomosis',
+          text: 'A hand-sewn coloanal anastomosis was fashioned transanally with interrupted absorbable sutures, quadrant stitches first and the intervening bites placed between them.' },
+        { needs: ['cr_l_circular'], not: 'Not used',
+          text: 'A {cr_l_circular} circular stapler was used.' },
+        { needs: ['cr_l_doughnuts'], equals: 'Complete',
+          text: 'Both doughnuts were inspected and were complete.' },
+        { group: 'rf', needs: ['cr_ta_reinforce'], equals: 'Yes',
+          text: 'A reinforcement suture was placed circumferentially around the anastomosis.' },
+        { group: 'rf', needs: ['cr_ta_reinforce'], not: 'Yes',
+          text: 'No reinforcement suture was placed; the anastomosis was judged secure.' }
+      ],
+
+      ta_events: [
+        { group: 'ev', needs: ['cr_ta_events'], equals: 'None',
+          text: 'The dissection plane was held throughout, and there was no urethral injury and no carbon dioxide embolism.' },
+        { group: 'ev', needs: ['cr_ta_events', 'cr_ta_events_other'],
+          text: 'During the transanal phase: {cr_ta_events|lc|and} ({cr_ta_events_other}).' },
+        { group: 'ev', needs: ['cr_ta_events'],
+          text: 'During the transanal phase: {cr_ta_events|lc|and}.' }
+      ],
+
 
       /* ---- haemorrhoid: the parts either path uses ---- */
       he_setup: [
@@ -1471,6 +1580,27 @@
         lines: [
           { use: 'st_setup' }, { use: 'st_access_form' }, { use: 'st_reason' },
           { use: 'st_form' }, { use: 'st_mature' }, { use: 'st_count' }
+        ]
+      },
+      {
+        /* Placed before the left-sided block, which would otherwise sweep up
+           a TaTME low anterior resection and describe it as though the whole
+           mesorectum had been taken from above. The abdominal phase is the
+           same operation and reuses the same parts; only the pelvic dissection
+           and the anastomosis are replaced. */
+        name: 'Transanal total mesorectal excision',
+        when: [
+          { key: 'cr_tme_route', any: ['TaTME (two-team)', 'TaTME (one-team)'] }
+        ],
+        lines: [
+          { use: 'setup' }, { use: 'access_left' }, { use: 'explore_left' },
+          { use: 'left_mobilise' }, { use: 'left_vessels' }, { use: 'splenic_flexure' },
+          { use: 'ta_setup' }, { use: 'ta_ps1' }, { use: 'ta_rectotomy' },
+          { use: 'ta_dissect' }, { use: 'ta_meet' },
+          { use: 'ta_extract' }, { use: 'margins' },
+          { use: 'ta_anast' }, { use: 'anast_check' }, { use: 'ta_events' },
+          { use: 'hemostasis_pelvis' }, { use: 'drain' },
+          { use: 'close_abdomen' }, { use: 'count' }
         ]
       },
       {
