@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fa';
+  var APP_BUILD = '2026-08-02fb';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2890,7 +2890,17 @@
         '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>');
     }
     S.photos.forEach(function (p) {
-      cells.push('<figure class="pph"><img src="' + (p.inkUrl || p.dataUrl || p.url) + '" alt="">' +
+      /* THE RATIO IS DECLARED, NOT INFERRED.
+
+         CSS gives the picture a height and lets the width follow from the
+         image's own proportions — which works in a browser, but leaves the
+         shape to whatever the rasteriser decides the intrinsic size is while
+         it is drawing the page. Writing the real pixel dimensions onto the
+         tag states the ratio in the markup, so nothing downstream has to
+         work it out and nothing can get it wrong. */
+      var dim = (p.w && p.h) ? ' width="' + p.w + '" height="' + p.h + '"' : '';
+      cells.push('<figure class="pph"><img' + dim + ' src="' +
+        (p.inkUrl || p.dataUrl || p.url) + '" alt="">' +
         '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>');
     });
     return imageTable(cells, 'figs');
@@ -4044,7 +4054,20 @@
         return api('GET', { action: 'photo', id: p.id }).then(function (r) {
           if (S.id !== mine || !r || !r.ok || !r.dataUrl) return;
           p.dataUrl = r.dataUrl;
-          renderPhotos();
+          /* A REOPENED PHOTOGRAPH HAD FORGOTTEN ITS SHAPE.
+
+             w and h are measured when a picture is first chosen and are what
+             the annotation window opens at. They are not stored in the Sheet,
+             so a reopened note had neither, and drawTarget fell back to
+             1000 x 750 — a landscape default. Annotate a portrait photograph
+             on a reopened note and it was drawn on, and exported, in the
+             wrong shape. Measuring it once as it arrives costs nothing. */
+          return loadImage(r.dataUrl).then(function (im) {
+            if (S.id !== mine) return;
+            p.w = im.naturalWidth || im.width || 0;
+            p.h = im.naturalHeight || im.height || 0;
+            renderPhotos();
+          }, renderPhotos);
         }, function () { /* this one is missing; the rest still come */ });
       });
     }, Promise.resolve()).then(function () {
