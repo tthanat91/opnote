@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02en';
+  var APP_BUILD = '2026-08-02es';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -797,6 +797,9 @@
     if (f.type === 'textarea') {
       var ta = el('textarea');
       ta.rows = 4; ta.dataset.key = f.key; ta.value = v || '';
+      /* the two boxes that hold a drafted narrative open tall: they are read
+         and corrected, not filled in */
+      if (/_steps$|^findings$|^cr_steps$/.test(f.key)) ta.classList.add('tall');
       body.appendChild(ta);
 
       /* the step-by-step box gets a draft button — pressed deliberately,
@@ -3358,11 +3361,42 @@
           pg.classList.remove('pdfshot');
           var pxPerMm = canvas.width / PDF_W;
           var pxPerCss = canvas.height / (cssH || 1);
+
+          /* THE SHEET THAT COULD NOT BE IDENTIFIED.
+
+             The continuation page is a table whose header holds the AN, HN and
+             the patient's name, so that the bar repeats on every printed sheet.
+             It does that when a BROWSER paginates the table — but the PDF is a
+             photograph of the whole element, sliced. The header is inside the
+             photograph, at the top, so it lands on the second sheet and nowhere
+             after it. A third sheet came out carrying nothing but numbered
+             steps: separate it from the others and there is no way to tell
+             whose operation it describes.
+
+             It needs no second rendering. The header IS the first band of the
+             photograph, so it is cut from there and stamped at the top of every
+             later sheet, and those sheets take correspondingly less content. */
+          var head = pg.querySelector('table.flow > thead');
+          var barPx = head ? Math.round(head.getBoundingClientRect().height * pxPerCss) : 0;
+          var barMm = barPx / pxPerMm;
+          var bar = null;
+          if (barPx > 0) {
+            bar = document.createElement('canvas');
+            bar.width = canvas.width; bar.height = barPx;
+            bar.getContext('2d').drawImage(canvas, 0, 0, canvas.width, barPx,
+              0, 0, canvas.width, barPx);
+            bar = bar.toDataURL('image/jpeg', 0.92);
+          }
+
           var sliceMax = Math.floor(PDF_H * pxPerMm);
           var plan = sheetPlan(canvas.height, sliceMax);
           var y = 0;
           while (y < canvas.height) {
-            var h = Math.min(plan.strip, canvas.height - y);
+            /* every sheet after the first gives up the height of the bar */
+            var repeat = bar && y > 0;
+            var room = repeat ? sliceMax - barPx : sliceMax;
+            var h = Math.min(repeat ? Math.min(plan.strip, room) : plan.strip,
+              canvas.height - y);
             /* THE 6 MM STRIP ON A SHEET OF ITS OWN.
 
                Snapping a cut back to a block boundary shortens the strip, and
@@ -3370,8 +3404,8 @@
                PDF the last sheet held 5.9 mm of a 396 mm page. If everything
                that is left would fit on this sheet, it belongs on this sheet —
                there is nothing to snap to and no reason to look. */
-            if (canvas.height - y <= sliceMax) h = canvas.height - y;
-            else if (plan.sheets > 1 && h === plan.strip && y + h < canvas.height) {
+            if (canvas.height - y <= room) h = canvas.height - y;
+            else if (plan.sheets > 1 && y + h < canvas.height) {
               /* Pull the cut back to the nearest block boundary. Ball's PDF
                  was sliced through the middle of a sentence because no
                  boundary fell inside the narrow window this used to look in,
@@ -3396,10 +3430,16 @@
             if (added) doc.addPage();
             /* a page that overflows by a few millimetres is set very
                slightly smaller so it lands on one sheet */
-            var hmm = Math.min(PDF_H, (h / pxPerMm) * plan.fits);
+            var hmm = Math.min(PDF_H - (repeat ? barMm : 0), (h / pxPerMm) * plan.fits);
             var wmm = PDF_W * (hmm / (h / pxPerMm));
+            var top = PDF_Y;
+            if (repeat) {
+              doc.addImage(bar, 'JPEG', (210 - PDF_W) / 2, top, PDF_W, barMm,
+                undefined, 'FAST');
+              top += barMm;
+            }
             doc.addImage(strip.toDataURL('image/jpeg', 0.92), 'JPEG',
-              (210 - wmm) / 2, PDF_Y, wmm, hmm, undefined, 'FAST');
+              (210 - wmm) / 2, top, wmm, hmm, undefined, 'FAST');
             added++;
             y += h;
           }

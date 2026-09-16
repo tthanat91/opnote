@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02en',
+    build: '2026-08-02es',
 
 
 
@@ -653,12 +653,50 @@
       extraction_left: [
         { group: 'extract', needs: ['cr_approach'], equals: 'Open',
           text: 'The specimen was delivered through the laparotomy wound and passed off the field: {organ_removed}' },
+        /* Two of the six options are not incisions, and the generic sentence
+           made nonsense of both: "a 6 cm transanal (NOSE) incision was made"
+           and "a 6 cm through the stoma site incision was made". They are
+           written out before the generic line, which now only ever sees an
+           option that really is an incision with a length. */
+        { group: 'extract', needs: ['cr_extraction'], equals: 'Transanal (NOSE)',
+          text: 'The specimen was delivered transanally through a wound protector, as a natural-orifice extraction, and passed off the field: {organ_removed}' },
+        { group: 'extract', needs: ['cr_extraction'], equals: 'Through the stoma site',
+          text: 'The specimen was delivered through the stoma trephine under a wound protector and passed off the field: {organ_removed}' },
         { group: 'extract', needs: ['cr_extraction', 'cr_r_extraction_length'],
           text: 'A {cr_r_extraction_length} cm {cr_extraction|lc} incision was made, a wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },
         { group: 'extract', needs: ['cr_extraction'],
           text: 'Extraction site: {cr_extraction}. A wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' },
+        /* This used to name a Pfannenstiel whenever the extraction field was
+           empty — and it is empty on every open case, because the question is
+           hidden there. So an open resection extracted through its own
+           laparotomy was printed as having had a second incision it never had.
+           A guillemet marks a default as unconfirmed; it does not make it
+           harmless. Nothing is named now unless it was recorded. */
         { group: 'extract',
-          text: 'A «Pfannenstiel» incision was made, a wound protector was placed and the specimen was delivered. The specimen was passed off the field: {organ_removed}' }
+          text: 'The specimen was delivered through the extraction wound under a wound protector and passed off the field: {organ_removed}' }
+      ],
+
+      /* An emergency resection for obstruction is a different operation from
+         the elective one, and the note should say which. Milking a dilated
+         colon and washing it out are decisions with consequences — for the
+         anastomosis, and for whoever reads this when the patient leaks. */
+      decompress: [
+        /* One or the other, never both: that is how it is actually done, so
+           there is no combined sentence to write.
+
+           Two traps were caught here and are worth keeping in mind for any
+           new part. equals tests the FIRST key in needs — cr_urgency was
+           written first, so every line compared 'Emergency' with the name of
+           a method and none could match. And equals is a SUBSTRING test, by
+           design, because that is what lets a checklist of three items match
+           one of them; while a combined option existed it also matched the
+           shorter one. Removing the combined option removes that hazard too. */
+        { group: 'dec', needs: ['cr_decompression'], equals: 'On-table antegrade colonic lavage',
+          text: 'An on-table antegrade colonic lavage was performed, warmed saline being run in proximally and the effluent led off the field into a closed bag until it ran clear.' },
+        { group: 'dec', needs: ['cr_decompression'], equals: 'Manual decompression',
+          text: 'The obstructed proximal colon was decompressed by gentle manual milking before the bowel was divided.' },
+        { group: 'dec', needs: ['cr_decompression'], equals: 'Not required',
+          text: 'The proximal colon was not loaded, and neither decompression nor on-table lavage was required.' }
       ],
 
       margins: [
@@ -1510,7 +1548,7 @@
           { use: 'left_mobilise' }, { use: 'left_vessels' }, { use: 'splenic_flexure' },
           { use: 'washout' }, { use: 'rectal_transection' },
           { text: 'The colon was divided at the intended proximal margin in healthy, well-perfused bowel.' },
-          { use: 'extraction_left' }, { use: 'margins' },
+          { use: 'extraction_left' }, { use: 'decompress' }, { use: 'margins' },
           { use: 'hartmann_stump' },
           { use: 'hemostasis_pelvis' }, { use: 'drain' },
           { use: 'stoma_form' }, { use: 'close_abdomen' },
@@ -1599,7 +1637,7 @@
           { use: 'left_mobilise' }, { use: 'left_vessels' }, { use: 'splenic_flexure' },
           { use: 'ta_setup' }, { use: 'ta_ps1' }, { use: 'ta_rectotomy' },
           { use: 'ta_dissect' }, { use: 'ta_meet' },
-          { use: 'ta_extract' }, { use: 'margins' },
+          { use: 'ta_extract' }, { use: 'decompress' }, { use: 'margins' },
           { use: 'ta_anast' }, { use: 'anast_check' }, { use: 'ta_events' },
           { use: 'hemostasis_pelvis' }, { use: 'drain' },
           { use: 'close_abdomen' }, { use: 'count' }
@@ -1635,7 +1673,7 @@
         ],
         lines: [
           { use: 'setup' }, { use: 'access_right' }, { use: 'explore_right' },
-          { use: 'right_mobilise' }, { use: 'right_resect' }, { use: 'margins' },
+          { use: 'right_mobilise' }, { use: 'right_resect' }, { use: 'decompress' }, { use: 'margins' },
           { use: 'anast_check' },
           { use: 'hemostasis_abdomen' }, { use: 'drain' },
           { use: 'close_abdomen' }, { use: 'count' }

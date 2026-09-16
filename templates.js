@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02en';
+  global.TEMPLATES_BUILD = '2026-08-02es';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -207,6 +207,12 @@
     /* "no drain" is a decision, and a decision belongs in the note. Asked
        first, and the three questions about the drain follow only if there
        was one. */
+    /* asked only of an emergency, where it is a real decision */
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_decompression', 'การลดความดันลำไส้ระหว่างผ่าตัด',
+      'On-table decompression', 'radio',
+      'Not required; Manual decompression; On-table antegrade colonic lavage',
+      'cr_urgency = Urgent; Emergency'),
+
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_placed', 'ใส่ท่อระบายหรือไม่', 'Drain placed', 'radio',
       'Yes; No'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text', '',

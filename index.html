@@ -132,7 +132,12 @@ main{max-width:1080px;margin:0 auto;padding:16px 16px 120px}
 .fbody input[type=time],.fbody select,.fbody textarea{
   width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fdfefe;
 }
-.fbody textarea{resize:vertical;min-height:84px;line-height:1.55}
+/* 84px is four lines: the drafted narrative is twenty, and correcting it
+   through a four-line window means scrolling for every change. The step and
+   findings boxes are where the surgeon actually works, so they open at about
+   fifteen lines; every other textarea keeps a more modest six. */
+.fbody textarea{resize:vertical;min-height:130px;line-height:1.55}
+.fbody textarea.tall{min-height:330px}
 .fbody input:focus,.fbody select:focus,.fbody textarea:focus{
   outline:none;border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(14,122,109,.14)}
 .optgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px}
@@ -961,12 +966,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=en"></script>
-<script src="figures.js?v=en"></script>
-<script src="figures-original.js?v=en"></script>
-<script src="letterhead.js?v=en"></script>
-<script src="narrative.js?v=en"></script>
-<script src="templates.js?v=en"></script>
-<script src="app.js?v=en"></script>
+<script src="config.js?v=es"></script>
+<script src="figures.js?v=es"></script>
+<script src="figures-original.js?v=es"></script>
+<script src="letterhead.js?v=es"></script>
+<script src="narrative.js?v=es"></script>
+<script src="templates.js?v=es"></script>
+<script src="app.js?v=es"></script>
 </body>
 </html>
