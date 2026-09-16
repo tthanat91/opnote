@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ez';
+  var APP_BUILD = '2026-08-02fa';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -4194,14 +4194,31 @@
     var bad = serverBuild && serverBuild !== EXPECTED_BUILD;
     n.classList.toggle('hidden', !bad);
     if (!bad) return;
-    n.innerHTML = '<b>\u0e2a\u0e04\u0e23\u0e34\u0e1b\u0e15\u0e4c\u0e43\u0e19 Google \u0e22\u0e31\u0e07\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e27\u0e2d\u0e23\u0e4c\u0e0a\u0e31\u0e19\u0e40\u0e01\u0e48\u0e32</b> \u2014 ' +
-      '\u0e21\u0e35 <code>' + esc(serverBuild) + '</code> \u0e41\u0e15\u0e48\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e32\u0e23 <code>' + esc(EXPECTED_BUILD) + '</code>. ' +
-      '\u0e43\u0e2b\u0e49\u0e27\u0e32\u0e07 Code.gs \u0e43\u0e2b\u0e21\u0e48 \u0e41\u0e25\u0e49\u0e27 Deploy \u25b8 Manage deployments \u25b8 ' +
-      '\u0e14\u0e34\u0e19\u0e2a\u0e2d \u25b8 Version: New version \u25b8 Deploy<br>' +
-      '<span class="en">The Apps Script deployment is older than this app expects. ' +
-      'Some things will simply not happen \u2014 an annotated photograph will not get its ' +
-      '<code>-drawing</code> copy, for one. Paste the current Code.gs, then ' +
-      'Deploy \u25b8 Manage deployments \u25b8 pencil \u25b8 Version: <b>New version</b> \u25b8 Deploy.</span>' +
+    /* WHICH OF THE TWO IS BEHIND.
+
+       This always said the script was older, because it only knew the two
+       builds differed, not which way round. It told Ball to redeploy a script
+       that was already newer than the app reading it, twice. The build stamps
+       sort, so the message can simply say which side to update. */
+    var scriptAhead = String(serverBuild) > String(EXPECTED_BUILD);
+    n.innerHTML = (scriptAhead
+      ? '<b>\u0e41\u0e2d\u0e1b\u0e22\u0e31\u0e07\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e27\u0e2d\u0e23\u0e4c\u0e0a\u0e31\u0e19\u0e40\u0e01\u0e48\u0e32</b> \u2014 ' +
+        '\u0e2a\u0e04\u0e23\u0e34\u0e1b\u0e15\u0e4c\u0e04\u0e37\u0e2d <code>' + esc(serverBuild) + '</code> ' +
+        '\u0e41\u0e15\u0e48\u0e41\u0e2d\u0e1b\u0e19\u0e35\u0e49\u0e04\u0e37\u0e2d <code>' + esc(EXPECTED_BUILD) + '</code>. ' +
+        '\u0e43\u0e2b\u0e49\u0e2d\u0e31\u0e1b\u0e42\u0e2b\u0e25\u0e14 index.html, app.js, templates.js, narrative.js ' +
+        '\u0e41\u0e25\u0e49\u0e27 hard-reload<br>' +
+        '<span class="en">It is the APP that is behind, not the script. The ' +
+        'deployment is <b>newer</b> than the files this browser is running \u2014 ' +
+        'upload index.html, app.js, templates.js and narrative.js, then hard-reload. ' +
+        'If it still says this, index.html is cached.</span>'
+      : '<b>\u0e2a\u0e04\u0e23\u0e34\u0e1b\u0e15\u0e4c\u0e43\u0e19 Google \u0e22\u0e31\u0e07\u0e40\u0e1b\u0e47\u0e19\u0e40\u0e27\u0e2d\u0e23\u0e4c\u0e0a\u0e31\u0e19\u0e40\u0e01\u0e48\u0e32</b> \u2014 ' +
+        '\u0e21\u0e35 <code>' + esc(serverBuild) + '</code> \u0e41\u0e15\u0e48\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e32\u0e23 <code>' + esc(EXPECTED_BUILD) + '</code>. ' +
+        '\u0e43\u0e2b\u0e49\u0e27\u0e32\u0e07 Code.gs \u0e43\u0e2b\u0e21\u0e48 \u0e41\u0e25\u0e49\u0e27 Deploy \u25b8 Manage deployments \u25b8 ' +
+        '\u0e14\u0e34\u0e19\u0e2a\u0e2d \u25b8 Version: New version \u25b8 Deploy<br>' +
+        '<span class="en">The Apps Script deployment is older than this app expects. ' +
+        'Some things will simply not happen \u2014 an annotated photograph will not get its ' +
+        '<code>-drawing</code> copy, for one. Paste the current Code.gs, then ' +
+        'Deploy \u25b8 Manage deployments \u25b8 pencil \u25b8 Version: <b>New version</b> \u25b8 Deploy.</span>') +
       /* The app can only report what the URL it is pointed at replies. If the
          editor shows the new code but this still shows the old build, the two
          are not the same deployment — and the only way to tell is to ask the

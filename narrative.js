@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02ez',
+    build: '2026-08-02fa',
 
 
 
@@ -258,8 +258,8 @@
           text: 'A Lone Star retractor was applied to expose the anal canal and a GelPOINT Path transanal access platform was inserted, with a 12 mm camera port at 12 o’clock and 8 mm working ports at 5 and 8 o’clock. Pneumopelvis was established with an AirSeal recirculating carbon dioxide insufflator at a flow of 40 L/min and a pressure of 15 mmHg, which holds the rectum open and clears the smoke without the bellowing that ordinary suction causes in a closed field.' },
         { needs: ['cr_l_clamp'], equals: 'Endoscopic bulldog clamp',
           text: 'An endoscopic bulldog clamp was placed across the sigmoid colon before the pelvis was insufflated, to keep the proximal bowel from distending.' },
-        { needs: ['cr_f_av_distance'],
-          text: 'With the rectum distended the lower edge of the tumour lay {cr_f_av_distance} cm from the anal verge, and the distal margin was marked circumferentially below it.' }
+        { needs: ['cr_tumor_distance'],
+          text: 'With the rectum distended the lower edge of the tumour lay {cr_tumor_distance} cm from the anal verge, and the distal margin was marked circumferentially below it.' }
       ],
 
       ta_ps1: [
@@ -691,11 +691,11 @@
            design, because that is what lets a checklist of three items match
            one of them; while a combined option existed it also matched the
            shorter one. Removing the combined option removes that hazard too. */
-        { group: 'dec', needs: ['cr_decompression'], equals: 'On-table antegrade colonic lavage',
+        { group: 'dec', needs: ['cr_additional_procedure'], equals: 'On-table antegrade colonic lavage',
           text: 'An on-table antegrade colonic lavage was performed, warmed saline being run in proximally and the effluent led off the field into a closed bag until it ran clear.' },
-        { group: 'dec', needs: ['cr_decompression'], equals: 'Manual decompression',
+        { group: 'dec', needs: ['cr_additional_procedure'], equals: 'Manual decompression',
           text: 'The obstructed proximal colon was decompressed by gentle manual milking before the bowel was divided.' },
-        { group: 'dec', needs: ['cr_decompression'], equals: 'Not required',
+        { group: 'dec', needs: ['cr_additional_procedure'], equals: 'Not required',
           text: 'The proximal colon was not loaded, and neither decompression nor on-table lavage was required.' }
       ],
 
@@ -1718,7 +1718,11 @@
       { group: 'gmargins', needs: ['cr_margin_dist'], text: 'The distal margin measured {cr_margin_dist} cm.' },
 
       { needs: ['cr_anast_config'], text: 'A {cr_anast_config|lc} anastomosis was fashioned.' },
-      { needs: ['cr_stapler'], text: 'Stapler and suture material used: {cr_stapler}.' },
+      /* cr_stapler was never a field; this line could not render. The real
+         ones are cr_l_circular for a circular stapler and cr_r_stapler for a
+         linear one. */
+      { needs: ['cr_l_circular'], not: 'Not used',
+        text: 'A {cr_l_circular} circular stapler was used.' },
       { needs: ['cr_leak_test'], not: 'Not performed',
         text: 'An air-leak test was performed and was {cr_leak_test}.' },
       { needs: ['cr_perfusion'], not: 'Not assessed',
@@ -1727,7 +1731,11 @@
         text: 'A {cr_diverting} was fashioned to divert the anastomosis.' },
 
       { needs: ['cr_drain'], not: 'None', text: 'A drain was placed: {cr_drain}.' },
-      { needs: ['cr_closure'], text: 'The wound was closed: {cr_closure}.' },
+      /* cr_closure likewise: the fascia and the skin are recorded separately */
+      { group: 'cl', needs: ['cr_closure_sheath_material', 'cr_closure_sheath_fashion'],
+        text: 'The fascia was closed with {cr_closure_sheath_material}, {cr_closure_sheath_fashion|lc}.' },
+      { group: 'cl', needs: ['cr_closure_sheath_material'],
+        text: 'The fascia was closed with {cr_closure_sheath_material}.' },
       { needs: ['cr_count'], equals: 'Yes',
         text: 'Sponge and instrument counts were correct at the end of the procedure.' }
     ],
@@ -1759,9 +1767,10 @@
 
       { needs: ['fi_procedure'], text: 'The procedure performed was {fi_procedure|lc}.' },
       { needs: ['fi_seton_material'], text: 'The seton used was {fi_seton_material}.' },
+      /* fi_specimen was removed from the fistula form on Ball's instruction;
+         the sentence that quoted it outlived the field */
       { needs: ['fi_marsupialise'], equals: 'Yes',
-        text: 'The wound edges were marsupialized.' },
-      { needs: ['fi_specimen'], text: 'Specimen sent: {fi_specimen}.' }
+        text: 'The wound edges were marsupialized.' }
     ],
 
     /* ----------------------------------------------------------------

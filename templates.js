@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02ez';
+  global.TEMPLATES_BUILD = '2026-08-02fa';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -208,8 +208,8 @@
        first, and the three questions about the drain follow only if there
        was one. */
     /* asked only of an emergency, where it is a real decision */
-    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_decompression', 'การลดความดันลำไส้ระหว่างผ่าตัด',
-      'On-table decompression', 'radio',
+    f('colorectal', 'มะเร็งวิทยา | Oncological detail', 'cr_additional_procedure', 'หัตถการเพิ่มเติมในเคสฉุกเฉิน',
+      'Additional procedure in emergency case', 'radio',
       'Not required; Manual decompression; On-table antegrade colonic lavage',
       'cr_urgency = Urgent; Emergency'),
 
