@@ -43,11 +43,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02w';
+  var EXPECTED_BUILD = '2026-08-02z';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02et';
+  var APP_BUILD = '2026-08-02ew';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -2856,13 +2856,26 @@
 
   /* A real table, not a grid. Browsers split a grid item down the middle at a
      page boundary; a table row they move whole. Four cells to a row. */
+  /* FOUR COLUMNS WHETHER THERE WERE FOUR PICTURES OR TWO.
+
+     Every row was padded out to four cells, so two specimen photographs were
+     squeezed into a quarter of the width each and the other half of the sheet
+     was left blank — and a 44 mm cell holding a 42 mm-tall picture is a
+     square, which is why a portrait specimen came out looking crushed.
+
+     The row is now as wide as it has pictures, up to four. Two photographs
+     take half the sheet each. */
   function imageTable(cells, cls) {
     if (!cells.length) return '';
+    var per = Math.min(4, cells.length);
+    var w = (100 / per).toFixed(2) + '%';
     var rows = '', i;
-    for (i = 0; i < cells.length; i += 4) {
-      var row = cells.slice(i, i + 4);
-      while (row.length < 4) row.push('');
-      rows += '<tr>' + row.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
+    for (i = 0; i < cells.length; i += per) {
+      var row = cells.slice(i, i + per);
+      while (row.length < per) row.push('');
+      rows += '<tr>' + row.map(function (c) {
+        return '<td style="width:' + w + '">' + c + '</td>';
+      }).join('') + '</tr>';
     }
     return '<table class="imgtab ' + cls + '"><tbody>' + rows + '</tbody></table>';
   }
@@ -3978,7 +3991,8 @@
       S.photos = (n.photoUrls || []).map(function (u, i) {
         var k = photoInk[i] || {};
         return {
-          url: u.url, dataUrl: u.dataUrl || '', drawnUrl: u.drawnUrl || '',
+          id: u.id || '', url: u.url, dataUrl: u.dataUrl || '',
+          drawnUrl: u.drawnUrl || '',
           caption: u.caption || '', name: u.name || '',
           strokes: k.strokes || [], texts: k.texts || []
         };
@@ -3995,10 +4009,46 @@
       busy(false);
       if (done) done();
       toast(editable ? 'เปิดเพื่อแก้ไข / Opened for editing' : 'เปิดเพื่อดูและพิมพ์ / Opened read-only', 'ok');
+      /* the note is open and usable; the pictures arrive behind it */
+      fetchPhotos(S.id);
     }).catch(function (e) {
       busy(false);
       if (done) done();
       toast('เปิดไม่สำเร็จ / Could not open: ' + e.message, 'warn');
+    });
+  }
+
+  /* THE PICTURES COME AFTERWARDS, ONE AT A TIME.
+
+     They used to travel inside the note itself, which is what made a note
+     with photographs impossible to open: megabytes of base64 in one reply,
+     slow enough that the redirect token behind an Apps Script /exec had
+     expired by the time the browser followed it, so fetch was handed a 404
+     while the JSONP attempt was still waiting and timed out.
+
+     Now the note opens on its text alone and each photograph is requested on
+     its own. They are fetched one after another rather than all at once —
+     the script is rate-limited, and a note that appears in two seconds with
+     its pictures filling in is better than one that appears in ten with them
+     already there. A picture that fails to arrive costs its thumbnail and
+     nothing else; the note is already open and can still be edited, saved
+     and printed. */
+  function fetchPhotos(id) {
+    var want = (S.photos || []).filter(function (p) { return p.id && !p.dataUrl; });
+    if (!want.length || !scriptUrl) return Promise.resolve();
+    var mine = id;
+    return want.reduce(function (chain, p) {
+      return chain.then(function () {
+        /* the surgeon has moved on to another note — stop */
+        if (S.id !== mine) return null;
+        return api('GET', { action: 'photo', id: p.id }).then(function (r) {
+          if (S.id !== mine || !r || !r.ok || !r.dataUrl) return;
+          p.dataUrl = r.dataUrl;
+          renderPhotos();
+        }, function () { /* this one is missing; the rest still come */ });
+      });
+    }, Promise.resolve()).then(function () {
+      if (S.id === mine && S.mode !== 'edit') refreshPreview();
     });
   }
 

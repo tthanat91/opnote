@@ -484,7 +484,7 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
 .imgtab{width:calc(100% - 10px);table-layout:fixed;border-collapse:separate;
   border-spacing:5px 6px;margin-top:6px}
 .imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
-.imgtab td{width:25%;vertical-align:top;padding:0}
+.imgtab td{vertical-align:top;padding:0}   /* width is set per row */
 .imgtab figure{margin:0;text-align:center}
 /* A HEIGHT, NOT A CEILING.
 
@@ -492,8 +492,16 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
    photograph came out 42 mm and a wide one 26 mm, and the row ended ragged.
    Giving them all the same height and letting object-fit letterbox inside it
    lines the row up top and bottom, whatever shape the camera gave them. */
-.imgtab figure img{width:100%;max-width:100%;height:42mm;
+/* width:auto, not 100%: a fixed width with a fixed height is a box, and
+   object-fit then letterboxed a portrait specimen into a square with white
+   down both sides. Fixing only the HEIGHT lets every picture take the width
+   its own proportions ask for, so a plate of them lines up along one baseline
+   whatever shape the camera gave them. */
+.imgtab figure img{width:auto;max-width:100%;height:42mm;
   object-fit:contain;object-position:center}
+/* a specimen photograph is the evidence; it is worth more of the sheet than
+   a line drawing from the bank */
+.imgtab figure.pph img{height:62mm}
 .imgtab figcaption{font-size:9.5px;color:#555;margin-top:2px}
 .imgtab.photos figure img{border:1px solid #999}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
@@ -578,6 +586,7 @@ table.flow td{padding-top:4px;vertical-align:top}
   table.flow td{vertical-align:top}
   /* smaller figures fit more per sheet and break less often */
   .imgtab figure img{height:34mm}
+  .imgtab figure.pph img{height:52mm}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
@@ -972,12 +981,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=et"></script>
-<script src="figures.js?v=et"></script>
-<script src="figures-original.js?v=et"></script>
-<script src="letterhead.js?v=et"></script>
-<script src="narrative.js?v=et"></script>
-<script src="templates.js?v=et"></script>
-<script src="app.js?v=et"></script>
+<script src="config.js?v=ew"></script>
+<script src="figures.js?v=ew"></script>
+<script src="figures-original.js?v=ew"></script>
+<script src="letterhead.js?v=ew"></script>
+<script src="narrative.js?v=ew"></script>
+<script src="templates.js?v=ew"></script>
+<script src="app.js?v=ew"></script>
 </body>
 </html>
