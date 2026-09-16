@@ -47,7 +47,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02es';
+  var APP_BUILD = '2026-08-02et';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1247,6 +1247,42 @@
     return renderSentences(lines, {}).join(' ');
   }
 
+  /* A DRAFT CAN BE OLDER THAN THE ANSWERS.
+
+     Drafting is deliberate and never automatic, which is right: the app must
+     not overwrite words the surgeon has typed. The cost is that correcting a
+     field afterwards leaves the paragraph saying the old thing, and the note
+     then contradicts the form printed above it — a laparoscopic case whose
+     extraction was changed to midline still reading as a Pfannenstiel.
+
+     Nothing is rewritten here. The box simply says when what it holds was
+     drafted from answers that have since changed, and the Draft button turns
+     amber until it is pressed again. */
+  function answerSignature() {
+    var keys = fieldsFor(S.category).map(function (f) { return f.key; }).sort();
+    return keys.map(function (k) { return k + '=' + valueOf(k); }).join('\u001f');
+  }
+
+  function markStaleDrafts() {
+    var now = answerSignature();
+    $$('#catFields textarea').forEach(function (ta) {
+      var box = ta.parentNode;
+      var warn = $('.draftstale', box);
+      var stale = ta.dataset.sig && ta.dataset.sig !== now && ta.value.trim();
+      if (stale && !warn) {
+        warn = el('p', 'draftstale',
+          '\u0e04\u0e33\u0e15\u0e2d\u0e1a\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e2b\u0e25\u0e31\u0e07\u0e23\u0e48\u0e32\u0e07\u0e02\u0e49\u0e2d\u0e04\u0e27\u0e32\u0e21\u0e19\u0e35\u0e49 \u2014 \u0e01\u0e14\u0e23\u0e48\u0e32\u0e07\u0e43\u0e2b\u0e21\u0e48' +
+          '<span class="en">The fields have changed since this was drafted. ' +
+          'Press Draft again, or correct these lines by hand.</span>');
+        box.insertBefore(warn, $('.draftbtn', box) || null);
+      } else if (!stale && warn) {
+        warn.parentNode.removeChild(warn);
+      }
+      var btn = $('.draftbtn', box);
+      if (btn) btn.classList.toggle('stale', !!stale);
+    });
+  }
+
   function draftInto(node, kind) {
     harvest();
     var text = kind === 'findings' ? buildFindings(S.category) : buildNarrative(S.category);
@@ -1268,6 +1304,10 @@
     }
     node.dispatchEvent(new Event('input', { bubbles: true }));
     node.focus();
+    /* remember what the draft was made from, so it can say when it is out of
+       date — see staleDrafts below */
+    node.dataset.sig = answerSignature();
+    markStaleDrafts();
     toast('ร่างแล้ว โปรดอ่านและแก้ไขก่อนบันทึก / Draft inserted — please read and edit it', 'ok');
   }
 
@@ -4244,7 +4284,7 @@
         S.data[k + '_manual'] = !!e.target.value.trim();
       }
       clearMissingFlag(e.target);
-      saveDraft(); applyVisibility();
+      saveDraft(); applyVisibility(); markStaleDrafts();
     }
 
     /* Being told a field is missing and then still being shouted at after
