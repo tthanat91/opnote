@@ -92,6 +92,15 @@ h3,h4,h5{margin:0}
 .ub-out:hover{background:#eaf4f1}
 #queueBadge{cursor:pointer}
 #pdfState{background:#e8f1ef;color:#0e5c52;font-size:.72rem}
+/* the minute before an idle sign-out: loud enough to catch someone still in
+   the room, and carrying the reassurance that nothing is being thrown away */
+.idlewarn{position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:#7d4207;color:#fff;padding:10px 16px;font-size:.86rem;line-height:1.4;
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  box-shadow:0 -2px 14px rgba(0,0,0,.25)}
+.idlewarn.hidden{display:none}
+.idlewarn .en{flex:1 1 100%;font-size:.74rem;color:#f3dcc2}
+.idlewarn .btn{background:#fff;color:#7d4207;border-color:#fff;font-weight:700}
 /* the filed copy, offered beside the rebuild and never in place of it */
 a.mini.pdf{display:inline-block;text-decoration:none;text-align:center;
   background:#eef4ff;border-color:#c3d4f0;color:#28457a}
@@ -667,6 +676,8 @@ table.flow td{padding-top:4px;vertical-align:top}
     <span id="connBadge" class="badge">…</span>
     <button id="queueBadge" title="แตะเพื่อส่งข้อมูลค้าง / tap to upload"></button>
     <span id="pdfState" class="badge" style="display:none"></span>
+    <!-- the minute before an idle sign-out, with a way to stay -->
+    <div id="idleWarn" class="idlewarn hidden"></div>
     <nav class="mainnav">
       <button data-view="new" id="navNew" class="on">ใหม่ · New</button>
       <button data-view="search">ค้นหา · Search</button>
@@ -926,6 +937,21 @@ table.flow td{padding-top:4px;vertical-align:top}
             </div>
           </div>
           <div class="field">
+            <!-- shorter on a shared computer than on a surgeon's own iPad -->
+            <label class="flabel"><span class="th">ออกจากระบบอัตโนมัติเมื่อไม่มีการใช้งาน</span><span class="en">Sign out automatically when untouched</span></label>
+            <div class="fbody">
+              <select id="setIdle">
+                <option value="0">ไม่ออกจากระบบเอง · Never</option>
+                <option value="5">5 นาที · 5 minutes</option>
+                <option value="10">10 นาที · 10 minutes</option>
+                <option value="20">20 นาที · 20 minutes</option>
+                <option value="30">30 นาที · 30 minutes</option>
+                <option value="60">60 นาที · 60 minutes</option>
+              </select>
+              <p class="drafthint">งานที่ทำค้างไว้จะถูกเก็บไว้ในเครื่องก่อนเสมอ และยังอยู่เมื่อเข้าระบบใหม่<span class="en">Whatever is on screen is written to this device before the key is forgotten, and is still there when you sign back in.</span></p>
+            </div>
+          </div>
+          <div class="field">
             <label class="flabel"><span class="th">ขนาดรูปสูงสุดเมื่อพิมพ์</span><span class="en">Maximum printed image size</span></label>
             <div class="fbody">
               <select id="setImgSize">
@@ -981,12 +1007,12 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=fb"></script>
-<script src="figures.js?v=fb"></script>
-<script src="figures-original.js?v=fb"></script>
-<script src="letterhead.js?v=fb"></script>
-<script src="narrative.js?v=fb"></script>
-<script src="templates.js?v=fb"></script>
-<script src="app.js?v=fb"></script>
+<script src="config.js?v=fd"></script>
+<script src="figures.js?v=fd"></script>
+<script src="figures-original.js?v=fd"></script>
+<script src="letterhead.js?v=fd"></script>
+<script src="narrative.js?v=fd"></script>
+<script src="templates.js?v=fd"></script>
+<script src="app.js?v=fd"></script>
 </body>
 </html>

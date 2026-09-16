@@ -36,7 +36,8 @@
     recorder: '',
     showLogo: true,
     imgSize: '55x38',     /* max printed width × height, in millimetres */
-    fontSize: '12'        /* printed body text size, in px */
+    fontSize: '12',       /* printed body text size, in px */
+    idleMinutes: '20'     /* sign out after this long untouched; 0 = never */
   };
 
   var EDIT_WINDOW_DAYS = 30;
@@ -47,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fb';
+  var APP_BUILD = '2026-08-02fd';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -431,6 +432,100 @@
     forgetIdentity();
     showView('new');
     ensureAccess();
+  }
+
+  /* =================== signing out on its own =================== */
+
+  /* A WARD COMPUTER IS NOT A PERSONAL ONE.
+
+     The key is kept on the device so that nobody has to type it between
+     cases. On the iPad in a surgeon's own hand that is right; on the
+     computer in the doctors' room it means the registry stays open behind
+     whoever walked away from it. So the key is forgotten after twenty
+     minutes with nothing touched.
+
+     Three things this must not do, all of which matter more than the
+     timeout itself:
+
+       - it must never cost anybody a half-written note. The draft is
+         written to this device BEFORE the key is forgotten, and it is still
+         there after signing back in, exactly as an interrupted note is now;
+       - it must not fire in the middle of a save, an upload or a PDF. Those
+         hold the screen and nobody is touching anything, which is precisely
+         what idleness looks like from here;
+       - it must not drop the surgeon mid-sentence without warning. One
+         minute before, a bar appears with the seconds counting down and a
+         button to stay. Drawing on a photograph, typing, scrolling, or
+         simply moving the pointer all count as being there.
+
+     Zero minutes turns it off, for anyone who would rather it did not. */
+  var IDLE_WARN_SEC = 60;
+  var idleAt = 0, idleTimer = null, idleWarnedAt = 0;
+
+  function idleLimitMs() {
+    var m = parseFloat(prefs.idleMinutes);
+    if (!isFinite(m) || m <= 0) return 0;
+    return m * 60000;
+  }
+
+  function idleBar(show, secs) {
+    var n = $('#idleWarn');
+    if (!n) return;
+    n.classList.toggle('hidden', !show);
+    if (!show) return;
+    n.innerHTML = '<b>\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2d\u0e2d\u0e01\u0e08\u0e32\u0e01\u0e23\u0e30\u0e1a\u0e1a\u0e43\u0e19 ' + secs +
+      ' \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35</b> \u2014 \u0e07\u0e32\u0e19\u0e17\u0e35\u0e48\u0e17\u0e33\u0e04\u0e49\u0e32\u0e07\u0e44\u0e27\u0e49\u0e08\u0e30\u0e16\u0e39\u0e01\u0e40\u0e01\u0e47\u0e1a\u0e44\u0e27\u0e49\u0e43\u0e19\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 ' +
+      '<button type="button" id="idleStay" class="btn ghost">\u0e2d\u0e22\u0e39\u0e48\u0e15\u0e48\u0e2d / Stay signed in</button>' +
+      '<span class="en">Signing out in ' + secs + ' seconds. Whatever is on screen ' +
+      'is already saved on this device and will be here when you sign back in.</span>';
+    var b = $('#idleStay');
+    if (b) b.onclick = touchIdle;
+  }
+
+  function touchIdle() {
+    idleAt = Date.now();
+    if (idleWarnedAt) { idleWarnedAt = 0; idleBar(false); }
+  }
+
+  function idleTick() {
+    var limit = idleLimitMs();
+    if (!limit || !me) { idleBar(false); return; }
+    /* a save, an upload or a PDF holds the screen and looks exactly like
+       idleness from here; it is not */
+    var working = $('#busy') && !$('#busy').classList.contains('hidden');
+    if (working) { touchIdle(); return; }
+
+    var left = limit - (Date.now() - idleAt);
+    if (left <= 0) {
+      idleBar(false);
+      /* the draft first, always, and only then the key */
+      try { saveDraftNow(); } catch (e) { }
+      forgetIdentity();
+      showView('new');
+      toast('\u0e2d\u0e2d\u0e01\u0e08\u0e32\u0e01\u0e23\u0e30\u0e1a\u0e1a\u0e2d\u0e31\u0e15\u0e42\u0e19\u0e21\u0e31\u0e15\u0e34 \u0e07\u0e32\u0e19\u0e16\u0e39\u0e01\u0e40\u0e01\u0e47\u0e1a\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 / ' +
+        'Signed out after ' + prefs.idleMinutes + ' minutes untouched. Your work is saved on this device.', 'warn');
+      ensureAccess();
+      return;
+    }
+    if (left <= IDLE_WARN_SEC * 1000) {
+      idleWarnedAt = idleWarnedAt || Date.now();
+      idleBar(true, Math.ceil(left / 1000));
+    }
+  }
+
+  function watchIdle() {
+    if (watchIdle.done) return;
+    watchIdle.done = true;
+    touchIdle();
+    ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'focusin']
+      .forEach(function (ev) {
+        window.addEventListener(ev, touchIdle, { passive: true, capture: true });
+      });
+    /* coming back to the tab is being there; leaving it is not a reprieve */
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) touchIdle();
+    });
+    setInterval(idleTick, 1000);
   }
 
   /* the person holding the key is, by default, the person writing the note */
@@ -4160,6 +4255,7 @@
     $('#setLogo').checked = prefs.showLogo !== false;
     $('#setImgSize').value = prefs.imgSize || '55x38';
     $('#setFontSize').value = String(prefs.fontSize || '12');
+    $('#setIdle').value = String(prefs.idleMinutes === undefined ? '20' : prefs.idleMinutes);
     var at = localStorage.getItem(LS.tplAt);
     $('#tplInfo').innerHTML = TEMPLATES.length + ' fields' +
       (at ? ' · updated ' + esc(new Date(at).toLocaleString()) : ' · built-in defaults') +
@@ -4334,6 +4430,8 @@
     prefs.showLogo = $('#setLogo').checked;
     prefs.imgSize = $('#setImgSize').value;
     prefs.fontSize = $('#setFontSize').value;
+    prefs.idleMinutes = $('#setIdle').value;
+    touchIdle();                  /* the new limit starts from now */
     writeJSON(LS.prefs, prefs);
     toast('บันทึกการตั้งค่าแล้ว / Settings saved', 'ok');
     updateConnBadge();
@@ -4635,6 +4733,7 @@
     bind();
     updateConnBadge();
     updateQueueBadge();
+    watchIdle();
     /* one call, which also warms the script so the first save is not the
        one that pays for waking it up */
     checkServerBuild();
