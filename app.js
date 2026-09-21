@@ -44,11 +44,11 @@
 
   /* must match BUILD in Code.gs — lets the app say plainly when an old
      version of the script is still deployed */
-  var EXPECTED_BUILD = '2026-08-02ac';
+  var EXPECTED_BUILD = '2026-08-02ad';
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fd';
+  var APP_BUILD = '2026-08-02ff';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1030,7 +1030,8 @@
 
   var PROC_KEY = {
     colorectal: 'cr_procedure', fistula: 'fi_procedure',
-    hemorrhoid: 'he_procedure', others: 'ot_procedure_name'
+    hemorrhoid: 'he_procedure', anorectal: 'ar_procedure',
+    stoma: 'st_procedure', others: 'ot_procedure_name'
   };
 
   function lcOrdinary(word) {
@@ -2913,6 +2914,10 @@
       'cr_r_extraction_length', 'cr_urgency'],
     fistula: ['fi_position'],
     hemorrhoid: ['he_position'],
+    /* urgency first: whether this was an emergency is the single most
+       useful thing to see above an abscess narrative */
+    anorectal: ['ar_urgency', 'ar_position'],
+    stoma: ['st_approach', 'st_position'],
     others: ['ot_approach', 'ot_position']
   };
 
@@ -2929,7 +2934,8 @@
   }
 
   function stepsBlock() {
-    var pre = { colorectal: 'cr', fistula: 'fi', hemorrhoid: 'he', stoma: 'st', others: 'ot' }[S.category] || 'ot';
+    var pre = { colorectal: 'cr', fistula: 'fi', hemorrhoid: 'he', stoma: 'st',
+      anorectal: 'ar', others: 'ot' }[S.category] || 'ot';
     var out = '';
     [pre + '_steps', pre + '_postop'].forEach(function (k) {
       var f = fieldByKey(k), v = valueOf(k);

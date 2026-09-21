@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02fd';
+  global.TEMPLATES_BUILD = '2026-08-02ff';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -465,12 +465,27 @@
     f('fistula', 'กายวิภาค | Anatomy', 'fi_sphincter_involved', 'สัดส่วนหูรูดที่เกี่ยวข้อง (%)', 'Proportion of external sphincter involved (%)', 'number', '',
       'fi_parks != Superficial / submucosal; Intersphincteric'),
 
+    /* "Drainage of abscess" is no longer offered here. Acute sepsis is a
+       different operation asking different questions — which space, which
+       origin, how far the debridement went — and it now has its own
+       category. What a fistula case keeps is the one thing that genuinely
+       happens here — pus found on the way to doing something else.
+
+       The three fi_abscess_* rows are not deleted; they are re-pointed at
+       that checkbox, so they still ask where the pus was, how much of it
+       there was and what was left in the cavity. A note already saved
+       with fi_procedure = "Drainage of abscess" keeps its answers and
+       still writes its old paragraph, because the narrative reads the
+       saved value rather than this list. */
     f('fistula', 'หัตถการ | Procedure', 'fi_procedure', 'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
       'Fistulotomy; Fistulectomy; Fistulotomy with immediate sphincteroplasty (FIPS); Fistulectomy with immediate sphincteroplasty (FIPS); Cutting seton; Draining (loose) seton; ' +
       'LIFT (ligation of intersphincteric fistula tract); Mucosal advancement flap; ' +
       'Anodermal advancement flap; VAAFT; Fibrin glue; Fistula plug; ' +
-      'Laser closure (FiLaC); Curettage of tract; Drainage of abscess; ' +
+      'Laser closure (FiLaC); Curettage of tract; ' +
       'Examination under anesthesia only; Other'),
+    f('fistula', 'หัตถการ | Procedure', 'fi_abscess_incidental',
+      'พบหนองระหว่างผ่าตัดและระบายออก',
+      'Pus encountered during the operation and drained', 'checkbox'),
     f('fistula', 'หัตถการ | Procedure', 'fi_seton_material', 'วัสดุ seton', 'Seton material', 'text', '',
       'fi_procedure = Cutting seton; Draining (loose) seton'),
     f('fistula', 'หัตถการ | Procedure', 'fi_marsupialise', 'Marsupialization of wound edges', 'Marsupialization', 'checkbox', '',
@@ -516,11 +531,11 @@
 
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_abscess_site', 'ตำแหน่งฝี', 'Abscess location', 'radio',
       'Perianal; Ischioanal; Intersphincteric; Supralevator; Horseshoe',
-      'fi_procedure = Drainage of abscess'),
+      'fi_abscess_incidental = Yes'),
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_abscess_pus', 'ปริมาณหนอง (มล.)', 'Volume of pus drained (mL)', 'number', '',
-      'fi_procedure = Drainage of abscess'),
+      'fi_abscess_incidental = Yes'),
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_abscess_drain', 'สิ่งที่ใส่คาไว้', 'Left in the cavity', 'radio',
-      'Nothing; Corrugated drain; Mushroom catheter; Packing', 'fi_procedure = Drainage of abscess'),
+      'Nothing; Corrugated drain; Mushroom catheter; Packing', 'fi_abscess_incidental = Yes'),
 
     f('fistula', 'เทคนิคการผ่าตัด | Operative technique', 'fi_wound', 'การดูแลแผล', 'Wound at the end of the operation', 'radio',
       'Left open; Marsupialized; Partially closed',
@@ -811,6 +826,210 @@
     f('stoma', 'รายละเอียดขั้นตอน | Operative steps', 'st_postop',
       'แผนการรักษาหลังผ่าตัด', 'Post-operative plan', 'textarea', ''),
 
+    /* ==================================================================
+       ANORECTAL SEPSIS
+
+       An abscess is described by the space it fills, not by the incision
+       that let it out, so the anatomy section carries the weight here and
+       the procedure section is short. The technique questions are all
+       conditional on a procedure being ticked, which is what keeps a
+       simple perianal abscess down to a dozen answers while a horseshoe
+       or a necrotising infection still gets asked everything.
+       ================================================================== */
+
+    f('anorectal', 'การประเมิน | Assessment', 'ar_urgency',
+      'ความเร่งด่วน', 'Urgency', 'radio', 'Emergency; Urgent; Elective'),
+    f('anorectal', 'การประเมิน | Assessment', 'ar_position',
+      'ท่าผู้ป่วย', 'Patient position', 'radio',
+      'Prone jackknife; Prone split-leg; Lithotomy; Left lateral'),
+    f('anorectal', 'การประเมิน | Assessment', 'ar_duration',
+      'ระยะเวลาที่มีอาการ (วัน)', 'Duration of symptoms (days)', 'number'),
+    f('anorectal', 'การประเมิน | Assessment', 'ar_prior',
+      'การผ่าตัดบริเวณนี้มาก่อน', 'Previous anorectal surgery', 'radio',
+      'None; Previous drainage of the same abscess; Previous fistula surgery; ' +
+      'Previous hemorrhoid surgery; Other'),
+    /* The host decides how far the operation goes. A neutrophil count and a
+       diabetic foot are the difference between deroofing a perianal abscess
+       and debriding a perineum, so it is asked before the procedure. */
+    f('anorectal', 'การประเมิน | Assessment', 'ar_host',
+      'ปัจจัยเสี่ยงของผู้ป่วย', 'Host factors', 'checklist',
+      'None; Diabetes mellitus; Chronic kidney disease; Immunosuppression; ' +
+      'On corticosteroids; Neutropenia; Haematological malignancy; ' +
+      'Crohn disease; Obesity; Current smoker'),
+    f('anorectal', 'การประเมิน | Assessment', 'ar_severity',
+      'ภาวะของผู้ป่วยก่อนผ่าตัด', 'Systemic state at operation', 'radio',
+      'Systemically well; SIRS; Sepsis; Septic shock'),
+    f('anorectal', 'การประเมิน | Assessment', 'ar_imaging',
+      'ภาพถ่ายก่อนผ่าตัด', 'Pre-operative imaging', 'radio',
+      'None; CT; MRI; Endoanal ultrasound; Transperineal ultrasound'),
+
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_space',
+      'ช่องที่มีการติดเชื้อ', 'Space or spaces involved', 'checklist',
+      'Perianal; Ischioanal; Intersphincteric; Submucosal; ' +
+      'Superficial postanal; Deep postanal (Courtney); Supralevator; ' +
+      'Retrorectal; Perineal soft tissue'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_side',
+      'ด้าน', 'Side', 'radio', 'Right; Left; Bilateral; Midline'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_clock',
+      'ตำแหน่ง (นาฬิกา)', "Position (o'clock)", 'text'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_cavity_size',
+      'ขนาดโพรงฝี (ซม.)', 'Cavity size (cm)', 'number'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_pus_volume',
+      'ปริมาณหนอง (มล.)', 'Volume of pus drained (mL)', 'number'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_horseshoe',
+      'การลามแบบเกือกม้า', 'Horseshoe extension', 'radio',
+      'No; Posterior horseshoe; Anterior horseshoe'),
+    /* The one question in this category that changes the operation rather
+       than describing it. Drain a supralevator abscess of intersphincteric
+       origin through the ischioanal fossa and you have made an
+       extrasphincteric fistula; drain one of ischioanal origin into the
+       rectum and you have done the same thing from the other side. The
+       narrative writes the rule out in full from this answer. */
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_supra_origin',
+      'ที่มาของฝีเหนือกล้ามเนื้อ levator', 'Origin of the supralevator collection', 'radio',
+      'Upward extension of an intersphincteric abscess; ' +
+      'Upward extension of an ischioanal abscess; ' +
+      'Downward extension of pelvic sepsis',
+      'ar_space = Supralevator'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_necrosis',
+      'ลักษณะของหนองและเนื้อเยื่อ', 'Character of the pus and tissues', 'radio',
+      'Frank pus, not malodorous; Foul-smelling pus; ' +
+      'Dishwater fluid with necrotic fascia; Crepitus or gas in the tissues'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_aetiology',
+      'สาเหตุ', 'Aetiology', 'radio',
+      'Cryptoglandular; Crohn disease; Tuberculosis; Hidradenitis suppurativa; ' +
+      'Post-operative; Malignancy; Pilonidal; Foreign body or trauma; Other'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_culture',
+      'ส่งเพาะเชื้อ', 'Pus sent for culture', 'radio', 'Yes; No'),
+    f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_histology',
+      'ส่งชิ้นเนื้อตรวจพยาธิวิทยา', 'Tissue sent for histology', 'radio', 'Yes; No'),
+
+    f('anorectal', 'รูเปิดภายใน | Internal opening', 'ar_io_found',
+      'รูเปิดภายใน', 'Internal opening', 'radio',
+      'Identified; Looked for but not found; Not sought at this sitting'),
+    f('anorectal', 'รูเปิดภายใน | Internal opening', 'ar_io_clock',
+      'ตำแหน่งรูเปิดภายใน (นาฬิกา)', "Internal opening (o'clock)", 'text',
+      '', 'ar_io_found = Identified'),
+    f('anorectal', 'รูเปิดภายใน | Internal opening', 'ar_io_level',
+      'ระดับของรูเปิดภายใน', 'Level of the internal opening', 'radio',
+      'Below the dentate line; At the dentate line; Above the dentate line',
+      'ar_io_found = Identified'),
+    f('anorectal', 'รูเปิดภายใน | Internal opening', 'ar_parks',
+      'Parks classification', 'Parks classification', 'radio',
+      'Superficial / submucosal; Intersphincteric; Transsphincteric; ' +
+      'Suprasphincteric; Extrasphincteric',
+      'ar_io_found = Identified'),
+
+    f('anorectal', 'หัตถการ | Procedure', 'ar_procedure',
+      'การผ่าตัดที่ทำ', 'Procedure performed', 'checklist',
+      'Incision and drainage; Deroofing of the cavity; ' +
+      'Drainage with counter-incision; Modified Hanley procedure; ' +
+      'Drainage of an intersphincteric abscess; ' +
+      'Transrectal drainage of a supralevator abscess; ' +
+      'Drainage of a supralevator abscess through the ischioanal fossa; ' +
+      'Draining (loose) seton; Primary fistulotomy; ' +
+      'Curettage and debridement; ' +
+      'Radical debridement for necrotising soft-tissue infection; ' +
+      'Faecal diversion; Examination under anesthesia only; Other'),
+
+    f('anorectal', 'เทคนิค: ระบายหนอง | Technique: drainage', 'ar_id_incision',
+      'รูปแบบแผล', 'Incision', 'radio',
+      'Radial; Cruciate; Elliptical; Curvilinear',
+      'ar_procedure = Incision and drainage; Deroofing of the cavity; Drainage with counter-incision'),
+    /* How far out the skin was opened decides how long any fistula that
+       follows will have to be. It is the one measurement from a drainage
+       that the next surgeon actually needs. */
+    f('anorectal', 'เทคนิค: ระบายหนอง | Technique: drainage', 'ar_id_distance',
+      'ระยะแผลจากขอบทวาร (ซม.)', 'Distance of the incision from the anal verge (cm)', 'number',
+      '', 'ar_procedure = Incision and drainage; Deroofing of the cavity; Drainage with counter-incision'),
+    f('anorectal', 'เทคนิค: ระบายหนอง | Technique: drainage', 'ar_id_loculi',
+      'สลายผนังกั้นในโพรงฝี', 'Loculi broken down', 'radio', 'Yes; No',
+      'ar_procedure = Incision and drainage; Deroofing of the cavity; Drainage with counter-incision'),
+    f('anorectal', 'เทคนิค: ระบายหนอง | Technique: drainage', 'ar_id_leftin',
+      'สิ่งที่ใส่คาไว้ในโพรง', 'Left in the cavity', 'radio',
+      'Nothing; Packing; Corrugated drain; Mushroom (de Pezzer) catheter; Vessel loop',
+      'ar_procedure = Incision and drainage; Deroofing of the cavity; Drainage with counter-incision'),
+
+    /* Hanley divided both sphincters in the posterior midline. The
+       modification that carries his name now is to divide the internal
+       sphincter alone — or nothing at all, and leave a seton — and to
+       reach the ischioanal extensions through counter-incisions instead.
+       Recording which of those was done is the point of these rows. */
+    f('anorectal', 'เทคนิค: Modified Hanley | Technique: Hanley', 'ar_h_ligament',
+      'ตัด anococcygeal ligament', 'Anococcygeal ligament divided', 'radio', 'Yes; No',
+      'ar_procedure = Modified Hanley procedure'),
+    f('anorectal', 'เทคนิค: Modified Hanley | Technique: Hanley', 'ar_h_is',
+      'จัดการหูรูดชั้นใน', 'Internal sphincter at the internal opening', 'radio',
+      'Divided over the internal opening; Preserved, seton placed instead',
+      'ar_procedure = Modified Hanley procedure'),
+    f('anorectal', 'เทคนิค: Modified Hanley | Technique: Hanley', 'ar_h_es',
+      'เก็บหูรูดชั้นนอกไว้ทั้งหมด', 'External sphincter preserved in its entirety', 'radio',
+      'Yes; No',
+      'ar_procedure = Modified Hanley procedure'),
+    f('anorectal', 'เทคนิค: Modified Hanley | Technique: Hanley', 'ar_h_counter',
+      'จำนวนแผล counter-incision', 'Number of counter-incisions', 'number', '',
+      'ar_procedure = Modified Hanley procedure; Drainage with counter-incision'),
+    f('anorectal', 'เทคนิค: Modified Hanley | Technique: Hanley', 'ar_h_drains',
+      'สิ่งที่ร้อยผ่าน counter-incision', 'Passed through the counter-incisions', 'radio',
+      'Vessel loops; Penrose drains; Mushroom catheters; Nothing',
+      'ar_procedure = Modified Hanley procedure; Drainage with counter-incision'),
+
+    f('anorectal', 'เทคนิค: Seton | Technique: seton', 'ar_seton_material',
+      'วัสดุที่ใช้', 'Seton material', 'text', '',
+      'ar_procedure = Draining (loose) seton'),
+    f('anorectal', 'เทคนิค: Seton | Technique: seton', 'ar_seton_number',
+      'จำนวน seton', 'Number of setons', 'number', '',
+      'ar_procedure = Draining (loose) seton'),
+    f('anorectal', 'เทคนิค: Seton | Technique: seton', 'ar_seton_plan',
+      'แผนการจัดการ seton', 'Plan for the seton', 'text', '',
+      'ar_procedure = Draining (loose) seton'),
+
+    /* A necrotising infection is the same disease at its extreme, so it
+       lives in this category rather than in "others". What matters in the
+       record is how far the debridement went and when the patient is
+       coming back — the second look is planned in theatre, not on the ward. */
+    f('anorectal', 'เทคนิค: เนื้อตายลุกลาม | Technique: necrotising infection', 'ar_fn_regions',
+      'บริเวณที่ตัดเนื้อตาย', 'Regions debrided', 'checklist',
+      'Perineum; Scrotum; Penis; Vulva; Groin; Buttock; Thigh; ' +
+      'Lower abdominal wall; Ischioanal fossa',
+      'ar_procedure = Radical debridement for necrotising soft-tissue infection'),
+    f('anorectal', 'เทคนิค: เนื้อตายลุกลาม | Technique: necrotising infection', 'ar_fn_area',
+      'พื้นที่ผิวที่ตัดออก (% ของผิวกาย)', 'Body surface area debrided (%)', 'number', '',
+      'ar_procedure = Radical debridement for necrotising soft-tissue infection'),
+    f('anorectal', 'เทคนิค: เนื้อตายลุกลาม | Technique: necrotising infection', 'ar_fn_testis',
+      'อัณฑะ', 'Testis', 'radio',
+      'Both preserved; Orchidectomy, one side; Orchidectomy, both sides; Not applicable',
+      'ar_procedure = Radical debridement for necrotising soft-tissue infection'),
+    f('anorectal', 'เทคนิค: เนื้อตายลุกลาม | Technique: necrotising infection', 'ar_fn_diversion',
+      'การเบี่ยงอุจจาระ', 'Faecal diversion', 'radio',
+      'None; Loop colostomy; Loop ileostomy; Faecal management system',
+      'ar_procedure = Radical debridement for necrotising soft-tissue infection; Faecal diversion'),
+    f('anorectal', 'เทคนิค: เนื้อตายลุกลาม | Technique: necrotising infection', 'ar_fn_relook',
+      'แผนการผ่าตัดซ้ำ', 'Planned second look', 'radio',
+      'Within 24 hours; Within 48 hours; When clinically indicated; Not planned',
+      'ar_procedure = Radical debridement for necrotising soft-tissue infection'),
+    f('anorectal', 'เทคนิค: เนื้อตายลุกลาม | Technique: necrotising infection', 'ar_fn_dressing',
+      'การปิดแผล', 'Dressing', 'radio',
+      'Saline gauze; Negative-pressure wound therapy; Antiseptic-soaked gauze; Other',
+      'ar_procedure = Radical debridement for necrotising soft-tissue infection'),
+
+    f('anorectal', 'ปิดแผลและสรุป | End of operation', 'ar_wound',
+      'แผลเมื่อจบการผ่าตัด', 'Wound at the end of the operation', 'radio',
+      'Left open; Marsupialized; Partially closed',
+      'ar_procedure != Examination under anesthesia only'),
+    f('anorectal', 'ปิดแผลและสรุป | End of operation', 'ar_packing',
+      'วัสดุที่ใส่ในทวารเมื่อจบผ่าตัด', 'Anal packing at the end of the operation', 'radio',
+      'None; Spongostan; Gauze pack; Spongostan and gauze'),
+    f('anorectal', 'ปิดแผลและสรุป | End of operation', 'ar_antibiotic',
+      'ยาปฏิชีวนะที่ให้ต่อ', 'Antibiotic continued', 'text'),
+    f('anorectal', 'ปิดแผลและสรุป | End of operation', 'ar_count',
+      'นับผ้าซับและเครื่องมือครบ', 'Sponge and instrument count correct', 'checkbox'),
+
+    f('anorectal', 'รายละเอียดขั้นตอน | Operative steps', 'ar_steps',
+      'รายละเอียดขั้นตอนการผ่าตัด', 'Step-by-step operative detail', 'textarea'),
+    f('anorectal', 'รายละเอียดขั้นตอน | Operative steps', 'ar_postop',
+      'แผนการดูแลหลังผ่าตัด', 'Post-operative plan', 'textarea'),
+
     f('others', 'หัตถการ | Procedure', 'ot_procedure_name', 'ชื่อการผ่าตัด', 'Name of procedure', 'text'),
     f('others', 'หัตถการ | Procedure', 'ot_position', 'ท่าผู้ป่วย', 'Patient position', 'text'),
     f('others', 'หัตถการ | Procedure', 'ot_incision', 'แผลผ่าตัด', 'Incision', 'text'),
@@ -822,6 +1041,14 @@
     { key: 'colorectal', th: 'ผ่าตัดลำไส้ใหญ่และทวารหนัก', en: 'Colorectal surgery' },
     { key: 'fistula', th: 'ผ่าตัดฝีคัณฑสูตร', en: 'Fistula surgery' },
     { key: 'hemorrhoid', th: 'ผ่าตัดริดสีดวงทวาร', en: 'Hemorrhoid surgery' },
+    /* Acute sepsis sat badly inside the fistula category. A fistula case
+       is elective, the tract is known and the operation is about
+       continence; an abscess is an emergency, the anatomy is whatever the
+       pus found, and the operation is about source control. They share an
+       anatomy and almost nothing else, so they are asked about
+       separately. Sits next to fistula, because that is where the
+       fellow's hand goes looking for it. */
+    { key: 'anorectal', th: 'ฝีและการติดเชื้อรอบทวารหนัก', en: 'Anorectal sepsis' },
     /* A stoma has no lesion to locate, no margins and no lymphadenectomy,
        so it sat badly among the resections. Forming one and taking one
        down are the same operation seen from opposite ends, and they

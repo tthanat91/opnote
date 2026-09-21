@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02fd',
+    build: '2026-08-02ff',
 
 
 
@@ -129,6 +129,69 @@
           text: 'The involved organ was taken en bloc with the specimen.' },
         { group: 'fenb', needs: ['cr_enbloc'], equals: 'No',
           text: 'The adjacent organ was dissected free and no en-bloc resection was required.' }
+      ],
+
+      /* An abscess is described by the space it filled and by what the
+         tissues looked like, not by the incision that let it out — the
+         incision belongs in the steps. So this list is anatomy, host and
+         appearances, and stops there. */
+      anorectal: [
+        { group: 'sp', needs: ['ar_side', 'ar_space'], equals: 'Midline',
+          text: 'Sepsis was found in the midline, involving the {ar_space|lc|and} space.' },
+        { group: 'sp', needs: ['ar_side', 'ar_space'], equals: 'Bilateral',
+          text: 'Sepsis was found bilaterally, involving the {ar_space|lc|and} space.' },
+        { group: 'sp', needs: ['ar_side', 'ar_space'],
+          text: 'Sepsis was found on the {ar_side|lc}, involving the {ar_space|lc|and} space.' },
+        { group: 'sp', needs: ['ar_space'],
+          text: 'Sepsis was found involving the {ar_space|lc|and} space.' },
+
+        { group: 'cav', needs: ['ar_clock', 'ar_cavity_size'],
+          text: 'The cavity lay at {ar_clock} o’clock and measured approximately {ar_cavity_size} cm.' },
+        { group: 'cav', needs: ['ar_clock'], text: 'The cavity lay at {ar_clock} o’clock.' },
+        { group: 'cav', needs: ['ar_cavity_size'],
+          text: 'The cavity measured approximately {ar_cavity_size} cm.' },
+        { needs: ['ar_pus_volume'], text: '{ar_pus_volume} mL of pus was drained.' },
+
+        { group: 'hs', needs: ['ar_horseshoe'], equals: 'No',
+          text: 'There was no horseshoe extension.' },
+        { group: 'hs', needs: ['ar_horseshoe'],
+          text: 'There was a {ar_horseshoe|lc} extension.' },
+
+        { needs: ['ar_supra_origin'],
+          text: 'The supralevator component was the {ar_supra_origin|lc}.' },
+
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'Crepitus',
+          text: 'There was crepitus in the surrounding tissues.' },
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'Dishwater',
+          text: 'The tissues yielded dishwater fluid with necrotic fascia.' },
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'Foul-smelling',
+          text: 'The pus was foul-smelling.' },
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'not malodorous',
+          text: 'The pus was frank and not malodorous.' },
+
+        { group: 'io', needs: ['ar_io_found', 'ar_io_clock', 'ar_io_level'], equals: 'Identified',
+          text: 'An internal opening was identified at {ar_io_clock} o’clock, {ar_io_level|lc}.' },
+        { group: 'io', needs: ['ar_io_found', 'ar_io_clock'], equals: 'Identified',
+          text: 'An internal opening was identified at {ar_io_clock} o’clock.' },
+        { group: 'io', needs: ['ar_io_found'], equals: 'Looked for but not found',
+          text: 'No internal opening could be identified.' },
+        { group: 'io', needs: ['ar_io_found'], equals: 'Not sought',
+          text: 'The internal opening was not sought at this sitting.' },
+        { needs: ['ar_parks'], text: 'The tract was {ar_parks|lc} in type.' },
+
+        { group: 'host', needs: ['ar_host'], equals: 'None',
+          text: 'There was no host factor predisposing to anorectal sepsis.' },
+        { group: 'host', needs: ['ar_host'],
+          text: 'Host factors present: {ar_host|lc|and}.' },
+        { group: 'sev', needs: ['ar_severity'], equals: 'Septic shock',
+          text: 'The patient was in septic shock.' },
+        { group: 'sev', needs: ['ar_severity'], equals: 'Sepsis',
+          text: 'The patient was septic.' },
+        { group: 'sev', needs: ['ar_severity'], equals: 'SIRS',
+          text: 'The patient met the criteria for SIRS.' },
+
+        { needs: ['ar_fn_regions'],
+          text: 'Necrosis extended over the {ar_fn_regions|lc|and}.' }
       ],
 
       fistula: [
@@ -1166,6 +1229,14 @@
           text: 'The cavity was explored with a finger, all loculi were broken down and the cavity was irrigated with «warm saline».' },
         { group: 'fiabsdr', needs: ['fi_procedure', 'fi_abscess_drain'], equals: 'Drainage of abscess', not: 'Nothing',
           text: 'A {fi_abscess_drain|lc} was left in the cavity.' },
+        /* Acute sepsis moved to its own category; what a fistula case
+           still meets is pus found on the way to doing something else. */
+        { group: 'fiinc', needs: ['fi_abscess_incidental', 'fi_abscess_site', 'fi_abscess_pus'], equals: 'Yes',
+          text: 'Pus was encountered during the dissection: a {fi_abscess_site|lc} collection, from which {fi_abscess_pus} mL was released, laid open, irrigated and left to drain.' },
+        { group: 'fiinc', needs: ['fi_abscess_incidental', 'fi_abscess_site'], equals: 'Yes',
+          text: 'Pus was encountered during the dissection, in the {fi_abscess_site|lc} space; the cavity was laid open, irrigated and left to drain.' },
+        { group: 'fiinc', needs: ['fi_abscess_incidental'], equals: 'Yes',
+          text: 'Pus was encountered during the dissection; the cavity was laid open, irrigated and left to drain.' },
         { group: 'fiabsdr', needs: ['fi_abscess_drain'], equals: 'Nothing',
           text: 'Nothing was left in the cavity, which was left open to drain freely.' }
       ],
@@ -1493,6 +1564,280 @@
         { group: 'scsd', needs: ['st_drain_sc'], equals: 'No',
           text: 'No subcutaneous drain was left.' }
       ],
+
+      /* ================= ANORECTAL SEPSIS =============================
+         One block serves the whole category, as it does for fistula,
+         because combinations are the rule: a modified Hanley is usually
+         a Hanley *and* counter-incisions *and* a seton, and all three
+         have to reach the note. Every part below is gated on its own
+         answers, so ticking one procedure prints one account and
+         ticking three prints three.
+
+         Two things are written as rules rather than as descriptions,
+         because they are the two places this operation is got wrong:
+
+         1. The route a supralevator abscess is drained by follows from
+            where it came from, not from where it is easiest to reach.
+            Drain one of intersphincteric origin through the ischioanal
+            fossa and you have made an extrasphincteric fistula; drain
+            one of ischioanal origin into the rectum and you have made
+            the same fistula from the other side. ar_supra_origin picks
+            the sentence, and the sentence says why.
+
+         2. The external sphincter in a modified Hanley. Hanley divided
+            both sphincters in the posterior midline; the modification is
+            that the external sphincter is left alone and the extensions
+            are reached through counter-incisions instead. So preserving
+            it is stated positively, and dividing it is recorded as the
+            deliberate decision it is.
+         =============================================================== */
+
+      ar_setup: [
+        { group: 'pos', needs: ['ar_position', 'anaesthesia'],
+          text: 'Under {anaesthesia}, the patient was placed in the {ar_position|lc} position with the buttocks taped apart, and the perineum was prepared and draped.' },
+        { group: 'pos', needs: ['ar_position'],
+          text: 'The patient was placed in the {ar_position|lc} position with the buttocks taped apart, and the perineum was prepared and draped.' },
+        { text: 'Examination under anesthesia was carried out, with digital and proctoscopic examination of the anal canal and lower rectum.' }
+      ],
+
+      ar_assess: [
+        { group: 'sp', needs: ['ar_side', 'ar_space'], equals: 'Midline',
+          text: 'The sepsis lay in the midline, involving the {ar_space|lc|and} space.' },
+        { group: 'sp', needs: ['ar_side', 'ar_space'], equals: 'Bilateral',
+          text: 'The sepsis involved the {ar_space|lc|and} space on both sides.' },
+        { group: 'sp', needs: ['ar_side', 'ar_space'],
+          text: 'The sepsis involved the {ar_space|lc|and} space on the {ar_side|lc}.' },
+        { group: 'sp', needs: ['ar_space'],
+          text: 'The sepsis involved the {ar_space|lc|and} space.' },
+
+        { needs: ['ar_clock'],
+          text: 'The point of maximum fluctuance lay at {ar_clock} o’clock.' },
+        { needs: ['ar_cavity_size'],
+          text: 'The cavity measured approximately {ar_cavity_size} cm.' },
+
+        { group: 'hs', needs: ['ar_horseshoe'], equals: 'No',
+          text: 'There was no horseshoe extension.' },
+        { group: 'hs', needs: ['ar_horseshoe'], equals: 'Posterior horseshoe',
+          text: 'The sepsis had tracked as a posterior horseshoe, the deep postanal space communicating with both ischioanal fossae.' },
+        { group: 'hs', needs: ['ar_horseshoe'], equals: 'Anterior horseshoe',
+          text: 'The sepsis had tracked as an anterior horseshoe, communicating across the midline in front of the anal canal.' },
+
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'Crepitus',
+          text: 'There was crepitus in the surrounding tissues, and gas escaped on opening them.' },
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'Dishwater',
+          text: 'The tissues yielded thin dishwater fluid and the fascia was grey and stripped off the underlying muscle with finger pressure — the appearances of a necrotising soft-tissue infection.' },
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'Foul-smelling',
+          text: 'The pus was foul-smelling.' },
+        { group: 'nec', needs: ['ar_necrosis'], equals: 'not malodorous',
+          text: 'The pus was frank and not malodorous.' },
+
+        { group: 'sev', needs: ['ar_severity'], equals: 'Septic shock',
+          text: 'The patient was in septic shock at the time of operation.' },
+        { group: 'sev', needs: ['ar_severity'], equals: 'Sepsis',
+          text: 'The patient was septic at the time of operation.' },
+        { group: 'sev', needs: ['ar_severity'], equals: 'SIRS',
+          text: 'The patient met the criteria for SIRS at the time of operation.' },
+
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Cryptoglandular',
+          text: 'The sepsis was cryptoglandular in origin, arising from an infected anal gland.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Crohn',
+          text: 'The sepsis arose on a background of Crohn disease.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Tuberculosis',
+          text: 'Tuberculous infection was suspected as the underlying cause.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Hidradenitis',
+          text: 'The sepsis arose within an area of hidradenitis suppurativa.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Pilonidal',
+          text: 'The sepsis arose from pilonidal disease.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Post-operative',
+          text: 'The sepsis followed previous anorectal surgery.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Malignancy',
+          text: 'The sepsis arose in association with an underlying malignancy.' },
+        { group: 'aet', needs: ['ar_aetiology'], equals: 'Foreign body',
+          text: 'The sepsis followed a foreign body or perineal trauma.' },
+        { group: 'aet', needs: ['ar_aetiology'],
+          text: 'The underlying cause is set out in the operative findings.' }
+      ],
+
+      /* Probing an acutely inflamed anorectum makes tracts that were not
+         there. So "not identified" and "not sought" are written as
+         deliberate decisions, which is what they are. */
+      ar_opening: [
+        { group: 'io', needs: ['ar_io_found'], equals: 'Not sought',
+          text: 'The internal opening was not sought at this sitting, the intention being source control alone, with reassessment once the acute inflammation had settled.' },
+        { group: 'io', needs: ['ar_io_found'], equals: 'Looked for but not found',
+          text: 'The internal opening was looked for but could not be identified, and no attempt was made to force a passage that might have created a false tract.' },
+        { group: 'io', needs: ['ar_io_found', 'ar_io_clock', 'ar_io_level'], equals: 'Identified',
+          text: 'The internal opening was identified at {ar_io_clock} o’clock, {ar_io_level|lc}.' },
+        { group: 'io', needs: ['ar_io_found', 'ar_io_clock'], equals: 'Identified',
+          text: 'The internal opening was identified at {ar_io_clock} o’clock.' },
+        { group: 'io', needs: ['ar_io_found'], equals: 'Identified',
+          text: 'The internal opening was identified.' },
+        { needs: ['ar_parks'], text: 'The tract was {ar_parks|lc} in type.' }
+      ],
+
+      ar_eua_only: [
+        { needs: ['ar_procedure'], equals: 'Examination under anesthesia only',
+          text: 'No collection requiring drainage was found, and the operation was concluded without an incision.' }
+      ],
+
+      ar_drain: [
+        { group: 'dr', needs: ['ar_procedure', 'ar_id_incision', 'ar_id_distance', 'ar_pus_volume'],
+          equals: 'Incision and drainage',
+          text: 'A {ar_id_incision|lc} incision was made over the point of maximum fluctuance, {ar_id_distance} cm from the anal verge, and {ar_pus_volume} mL of pus was released and sent for examination.' },
+        { group: 'dr', needs: ['ar_procedure', 'ar_id_incision', 'ar_id_distance'],
+          equals: 'Incision and drainage',
+          text: 'A {ar_id_incision|lc} incision was made over the point of maximum fluctuance, {ar_id_distance} cm from the anal verge, and the pus was released.' },
+        { group: 'dr', needs: ['ar_procedure', 'ar_id_incision'], equals: 'Incision and drainage',
+          text: 'A {ar_id_incision|lc} incision was made over the point of maximum fluctuance and the pus was released.' },
+        { group: 'dr', needs: ['ar_procedure'], equals: 'Incision and drainage',
+          text: 'The abscess was incised over the point of maximum fluctuance and the pus was released.' },
+
+        { needs: ['ar_procedure'], equals: 'Deroofing of the cavity',
+          text: 'The skin edges were excised so that the cavity was deroofed, allowing it to heal from its depth outward rather than closing over at the skin and refilling.' },
+        { needs: ['ar_id_loculi'], equals: 'Yes',
+          text: 'All loculi were broken down digitally and the cavity was irrigated with normal saline.' },
+
+        { group: 'left', needs: ['ar_id_leftin'], equals: 'Nothing',
+          text: 'Nothing was left in the cavity.' },
+        { group: 'left', needs: ['ar_id_leftin'], equals: 'Packing',
+          text: 'The cavity was lightly packed.' },
+        { group: 'left', needs: ['ar_id_leftin'],
+          text: 'A {ar_id_leftin|lc} was left in the cavity.' }
+      ],
+
+      ar_counter: [
+        { group: 'ci', needs: ['ar_procedure', 'ar_h_counter'], equals: 'counter-incision',
+          text: 'The lateral extensions were opened through separate counter-incisions ({ar_h_counter} in all), each placed over the most dependent part of its extension.' },
+        { group: 'ci', needs: ['ar_procedure'], equals: 'counter-incision',
+          text: 'The lateral extensions were opened through separate counter-incisions, each placed over the most dependent part of its extension.' },
+        { group: 'cdr', needs: ['ar_h_drains'], equals: 'Nothing',
+          text: 'Nothing was passed through the counter-incisions.' },
+        { group: 'cdr', needs: ['ar_h_drains'],
+          text: '{ar_h_drains} were passed between the counter-incisions and the midline wound and secured.' }
+      ],
+
+      ar_hanley: [
+        { needs: ['ar_procedure'], equals: 'Modified Hanley procedure',
+          text: 'A midline incision was made posteriorly, between the anal verge and the tip of the coccyx.' },
+        { group: 'hlig', needs: ['ar_h_ligament'], equals: 'Yes',
+          text: 'The anococcygeal ligament was divided and the deep postanal space of Courtney was entered, releasing the collection within it.' },
+        { group: 'hlig', needs: ['ar_h_ligament'], equals: 'No',
+          text: 'The deep postanal space was entered without dividing the anococcygeal ligament.' },
+        { needs: ['ar_procedure'], equals: 'Modified Hanley procedure',
+          text: 'The space was explored digitally along its whole length, and its lateral extensions into each ischioanal fossa were followed to their limits.' },
+        { group: 'hes', needs: ['ar_h_es'], equals: 'Yes',
+          text: 'The external sphincter was preserved in its entirety.' },
+        { group: 'hes', needs: ['ar_h_es'], equals: 'No',
+          text: 'The external sphincter was divided in the posterior midline, the extent of the division being set out in the findings; the consequence for continence had been discussed with the patient before operation.' },
+        { group: 'his', needs: ['ar_h_is'], equals: 'Divided over the internal opening',
+          text: 'The internal sphincter alone was divided over the internal opening in the posterior midline, laying the primary tract open into the anal canal.' },
+        { group: 'his', needs: ['ar_h_is'], equals: 'Preserved, seton placed instead',
+          text: 'The internal sphincter was left intact, a seton being passed through the primary tract instead, so that the decision to divide it could be taken once the sepsis had settled.' }
+      ],
+
+      ar_intersphincteric: [
+        { needs: ['ar_procedure'], equals: 'Drainage of an intersphincteric abscess',
+          text: 'The intersphincteric abscess was drained into the anal canal by dividing the internal sphincter over it. No external incision was made, so that the sepsis was not carried out across the external sphincter.' }
+      ],
+
+      /* The invariant. Which way a supralevator abscess is drained is
+         decided by where it came from, and the wrong choice makes an
+         extrasphincteric fistula. So the sentence carries its reason. */
+      ar_supralevator: [
+        { group: 'sup', needs: ['ar_supra_origin'], equals: 'Upward extension of an intersphincteric',
+          text: 'The supralevator collection was the upward extension of an intersphincteric abscess. It was therefore drained through the anal canal into the rectum above the anorectal ring, and not through the ischioanal fossa, since drainage through the fossa would have created an extrasphincteric fistula.' },
+        { group: 'sup', needs: ['ar_supra_origin'], equals: 'Upward extension of an ischioanal',
+          text: 'The supralevator collection was the upward extension of an ischioanal abscess. It was therefore drained downward through the ischioanal fossa, and not into the rectum, since transrectal drainage would have created an extrasphincteric fistula.' },
+        { group: 'sup', needs: ['ar_supra_origin'], equals: 'Downward extension of pelvic sepsis',
+          text: 'The supralevator collection was the downward extension of pelvic sepsis rather than a disease of the anal glands, and was drained by the route leading most directly to it; the intra-abdominal source was addressed separately.' },
+
+        { group: 'suproute', needs: ['ar_procedure'], equals: 'Transrectal drainage of a supralevator',
+          text: 'The collection was opened through the rectal wall above the anorectal ring and a catheter was left to keep the track open.' },
+        { group: 'suproute', needs: ['ar_procedure'], equals: 'supralevator abscess through the ischioanal fossa',
+          text: 'The collection was reached from below by opening the levator through the ischioanal fossa, and a drain was left in the track.' }
+      ],
+
+      ar_necrotising: [
+        { needs: ['ar_procedure'], equals: 'Radical debridement for necrotising',
+          text: 'All necrotic skin, subcutaneous tissue and fascia were excised back to bleeding, viable tissue, the limits of the excision being set by what was found at operation rather than by the margin marked out before it.' },
+        { needs: ['ar_fn_regions'],
+          text: 'The debridement extended over the {ar_fn_regions|lc|and}.' },
+        { needs: ['ar_fn_area'],
+          text: 'Approximately {ar_fn_area}% of the body surface was debrided.' },
+        { group: 'fnt', needs: ['ar_fn_testis'], equals: 'Both preserved',
+          text: 'The testes were viable, their blood supply arising independently of the scrotal skin, and both were preserved.' },
+        { group: 'fnt', needs: ['ar_fn_testis'], equals: 'Orchidectomy, one side',
+          text: 'A unilateral orchidectomy was required.' },
+        { group: 'fnt', needs: ['ar_fn_testis'], equals: 'Orchidectomy, both sides',
+          text: 'Bilateral orchidectomy was required.' },
+        { group: 'fnd', needs: ['ar_fn_diversion'], equals: 'None',
+          text: 'No faecal diversion was performed.' },
+        { group: 'fnd', needs: ['ar_fn_diversion'], equals: 'Faecal management system',
+          text: 'A faecal management system was placed rather than a stoma.' },
+        { group: 'fnd', needs: ['ar_fn_diversion'],
+          text: 'A {ar_fn_diversion|lc} was fashioned to divert stool away from the wound.' },
+        { group: 'fnr', needs: ['ar_fn_relook'], equals: 'Not planned',
+          text: 'No second look was planned.' },
+        { group: 'fnr', needs: ['ar_fn_relook'], equals: 'When clinically indicated',
+          text: 'A second-look debridement was planned for whenever the wound should demand it.' },
+        { group: 'fnr', needs: ['ar_fn_relook'],
+          text: 'A second-look debridement was planned {ar_fn_relook|lc}.' },
+        { group: 'fndr', needs: ['ar_fn_dressing'], equals: 'Negative-pressure',
+          text: 'Negative-pressure wound therapy was applied.' },
+        { group: 'fndr', needs: ['ar_fn_dressing'],
+          text: 'The wound was dressed with {ar_fn_dressing|lc}.' }
+      ],
+
+      ar_seton: [
+        { group: 'set', needs: ['ar_procedure', 'ar_seton_material'], equals: 'Draining (loose) seton',
+          text: 'A loose draining seton of {ar_seton_material} was passed along the tract, from the internal opening to the external wound, and tied without tension so that it would drain rather than cut.' },
+        { group: 'set', needs: ['ar_procedure'], equals: 'Draining (loose) seton',
+          text: 'A loose draining seton was passed along the tract and tied without tension so that it would drain rather than cut.' },
+        { needs: ['ar_seton_number'],
+          text: 'The number of setons placed was {ar_seton_number}.' },
+        /* his own sentence, so it supplies its own full stop */
+        { needs: ['ar_seton_plan'],
+          text: 'The plan for the seton is as follows: {ar_seton_plan}' }
+      ],
+
+      ar_fistulotomy: [
+        { needs: ['ar_procedure'], equals: 'Primary fistulotomy',
+          text: 'The primary tract was laid open at the same sitting, the internal opening being low and the bulk of the external sphincter not at risk.' }
+      ],
+
+      ar_curettage: [
+        { needs: ['ar_procedure'], equals: 'Curettage and debridement',
+          text: 'The cavity was curetted of granulation tissue and necrotic debris until a clean, bleeding wall was reached.' }
+      ],
+
+      ar_specimens: [
+        { group: 'cul', needs: ['ar_culture'], equals: 'Yes',
+          text: 'Pus was sent for culture and sensitivity.' },
+        { group: 'cul', needs: ['ar_culture'], equals: 'No',
+          text: 'No specimen was sent for culture.' },
+        { needs: ['ar_histology'], equals: 'Yes',
+          text: 'Tissue from the cavity wall was sent for histopathology.' }
+      ],
+
+      ar_close: [
+        { group: 'w', needs: ['ar_wound'], equals: 'Marsupialized',
+          text: 'The wound edges were marsupialized to the wall of the cavity.' },
+        { group: 'w', needs: ['ar_wound'], equals: 'Left open',
+          text: 'The wound was left open to heal by secondary intention.' },
+        { group: 'w', needs: ['ar_wound'], equals: 'Partially closed',
+          text: 'The wound was partially closed, a dependent portion being left open for drainage.' },
+        { group: 'pk', needs: ['ar_packing'], equals: 'None',
+          text: 'No anal packing was used.' },
+        { group: 'pk', needs: ['ar_packing'],
+          text: '{ar_packing} was placed in the anal canal at the end of the procedure.' },
+        { needs: ['ar_antibiotic'],
+          text: 'Antibiotic treatment was continued with {ar_antibiotic}.' }
+      ],
+
+      ar_count: [
+        { needs: ['ar_count'], equals: 'Yes',
+          text: 'Swab, needle and instrument counts were correct at the end of the procedure.' }
+      ],
     },
 
     /* =================================================================
@@ -1580,6 +1925,39 @@
           { use: 'fi_filac' }, { use: 'fi_plug' }, { use: 'fi_glue' },
           { use: 'fi_seton' }, { use: 'fi_other' },
           { use: 'fi_close' }
+        ]
+      },
+      {
+        /* One block for the whole category. Like a fistula, an abscess
+           operation is usually several named procedures at once — a
+           modified Hanley is a Hanley and counter-incisions and, more
+           often than not, a seton — and the first matching block wins,
+           so splitting them would print only the first. Every part is
+           gated on its own answers instead.
+
+           The order of the parts is the order of the operation: look,
+           describe, find the opening, let the pus out, deal with what
+           the pus had reached, then close. */
+        name: 'Anorectal sepsis',
+        when: [
+          { key: 'ar_procedure', any: ['Incision and drainage',
+            'Deroofing of the cavity', 'Drainage with counter-incision',
+            'Modified Hanley procedure', 'Drainage of an intersphincteric abscess',
+            'Transrectal drainage of a supralevator abscess',
+            'Drainage of a supralevator abscess through the ischioanal fossa',
+            'Draining (loose) seton', 'Primary fistulotomy',
+            'Curettage and debridement',
+            'Radical debridement for necrotising soft-tissue infection',
+            'Faecal diversion', 'Examination under anesthesia only', 'Other'] }
+        ],
+        lines: [
+          { use: 'ar_setup' }, { use: 'ar_assess' }, { use: 'ar_opening' },
+          { use: 'ar_eua_only' },
+          { use: 'ar_drain' }, { use: 'ar_hanley' }, { use: 'ar_counter' },
+          { use: 'ar_intersphincteric' }, { use: 'ar_supralevator' },
+          { use: 'ar_necrotising' },
+          { use: 'ar_curettage' }, { use: 'ar_fistulotomy' }, { use: 'ar_seton' },
+          { use: 'ar_specimens' }, { use: 'ar_close' }, { use: 'ar_count' }
         ]
       },
       {
@@ -1771,6 +2149,20 @@
          the sentence that quoted it outlived the field */
       { needs: ['fi_marsupialise'], equals: 'Yes',
         text: 'The wound edges were marsupialized.' }
+    ],
+
+    /* ----------------------------------------------------------------
+       ANORECTAL SEPSIS — the fallback, naming the same parts as the
+       block above so the two cannot drift apart.
+       ---------------------------------------------------------------- */
+    anorectal: [
+      { use: 'ar_setup' }, { use: 'ar_assess' }, { use: 'ar_opening' },
+      { use: 'ar_eua_only' },
+      { use: 'ar_drain' }, { use: 'ar_hanley' }, { use: 'ar_counter' },
+      { use: 'ar_intersphincteric' }, { use: 'ar_supralevator' },
+      { use: 'ar_necrotising' },
+      { use: 'ar_curettage' }, { use: 'ar_fistulotomy' }, { use: 'ar_seton' },
+      { use: 'ar_specimens' }, { use: 'ar_close' }, { use: 'ar_count' }
     ],
 
     /* ----------------------------------------------------------------
