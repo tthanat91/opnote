@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ff';
+  var APP_BUILD = '2026-08-02fg';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3031,11 +3031,22 @@
   }
 
   /* How many drawings belong inside the findings box rather than on page 2.
-     A fistula is read from the axial, coronal and tract views together — one
-     of them alone says nothing — so all three sit beside the paragraph that
-     interprets them. Every other operation keeps a single figure there. */
+
+     Some operations are read from several views at once and one of them
+     alone says nothing: a fistula from the axial, coronal and tract views,
+     an abscess from the coronal, pelvic-floor and sagittal ones, because
+     which space the pus is in is the whole finding and no single section
+     shows every space. Those sets sit together beside the paragraph that
+     interprets them. Every other operation keeps a single figure there.
+
+     Named by category rather than tested one by one, so adding a category
+     that works this way is one line here instead of a condition that
+     someone has to remember to widen. */
+  var FIG_SET_CATEGORIES = { fistula: 3, anorectal: 3 };
+
   function inBoxCount(pngs) {
-    if (S.category === 'fistula') return Math.min(3, pngs.length);
+    var n = FIG_SET_CATEGORIES[S.category];
+    if (n) return Math.min(n, pngs.length);
     return pngs.length ? 1 : 0;
   }
 
