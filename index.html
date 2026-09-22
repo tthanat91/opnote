@@ -406,7 +406,7 @@ table.idbar td.wide{width:32%}
 /* the first drawing sits in the lower right of the findings box, with the
    paragraph flowing around it */
 .findbox figure.fig{float:right;margin:0 0 4px 10px;width:var(--imgw,52mm);text-align:center}
-.findbox figure.fig img{max-width:var(--imgw,52mm);max-height:var(--imgh,38mm)}
+.findbox figure.fig img{display:block;margin:0 auto;width:var(--imgw,52mm);height:var(--imgh,38mm);object-fit:contain}
 .findbox .bbody::after{content:'';display:block;clear:both}
 /* three small views floated together, so the paragraph that interprets them
    wraps around the set instead of around each picture separately */
@@ -465,7 +465,7 @@ button.mini.loading{opacity:1;position:relative}
 .findbox .figset{display:flex;flex-wrap:nowrap;justify-content:center;
   align-items:flex-start;gap:2mm;margin:0 0 5px;width:100%}
 .findbox .figset figure.fig{float:none;flex:0 1 var(--figw,44mm);min-width:0;margin:0;text-align:center}
-.findbox .figset figure.fig img{max-width:100%;max-height:var(--figh,44mm)}
+.findbox .figset figure.fig img{display:block;margin:0 auto;height:var(--figh,44mm);width:auto;max-width:100%;object-fit:contain}
 .findbox .figset figcaption{font-size:10px;line-height:1.15}
 /* and the box grows to hold the band plus the paragraph */
 .findbox.tall .bbody{height:100mm}
@@ -1007,13 +1007,13 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=fj"></script>
-<script src="figures.js?v=fj"></script>
-<script src="figures-original.js?v=fj"></script>
-<script src="figures-anorectal.js?v=fj"></script>
-<script src="letterhead.js?v=fj"></script>
-<script src="narrative.js?v=fj"></script>
-<script src="templates.js?v=fj"></script>
-<script src="app.js?v=fj"></script>
+<script src="config.js?v=fk"></script>
+<script src="figures.js?v=fk"></script>
+<script src="figures-original.js?v=fk"></script>
+<script src="figures-anorectal.js?v=fk"></script>
+<script src="letterhead.js?v=fk"></script>
+<script src="narrative.js?v=fk"></script>
+<script src="templates.js?v=fk"></script>
+<script src="app.js?v=fk"></script>
 </body>
 </html>

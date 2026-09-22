@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fj';
+  var APP_BUILD = '2026-08-02fk';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3108,10 +3108,13 @@
     if (!n) return '';
     var figs = '', i;
     for (i = 0; i < n; i++) {
-      var f = window.FIGURES[S.sheets[i].fig] || {};
+      var key = S.sheets[i].fig;
+      var f = window.FIGURES[key] || {};
+      /* the blank sheet is squared paper to draw on, not a diagram of
+         anything; captioning a drawing "Blank sheet" names the stationery */
+      var cap = key === 'blank' ? '' : (n > 1 ? (f.short || f.en || '') : (f.en || ''));
       figs += '<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
-        '<figcaption>' + esc(n > 1 ? (f.short || f.en || '') : (f.en || '')) +
-        '</figcaption></figure>';
+        '<figcaption>' + esc(cap) + '</figcaption></figure>';
     }
     /* no caption under the set: three labelled views sitting together in
        one frame already say they belong together, and the line cost a row
@@ -3330,6 +3333,10 @@
      box. */
   var FIG_KIND = {
     solo: { w: 52, h: 38, vars: ['--imgw', '--imgh'], steps: [1.2, 1.45, 1.7, 2.0] },
+    /* three across is what fixes the width at 44 mm. Two have half as much
+       competition for the row and were being held to the same size as
+       three, which wasted a third of the band. */
+    set2: { w: 62, h: 46, vars: ['--figw', '--figh'], steps: [1.1, 1.2, 1.3] },
     set:  { w: 44, h: 44, vars: ['--figw', '--figh'], steps: [1.1, 1.18, 1.25] }
   };
 
@@ -3358,7 +3365,9 @@
     var find = box.parentNode;
     if (!find || !/findbox/.test(find.className || '')) find = null;
     var set = !!box.querySelector('.figset');
-    var kind = set ? FIG_KIND.set : (box.querySelector('figure.fig') ? FIG_KIND.solo : null);
+    var inSet = box.querySelectorAll('.figset figure.fig').length;
+    var kind = set ? (inSet === 2 ? FIG_KIND.set2 : FIG_KIND.set)
+      : (box.querySelector('figure.fig') ? FIG_KIND.solo : null);
     var basePad = 6;                      /* the 6px the stylesheet gives it */
     var slackPx = FIND_SLACK_MM * MM_PX;
 
@@ -3792,12 +3801,48 @@
     });
   }
 
+  /* THE BOX WAS MEASURED BEFORE THE PICTURES ARRIVED.
+
+     fitFindings works by asking how tall the content is and dividing what
+     is left over between the top and the bottom. It was asked that question
+     in the same tick as innerHTML, when every <img> was still a data URL
+     the browser had not decoded: the figures measured zero, the box looked
+     almost empty, and the whole of a 100 mm box was handed to the padding.
+     The drawings then decoded, took their real height, pushed the paragraph
+     down — and the last lines of the findings fell off the bottom of the
+     box, which is silent, because the box is overflow:hidden.
+
+     Two guards, because one is not enough. The stylesheet now gives every
+     figure an explicit height, so its space is reserved before it decodes;
+     and nothing is measured until the browser says the pictures are in. */
+  function imagesSettled(root) {
+    var imgs = root ? Array.prototype.slice.call(root.querySelectorAll('img')) : [];
+    var pending = imgs.filter(function (im) { return !im.complete; });
+    if (!pending.length) return Promise.resolve();
+    return new Promise(function (done) {
+      var left = pending.length, over = false;
+      function tick() { if (!over && --left <= 0) { over = true; done(); } }
+      pending.forEach(function (im) {
+        im.addEventListener('load', tick, { once: true });
+        im.addEventListener('error', tick, { once: true });
+      });
+      /* A picture that never resolves must not freeze the preview. In jsdom
+         nothing ever loads, so the harness — which builds the preview a
+         hundred times over — sets this to 0 rather than waiting two
+         seconds a scenario for images it is not rendering anyway. */
+      setTimeout(function () { if (!over) { over = true; done(); } },
+        window.OPNOTE_IMG_WAIT_MS == null ? 2000 : window.OPNOTE_IMG_WAIT_MS);
+    });
+  }
+
   function refreshPreview() {
     harvest();
     return exportAllPhotos().then(exportAllSheets).then(function (pngs) {
       var html = buildDocument(pngs);
       $('#printRoot').innerHTML = html;
       $('#previewBox').innerHTML = html;
+      return imagesSettled($('#previewBox')).then(function () { return pngs; });
+    }).then(function (pngs) {
       fitPageOne();
       fitFindings($('#previewBox'));
       /* the same reason: the printed copy cannot be measured while hidden,
