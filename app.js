@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fh';
+  var APP_BUILD = '2026-08-02fj';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -691,6 +691,20 @@
      narrative apply the same rule whether or not the field is on screen. */
   function ruleHolds(rule) {
     var raw = S.data[rule.key];
+    /* A TICK THAT NO RULE COULD SEE.
+
+       collect() stores a checkbox as a real boolean, and valueOf() turns
+       that into "ใช่ / Yes" for the printout — but this function reads
+       S.data directly, so it was comparing the string "true" against the
+       word the rule actually names. Every rule pointing at a checkbox was
+       therefore false no matter what the surgeon ticked: "no tumor" left
+       the tumour questions on screen, and the abscess-detail rows behind
+       fi_abscess_incidental could never appear at all.
+
+       A rule says Yes because that is what the tick means, so that is
+       what a ticked box reports here. */
+    if (raw === true) raw = 'Yes; ใช่ / Yes';
+    else if (raw === false) raw = '';
     var have = (Array.isArray(raw) ? raw : String(raw == null ? '' : raw).split(';'))
       .map(function (x) { return String(x).trim().toLowerCase(); })
       .filter(function (x) { return x.length; });
@@ -1082,12 +1096,43 @@
     S.data.findings = txt;
   }
 
+  /* THE ANSWER THAT IS TRUE ALMOST EVERY TIME.
+
+     An uncomplicated recovery, a Jackson-Pratt drain, nothing untoward
+     during the operation — these are the ordinary case, and leaving them
+     blank does not record them, it records nothing. A blank on a
+     complication line reads as an omission; the word "None" reads as a
+     negative finding, which is what the surgeon actually observed.
+
+     Seeded only into a field that is EMPTY and whose showif currently
+     holds, so it never overwrites an answer and never quietly asserts a
+     drain on a note that says no drain was placed. Choosing anything else
+     makes the field non-empty, and it is then left alone for good. */
+  var FIELD_DEFAULTS = {
+    intraop_complication: 'None',
+    postop_complication: 'None',
+    cr_drain: 'Jackson-Pratt drain'
+  };
+
   /* A field that is the same on every note in the department is a field the
      surgeon should not have to type. Settings can override it. */
   function seedDefaults() {
     if (!S.data.department) S.data.department = prefs.department || 'ศัลยศาสตร์';
     var n = $('[data-key="department"]');
     if (n && !n.value) n.value = S.data.department;
+
+    Object.keys(FIELD_DEFAULTS).forEach(function (k) {
+      var cur = S.data[k];
+      if (String(cur == null ? '' : cur).trim()) return;
+      var f = fieldByKey(k);
+      if (!f || !showIfOk(f)) return;
+      S.data[k] = FIELD_DEFAULTS[k];
+      var node = $('[data-key="' + k + '"]');
+      if (node && 'value' in node && !node.value) node.value = S.data[k];
+      $$('input[data-key="' + k + '"]').forEach(function (r) {
+        if (r.type === 'radio' && r.value === S.data[k]) r.checked = true;
+      });
+    });
   }
 
   function autofillOperation() {
@@ -3042,12 +3087,20 @@
      Named by category rather than tested one by one, so adding a category
      that works this way is one line here instead of a condition that
      someone has to remember to widen. */
-  var FIG_SET_CATEGORIES = { fistula: 3, anorectal: 3 };
+  /* Three is the row: at 44 mm each they span the box and a fourth would
+     have nowhere to go. Photographs are not diagrams and keep their own
+     place further down the note. */
+  var FIG_IN_BOX_MAX = 3;
 
   function inBoxCount(pngs) {
-    var n = FIG_SET_CATEGORIES[S.category];
-    if (n) return Math.min(n, pngs.length);
-    return pngs.length ? 1 : 0;
+    /* Naming the categories by hand meant a figure ADDED to a colorectal
+       case landed on page 2 while the same figure on a fistula case sat in
+       the box. What decides it is not the operation but what is open: a
+       base diagram is there to be read beside the findings it illustrates,
+       whichever operation drew it. */
+    /* pngs is one entry per figure sheet — photographs travel separately in
+       S.photos and are never candidates for the box. */
+    return Math.min(FIG_IN_BOX_MAX, pngs.length);
   }
 
   function boxFigures(pngs) {
@@ -3551,6 +3604,17 @@
              It needs no second rendering. The header IS the first band of the
              photograph, so it is cut from there and stamped at the top of every
              later sheet, and those sheets take correspondingly less content. */
+          /* A JPEG of a page of text is a page of text with a halo round
+             every letter — the artefact reads as softness, and no amount
+             of extra scale removes it. PNG is lossless and, on black
+             line work over white paper, usually the smaller file too.
+             A page carrying a photograph is the one case where JPEG is
+             the right answer, so that page alone keeps it. */
+          var photoPage = !!pg.querySelector('figure.pph');
+          var FMT = photoPage ? 'JPEG' : 'PNG';
+          var MIME = photoPage ? 'image/jpeg' : 'image/png';
+          var QUAL = photoPage ? 0.95 : undefined;
+
           var head = pg.querySelector('table.flow > thead');
           var barPx = head ? Math.round(head.getBoundingClientRect().height * pxPerCss) : 0;
           var barMm = barPx / pxPerMm;
@@ -3560,7 +3624,7 @@
             bar.width = canvas.width; bar.height = barPx;
             bar.getContext('2d').drawImage(canvas, 0, 0, canvas.width, barPx,
               0, 0, canvas.width, barPx);
-            bar = bar.toDataURL('image/jpeg', 0.92);
+            bar = bar.toDataURL('image/png');
           }
 
           var sliceMax = Math.floor(PDF_H * pxPerMm);
@@ -3609,11 +3673,11 @@
             var wmm = PDF_W * (hmm / (h / pxPerMm));
             var top = PDF_Y;
             if (repeat) {
-              doc.addImage(bar, 'JPEG', (210 - PDF_W) / 2, top, PDF_W, barMm,
+              doc.addImage(bar, 'PNG', (210 - PDF_W) / 2, top, PDF_W, barMm,
                 undefined, 'FAST');
               top += barMm;
             }
-            doc.addImage(strip.toDataURL('image/jpeg', 0.92), 'JPEG',
+            doc.addImage(strip.toDataURL(MIME, QUAL), FMT,
               (210 - wmm) / 2, top, wmm, hmm, undefined, 'FAST');
             added++;
             y += h;
@@ -3656,10 +3720,20 @@
       function (e) { normal(); throw e; });
   }
 
-  /* a lower factor on a phone, where memory is tightest */
-  function pdfScale() {
-    return Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.5));
-  }
+  /* THE FILED COPY WAS THE BLURRY ONE.
+
+     Save rasterised at 2x on a desktop and 3x on the iPad; the copy filed
+     to Drive — the one printed on the ward computer — was built at 1.6,
+     which across a 198 mm page is about 153 dpi. Two renderings of the
+     same note at two sharpnesses, and the worse one was the one that got
+     printed. One number now, used by both.
+
+     3x is ~290 dpi and is what the iPad has been building for Save all
+     along, so it is already proven on the device that has the least
+     memory to spare. */
+  var PDF_SCALE = 3;
+
+  function pdfScale() { return PDF_SCALE; }
 
   /* PRINTING IS DONE FROM THE DOCUMENT, NOT FROM THE PAGE.
 
@@ -3778,7 +3852,8 @@
          downloads. A note with four photographs at printing resolution is
          several megabytes, and it has to reach Apps Script as base64, which
          is a third larger again. */
-  var ARCHIVE_SCALE = 1.6;
+  /* the filed copy is the same document at the same sharpness */
+  var ARCHIVE_SCALE = PDF_SCALE;
 
   function archivePdf(id) {
     if (!scriptUrl || !id) return Promise.resolve();

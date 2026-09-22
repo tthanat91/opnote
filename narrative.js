@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02fh',
+    build: '2026-08-02fj',
 
 
 
@@ -53,6 +53,26 @@
     findings: {
 
       colorectal: [
+        /* Said outright, because the tumour sentences below simply fall
+           silent when their fields are empty, and silence on this point
+           reads as an omission rather than as a negative finding.
+
+           Which sentence matters clinically. "No tumour" on a resection
+           after a malignant polyp, or after a complete response to
+           neoadjuvant therapy, does not mean the disease was benign — it
+           means the operation is being done for the lymph nodes. The first
+           version of this line said "non-neoplastic disease" in every case
+           and so contradicted the indication on the same page. */
+        { group: 'nt', needs: ['cr_f_no_tumor_reason'], equals: 'Previous endoscopic resection',
+          text: 'No residual tumor was seen at the site of the previously resected malignant polyp; the resection was undertaken for oncological clearance of the draining lymph node basin.' },
+        { group: 'nt', needs: ['cr_f_no_tumor_reason'], equals: 'Complete or near-complete response',
+          text: 'No tumor was identified at the tumor site, the patient having had a complete or near-complete response to neoadjuvant therapy; the resection was undertaken for oncological clearance.' },
+        { group: 'nt', needs: ['cr_f_no_tumor_reason'], equals: 'Lesion not palpable',
+          text: 'No tumor was palpable; the site of the lesion was identified by the endoscopic tattoo.' },
+        { group: 'nt', needs: ['cr_f_no_tumor_reason'], equals: 'Non-neoplastic disease',
+          text: 'No tumor was present; the resection was for non-neoplastic disease.' },
+        { group: 'nt', needs: ['cr_f_no_tumor'], equals: 'Yes',
+          text: 'No tumor was identified at operation.' },
         { group: 'loc', needs: ['cr_f_location', 'cr_f_size_w', 'cr_f_size_l', 'cr_f_size_h'],
           text: 'The tumor was located at the {cr_f_location|lc}, measuring {cr_f_size_w} × {cr_f_size_l} × {cr_f_size_h} cm.' },
         { group: 'loc', needs: ['cr_f_location'], text: 'The tumor was located at the {cr_f_location|lc}.' },
@@ -95,11 +115,20 @@
         { group: 'syn', needs: ['cr_f_synchronous'], equals: 'Yes', text: 'A synchronous lesion was present.' },
         { group: 'syn', needs: ['cr_f_synchronous'], equals: 'No', text: 'No synchronous lesion was found.' },
 
+        /* "Abnormal" CONTAINS "Normal", and equals is a substring test. With
+           only the two lines below, an abnormal uterus whose detail box was
+           left empty fell through to the second line and the note said it
+           appeared normal. Every such pair now states the longer value
+           first, so the shorter one can never catch it. */
         { group: 'ut', needs: ['cr_f_uterus', 'cr_f_uterus_detail'], equals: 'Abnormal',
           text: 'The uterus was abnormal: {cr_f_uterus_detail}.' },
+        { group: 'ut', needs: ['cr_f_uterus'], equals: 'Abnormal',
+          text: 'The uterus was abnormal.' },
         { group: 'ut', needs: ['cr_f_uterus'], equals: 'Normal', text: 'The uterus appeared normal.' },
         { group: 'ov', needs: ['cr_f_ovaries', 'cr_f_ovaries_detail'], equals: 'Abnormal',
           text: 'The ovaries were abnormal: {cr_f_ovaries_detail}.' },
+        { group: 'ov', needs: ['cr_f_ovaries'], equals: 'Abnormal',
+          text: 'The ovaries were abnormal.' },
         { group: 'ov', needs: ['cr_f_ovaries'], equals: 'Normal', text: 'Both ovaries appeared normal.' },
 
         { needs: ['cr_f_plane_quality'],
@@ -393,7 +422,9 @@
           text: 'A hand-sewn coloanal anastomosis was fashioned transanally with interrupted absorbable sutures, quadrant stitches first and the intervening bites placed between them.' },
         { needs: ['cr_l_circular'], not: 'Not used',
           text: 'A {cr_l_circular} circular stapler was used.' },
-        { needs: ['cr_l_doughnuts'], equals: 'Complete',
+        { group: 'dnut', needs: ['cr_l_doughnuts'], equals: 'Incomplete',
+          text: 'The doughnuts were inspected and were incomplete; the anastomosis was reinforced.' },
+        { group: 'dnut', needs: ['cr_l_doughnuts'], equals: 'Complete',
           text: 'Both doughnuts were inspected and were complete.' },
         { group: 'rf', needs: ['cr_ta_reinforce'], equals: 'Yes',
           text: 'A reinforcement suture was placed circumferentially around the anastomosis.' },
@@ -664,6 +695,8 @@
           text: 'The splenic flexure was fully mobilized using a {cr_splenic_approach|lc} approach to allow the conduit to reach the pelvis without tension.' },
         { group: 'flex', needs: ['cr_splenic_flexure'], equals: 'Yes',
           text: 'The splenic flexure was fully mobilized «using a combined inferior, anterior and lateral approach» to allow the conduit to reach the pelvis without tension.' },
+        { group: 'flex', needs: ['cr_splenic_flexure'], equals: 'Not applicable',
+          text: 'Mobilization of the splenic flexure was not applicable to this resection.' },
         { group: 'flex', needs: ['cr_splenic_flexure'], equals: 'No',
           text: 'The splenic flexure was not mobilized; the conduit reached the pelvis without tension.' }
       ],
@@ -815,6 +848,64 @@
       hemostasis_abdomen: [
         { text: 'Hemostasis was confirmed and the abdomen irrigated with «warm saline».' }
       ],
+      /* ================= LEFT HEMICOLECTOMY ==========================
+         It used to borrow the rectal transection sentences, which describe
+         firing a stapler across the rectum — an event a left hemicolectomy
+         does not contain. What it does contain is two bowel divisions and
+         a colo-colic join, and the orientation of that join is a real
+         decision that the note should record: an antiperistaltic
+         side-to-side is not the same operation as an isoperistaltic one.
+         ============================================================== */
+      /* "divided with a linear cutter (GIA)" read as the GIA specifically,
+         when the option meant any cutting stapler and the brand was being
+         recorded a field away. The device says what kind of instrument it
+         was and the stapler field says which one, so the sentence carries
+         both and the option label no longer names a brand it does not mean. */
+      lh_transection: [
+        { group: 'lhp', needs: ['cr_lh_prox_device', 'cr_lh_stapler'], equals: 'Linear cutting stapler',
+          text: 'The bowel was divided proximally with a linear cutting stapler ({cr_lh_stapler}).' },
+        { group: 'lhp', needs: ['cr_lh_prox_device'],
+          text: 'The bowel was divided proximally with a {cr_lh_prox_device|lc}.' },
+        { group: 'lhd', needs: ['cr_lh_dist_device', 'cr_lh_stapler'], equals: 'Linear cutting stapler',
+          text: 'The bowel was divided distally with a linear cutting stapler ({cr_lh_stapler}).' },
+        { group: 'lhd', needs: ['cr_lh_dist_device'],
+          text: 'The bowel was divided distally with a {cr_lh_dist_device|lc}.' }
+      ],
+
+      lh_anastomosis: [
+        { group: 'lhs', needs: ['cr_lh_anast_site'], equals: 'Intracorporeal',
+          text: 'The anastomosis was fashioned intracorporeally.' },
+        { group: 'lhs', needs: ['cr_lh_anast_site'], equals: 'Extracorporeal',
+          text: 'The bowel ends were delivered through the extraction wound and the anastomosis was fashioned extracorporeally.' },
+
+        { group: 'lhc', needs: ['cr_lh_anast_config', 'cr_lh_stapler'], equals: 'Isoperistaltic',
+          text: 'A side-to-side anastomosis was made in the isoperistaltic orientation with a linear cutting stapler ({cr_lh_stapler}), the two limbs lying with their peristalsis running the same way.' },
+        { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'Isoperistaltic',
+          text: 'A side-to-side anastomosis was made in the isoperistaltic orientation, the two limbs lying with their peristalsis running the same way.' },
+        { group: 'lhc', needs: ['cr_lh_anast_config', 'cr_lh_stapler'], equals: 'Antiperistaltic',
+          text: 'A side-to-side anastomosis was made in the antiperistaltic orientation with a linear cutting stapler ({cr_lh_stapler}), the two limbs lying head to head.' },
+        { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'Antiperistaltic',
+          text: 'A side-to-side anastomosis was made in the antiperistaltic orientation, the two limbs lying head to head.' },
+        { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'End-to-side',
+          text: 'An end-to-side anastomosis was made.' },
+        { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'End-to-end, hand-sewn',
+          text: 'An end-to-end anastomosis was hand-sewn.' },
+        { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'End-to-end, circular stapled',
+          text: 'An end-to-end anastomosis was made with a circular stapler.' },
+
+        { group: 'lhe', needs: ['cr_lh_enterotomy'], equals: 'Stapled',
+          text: 'The common enterotomy was closed with a further firing of the stapler.' },
+        { group: 'lhe', needs: ['cr_lh_enterotomy'], equals: 'Hand-sewn two layers',
+          text: 'The common enterotomy was closed by hand in two layers.' },
+        { group: 'lhe', needs: ['cr_lh_enterotomy'], equals: 'Hand-sewn single layer',
+          text: 'The common enterotomy was closed by hand in a single layer.' },
+
+        { group: 'lhm', needs: ['cr_lh_mesenteric'], equals: 'Closed',
+          text: 'The mesenteric defect was closed.' },
+        { group: 'lhm', needs: ['cr_lh_mesenteric'], equals: 'Left open',
+          text: 'The mesenteric defect was left open.' }
+      ],
+
       drain: [
         { group: 'drain', needs: ['cr_drain_placed'], equals: 'No',
           text: 'No drain was left.' },
@@ -958,11 +1049,14 @@
           text: 'The abdominal wall was opened at that site through a {cr_st_trephine|lc}: the subcutaneous fat was divided, the anterior rectus sheath incised cruciately, the rectus muscle split rather than divided and the posterior sheath and peritoneum opened to admit two fingers.' },
         { group: 'treph',
           text: 'The abdominal wall was opened at that site through a «circular skin disc»: the anterior rectus sheath incised cruciately, the rectus muscle split rather than divided and the posterior sheath and peritoneum opened to admit two fingers.' },
-        { group: 'stdeliver', needs: ['cr_procedure'], equals: 'Loop ileostomy',
+        /* cr_procedure stopped offering stoma options when stoma became its
+           own category; a defunctioning stoma on a resection is cr_diverting,
+           so these three had quietly become unreachable. */
+        { group: 'stdeliver', needs: ['cr_diverting'], equals: 'Loop ileostomy',
           text: 'A mobile loop of terminal ileum «40 cm proximal to the ileocecal valve» was selected, its proximal and distal limbs marked, and the loop delivered through the trephine without tension and with correct orientation.' },
-        { group: 'stdeliver', needs: ['cr_procedure'], equals: 'Loop colostomy',
+        { group: 'stdeliver', needs: ['cr_diverting'], equals: 'Loop colostomy',
           text: 'A mobile loop of «transverse» colon was selected, its proximal and distal limbs marked, and the loop delivered through the trephine without tension and with correct orientation.' },
-        { group: 'stdeliver', needs: ['cr_procedure'], equals: 'End ileostomy',
+        { group: 'stdeliver', needs: ['cr_procedure'], equals: 'Total proctocolectomy',
           text: 'The divided end of the ileum was delivered through the trephine without tension and with its mesentery orientated correctly.' },
         { group: 'stdeliver',
           text: 'The divided proximal end of the colon was delivered through the trephine without tension and with its mesentery orientated correctly.' },
@@ -972,9 +1066,9 @@
       ],
 
       stoma_mature: [
-        { group: 'stmat', needs: ['cr_procedure', 'cr_st_suture'], equals: 'Loop',
+        { group: 'stmat', needs: ['cr_diverting', 'cr_st_suture'], equals: 'Loop',
           text: 'The abdominal wall having been closed, the stoma was opened transversely on its distal aspect and matured as a Brooke loop stoma with {cr_st_suture|lc}, each bite taking seromuscular bowel, the fascial edge and the dermis, so that the proximal limb everted as a spout.' },
-        { group: 'stmat', needs: ['cr_procedure'], equals: 'Loop',
+        { group: 'stmat', needs: ['cr_diverting'], equals: 'Loop',
           text: 'The abdominal wall having been closed, the stoma was opened transversely on its distal aspect and matured as a Brooke loop stoma with «interrupted 3-0 Vicryl», each bite taking seromuscular bowel, the fascial edge and the dermis, so that the proximal limb everted as a spout.' },
         { group: 'stmat', needs: ['cr_st_suture'],
           text: 'The abdominal wall having been closed, the stoma was matured as a Brooke end stoma with {cr_st_suture|lc}, each bite taking seromuscular bowel, the fascial edge and the dermis.' },
@@ -2022,13 +2116,32 @@
         ]
       },
       {
+        /* Narrower than the left-sided block below, so it must come
+           first: otherwise a left hemicolectomy is swept up by it and
+           told how many times its rectum was stapled across. */
+        name: 'Left hemicolectomy',
+        when: [
+          { key: 'cr_procedure', any: ['Left hemicolectomy'] },
+          { key: 'cr_approach', any: ['Open', 'Laparoscopic', 'Robotic'] }
+        ],
+        lines: [
+          { use: 'setup' }, { use: 'access_left' }, { use: 'explore_left' },
+          { use: 'left_mobilise' }, { use: 'left_vessels' }, { use: 'splenic_flexure' },
+          { use: 'lh_transection' },
+          { use: 'extraction_left' }, { use: 'decompress' }, { use: 'margins' },
+          { use: 'lh_anastomosis' }, { use: 'anast_check' },
+          { use: 'hemostasis_abdomen' }, { use: 'drain' },
+          { use: 'close_abdomen' }, { use: 'count' }
+        ]
+      },
+      {
         /* One block for every left-sided and rectal resection. The rectal
            sentences quote fields that only a rectal case is asked for, so a
            sigmoidectomy simply skips them — which is safer than keeping a
            second, older block that had to be corrected separately. */
         name: 'Left-sided and rectal resection',
         when: [
-          { key: 'cr_procedure', any: ['Left hemicolectomy', 'Sigmoidectomy',
+          { key: 'cr_procedure', any: ['Sigmoidectomy',
           'Anterior resection', 'Low anterior resection', 'Ultra-low anterior resection'] },
           { key: 'cr_approach', any: ['Open', 'Laparoscopic', 'Robotic', 'Transanal'] }
         ],
@@ -2189,8 +2302,17 @@
 
     /* appended to every category ------------------------------------- */
     common: [
-      { needs: ['intraop_complication'], not: 'None',
+      { group: 'icx', needs: ['intraop_complication'], equals: 'None',
+        text: 'There was no intra-operative complication.' },
+      { group: 'icx', needs: ['intraop_complication'],
         text: 'Intra-operative complication: {intraop_complication}' },
+      { group: 'pcx', needs: ['postop_complication'], equals: 'None',
+        text: 'There was no immediate post-operative complication.' },
+      { group: 'pcx', needs: ['postop_complication', 'postop_complication_other'],
+        equals: 'Other',
+        text: 'Immediate post-operative complication: {postop_complication_other}.' },
+      { group: 'pcx', needs: ['postop_complication'],
+        text: 'Immediate post-operative complication: {postop_complication|lc}.' },
       { needs: ['ebl'], text: 'Estimated blood loss was {ebl} mL.' },
       { needs: ['transfusion'], not: 'None',
         text: 'Replacement given: {transfusion}.' },

@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02fh';
+  global.TEMPLATES_BUILD = '2026-08-02fj';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -71,6 +71,17 @@
     f('common', DIAG, 'organ_removed', 'อวัยวะหรือสิ่งที่ถูกตัดออก', 'Organ / tissue removed', 'textarea'),
     f('common', DIAG, 'pathology_sent', 'ชิ้นเนื้อที่ส่งตรวจทางพยาธิวิทยา', 'Specimen sent to pathology', 'textarea'),
     f('common', DIAG, 'intraop_complication', 'ภาวะแทรกซ้อนระหว่างผ่าตัด', 'Intra-operative complication', 'textarea'),
+    /* Asked as a list rather than a free-text box so the answers can be
+       counted later, and seeded with None by FIELD_DEFAULTS in app.js: an
+       uncomplicated recovery is the ordinary case, and a blank on this line
+       reads as an omission rather than as a negative finding. */
+    f('common', DIAG, 'postop_complication', 'ภาวะแทรกซ้อนหลังผ่าตัดทันที',
+      'Immediate post-operative complication', 'radio',
+      'None; Bleeding; Anastomotic problem; Airway or anesthetic event; ' +
+      'Cardiac event; Other'),
+    f('common', DIAG, 'postop_complication_other', 'ระบุภาวะแทรกซ้อน',
+      'Complication — specify', 'text', '', 'postop_complication = Other'),
+
     f('common', DIAG, 'ebl', 'ประมาณการเสียเลือด (มล.)', 'Estimated blood loss (mL)', 'number'),
     f('common', DIAG, 'transfusion', 'การให้ทดแทน', 'Replacement / transfusion', 'text'),
 
@@ -82,7 +93,7 @@
     f('common', TEAM, 'anaesthetist', 'วิสัญญีแพทย์', 'Anesthetist', 'text'),
     f('common', TEAM, 'anaesthesia', 'วิธีระงับความรู้สึก', 'Type of anesthesia', 'select',
       'GA; GA + epidural; Spinal block; Spinal + sedation; Caudal block; ' +
-      'Pudendal / perianal block; Local infiltration; MAC / sedation'),
+      'Perianal block + TIVA; Local infiltration; MAC / sedation'),
     f('common', TEAM, 'scrub_nurse', 'พยาบาลส่งเครื่องมือ', 'Scrub nurse', 'text'),
     f('common', TEAM, 'circulating_nurse', 'พยาบาลช่วยรอบนอก', 'Circulating nurse', 'text'),
     f('common', TEAM, 'others_note', 'อื่น ๆ', 'Others', 'text'),
@@ -215,8 +226,12 @@
 
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_placed', 'ใส่ท่อระบายหรือไม่', 'Drain placed', 'radio',
       'Yes; No'),
-    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'text', '',
+    /* was a free-text box; seeded with Jackson-Pratt by FIELD_DEFAULTS */
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'radio',
+      'Jackson-Pratt drain; Blake drain; Penrose drain; Corrugated drain; Sump drain; Other',
       'cr_drain_placed = Yes'),
+    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_other', 'ระบุชนิดท่อระบาย',
+      'Drain type — specify', 'text', '', 'cr_drain = Other'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'radio',
       'Cul-de-sac (pelvis); Right paracolic gutter; Left paracolic gutter; Subhepatic; ' +
       'Subphrenic; Adjacent to the anastomosis; Other', 'cr_drain_placed = Yes'),
@@ -234,17 +249,42 @@
 
 
     /* ---- structured operative findings, colorectal ---- */
+    /* Finding no tumour is not the same as there being no cancer, and the
+       first version of this tick said it was — it printed "the resection was
+       for non-neoplastic disease" over an oncological operation. The common
+       reasons are the opposite of benign: a malignant polyp already taken
+       out endoscopically, where the resection is for the nodes; and a rectal
+       cancer with a complete or near-complete response to total neoadjuvant
+       therapy, where the tumour has gone but the operation has not changed.
+       So the tick hides the six measurements, and a second question records
+       why there was nothing to measure. */
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_no_tumor',
+      'ไม่พบก้อนเนื้องอกขณะผ่าตัด', 'No tumor identified at operation', 'checkbox'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_no_tumor_reason',
+      'เหตุผลที่ไม่พบก้อน', 'Why no tumor was found', 'radio',
+      'Previous endoscopic resection of a malignant polyp; ' +
+      'Complete or near-complete response to neoadjuvant therapy; ' +
+      'Lesion not palpable, site marked by tattoo or clip; ' +
+      'Non-neoplastic disease; Other',
+      'cr_f_no_tumor = Yes'),
+
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_location', 'ตำแหน่งรอยโรค', 'Tumor location', 'radio',
-      'Cecum; Ascending colon; Hepatic flexure; Transverse colon — proximal; ' +
+      'Appendix; Cecum; Ascending colon; Hepatic flexure; Transverse colon — proximal; ' +
       'Transverse colon — mid; Transverse colon — distal; Splenic flexure; Descending colon; ' +
       'Descendosigmoid colon; Sigmoid colon; Rectosigmoid colon; Rectum — upper; ' +
-      'Rectum — mid; Rectum — lower'),
-    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_w', 'กว้าง (ซม.)', 'Width (cm)', 'number'),
-    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_l', 'ยาว (ซม.)', 'Length (cm)', 'number'),
-    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_h', 'หนา (ซม.)', 'Height (cm)', 'number'),
+      'Rectum — mid; Rectum — lower',
+      'cr_f_no_tumor != Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_w', 'กว้าง (ซม.)', 'Width (cm)', 'number', '',
+      'cr_f_no_tumor != Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_l', 'ยาว (ซม.)', 'Length (cm)', 'number', '',
+      'cr_f_no_tumor != Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_size_h', 'หนา (ซม.)', 'Height (cm)', 'number', '',
+      'cr_f_no_tumor != Yes'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_appearance', 'ลักษณะรอยโรค', 'Appearance', 'radio',
-      'Polypoid; Ulcerated; Ulceroproliferative; Annular; Circumferential; Other'),
-    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_annular_pct', 'สัดส่วนรอบวง (%)', 'Circumference involved (%)', 'number'),
+      'Polypoid; Ulcerated; Ulceroproliferative; Annular; Circumferential; Other',
+      'cr_f_no_tumor != Yes'),
+    f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_f_annular_pct', 'สัดส่วนรอบวง (%)', 'Circumference involved (%)', 'number', '',
+      'cr_f_no_tumor != Yes'),
     f('colorectal', 'สิ่งตรวจพบ | Operative findings', 'cr_tumor_distance', 'ระยะจากขอบทวาร (ซม.)',
       'Distance of the tumor from the anal verge (cm)', 'number', '',
       'cr_f_location = Transverse colon — proximal; Transverse colon — mid; Transverse colon — distal; Splenic flexure; Descending colon; Descendosigmoid colon; Sigmoid colon; Rectosigmoid colon; Rectum — upper; Rectum — mid; Rectum — lower'),
@@ -289,19 +329,19 @@
       'Yes; No', 'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_transection_size', 'ขนาดเครื่องเย็บ', 'Stapler cartridge length', 'radio',
       '30 mm; 45 mm; 60 mm; Curved (Contour); Open linear stapler (TA)',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_transection_color', 'สีของ cartridge', 'Cartridge colour (staple height)', 'radio',
       'White (2.5 mm); Blue (3.5 mm); Gold (3.8 mm); Green (4.1 mm); Black (4.2 mm); ' +
       'Purple (tri-staple); Tan (tri-staple); Black (tri-staple)',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_firings', 'จำนวนครั้งที่ยิง', 'Number of stapler firings', 'number', '',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_circular', 'ขนาด circular stapler', 'Circular stapler size', 'radio',
       '25 mm; 28 mm; 29 mm; 31 mm; 33 mm; Not used', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_doughnuts', 'Doughnuts', 'Anastomotic doughnuts', 'radio',
       'Complete; Incomplete — reinforced; Not applicable', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout', 'ล้างลำไส้ส่วนปลายก่อนตัด', 'Rectal washout before transection', 'radio',
-      'Yes; No', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'Yes; No', 'cr_procedure = Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_washout_solution', 'น้ำยาที่ใช้ล้าง', 'Washout solution', 'radio',
       'Normal saline; Povidone-iodine; Normal saline with povidone-iodine; Sterile water; Other',
       'cr_l_washout = Yes'),
@@ -309,7 +349,7 @@
       'cr_l_washout = Yes'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_clamp', 'การหนีบลำไส้ส่วนปลาย', 'Distal bowel occlusion', 'radio',
       'Endoscopic bulldog clamp; Right-angled clamp; Umbilical tape; None',
-      'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
+      'cr_procedure = Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Hartmann procedure; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_l_leak_method', 'วิธีทดสอบรอยรั่ว', 'Air-leak test method', 'radio',
       'Colonoscopic; Rigid proctoscope; Bulb syringe; Not performed', 'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy'),
     f('colorectal', 'ลำไส้ใหญ่ด้านซ้าย | Left-sided & rectal resection', 'cr_leak_test',
@@ -318,6 +358,48 @@
       'cr_procedure = Left hemicolectomy; Sigmoidectomy; Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Subtotal colectomy; Total colectomy'),
 
     /* ---------------- RECTAL DETAIL ---------------- */
+    /* =================================================================
+       LEFT HEMICOLECTOMY
+
+       It was sharing the left-sided block with the anterior resections,
+       and so was being asked how many times the rectum was fired across —
+       a question it has no answer to. What it actually needs recording is
+       what each end was divided with, whether the join was made inside the
+       abdomen or outside it, and which way round the two limbs were laid,
+       because an antiperistaltic side-to-side is a different anastomosis
+       from an isoperistaltic one and the note should say which.
+       ================================================================= */
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_prox_device',
+      'วิธีตัดลำไส้ด้านต้น', 'Proximal transection — device', 'radio',
+      'Linear cutting stapler; Linear stapler (TA); Energy device; ' +
+      'Scalpel between crushing clamps',
+      'cr_procedure = Left hemicolectomy'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_dist_device',
+      'วิธีตัดลำไส้ด้านปลาย', 'Distal transection — device', 'radio',
+      'Linear cutting stapler; Linear stapler (TA); Energy device; ' +
+      'Scalpel between crushing clamps',
+      'cr_procedure = Left hemicolectomy'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_anast_site',
+      'ตำแหน่งการต่อลำไส้', 'Anastomosis performed', 'radio',
+      'Intracorporeal; Extracorporeal',
+      'cr_procedure = Left hemicolectomy'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_anast_config',
+      'รูปแบบการต่อลำไส้', 'Anastomosis configuration', 'radio',
+      'Isoperistaltic side-to-side; Antiperistaltic side-to-side; End-to-side; ' +
+      'End-to-end, hand-sewn; End-to-end, circular stapled',
+      'cr_procedure = Left hemicolectomy'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_stapler',
+      'เครื่องเย็บที่ใช้', 'Linear stapler used', 'radio',
+      'GIA 80; Endo GIA 60; Signia; Echelon; Tri-stapler',
+      'cr_procedure = Left hemicolectomy'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_enterotomy',
+      'การปิดรูเย็บลำไส้', 'Enterotomy closure', 'radio',
+      'Stapled; Hand-sewn two layers; Hand-sewn single layer',
+      'cr_lh_anast_config = Isoperistaltic side-to-side; Antiperistaltic side-to-side'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_mesenteric',
+      'ช่องว่าง mesentery', 'Mesenteric defect', 'radio', 'Closed; Left open',
+      'cr_procedure = Left hemicolectomy'),
+
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_tme', 'ขอบเขตการเลาะ mesorectum', 'Extent of mesorectal excision', 'radio',
       'Total (TME); Tumor-specific (TSME)', 'cr_procedure = Anterior resection; Low anterior resection; Ultra-low anterior resection with coloanal anastomosis; Abdominoperineal resection'),
     f('colorectal', 'ทวารหนัก | Rectal detail', 'cr_rect_nerve', 'การรักษาเส้นประสาทอัตโนมัติ', 'Autonomic nerve preservation', 'radio',
@@ -877,8 +959,8 @@
     f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_pus_volume',
       'ปริมาณหนอง (มล.)', 'Volume of pus drained (mL)', 'number'),
     f('anorectal', 'กายวิภาคของฝี | Anatomy of the sepsis', 'ar_horseshoe',
-      'การลามแบบเกือกม้า', 'Horseshoe extension', 'radio',
-      'No; Posterior horseshoe; Anterior horseshoe'),
+      'การลามแบบ Horseshoe', 'Horseshoe extension', 'radio',
+      'No; Posterior horseshoe; Anterior horseshoe; Semi-Horseshoe'),
     /* The one question in this category that changes the operation rather
        than describing it. Drain a supralevator abscess of intersphincteric
        origin through the ischioanal fossa and you have made an
