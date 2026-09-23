@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fk';
+  var APP_BUILD = '2026-08-02fl';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -138,9 +138,88 @@
   function busy(msg) {
     var n = $('#busy');
     if (!n) return;
-    if (msg === false) { n.classList.add('hidden'); return; }
+    if (msg === false) { n.classList.add('hidden'); progress.stop(); return; }
     $('#busyMsg').innerHTML = msg;
     n.classList.remove('hidden');
+  }
+
+  /* =================== progress =================== */
+
+  /* WHY A BAR AND NOT A SPINNER.
+
+     Saving a note with photographs takes upwards of twenty seconds, and for
+     all of that the only thing that changed was the label on a button at
+     the BOTTOM of a long form — off-screen on an iPad the moment anyone has
+     scrolled. A still screen reads as a crash, so people pressed Save again
+     or walked away, and walking away before the PDF had gone up meant no
+     PDF in Drive.
+
+     Every number this reports is a real one. The stages are weighted by how
+     long they actually take rather than counted evenly, because five even
+     steps where one of them is nine tenths of the wait is a bar that sits
+     at 20% and then jumps to done — which tells the surgeon less than no
+     bar at all.
+
+     The weights are rough, and they do not need to be exact: what a person
+     waiting needs to know is that something is still happening and roughly
+     how much is left. What they must never see is the bar going backwards,
+     so it is clamped. */
+  var progress = (function () {
+    var plan = null, base = 0, span = 0, shown = 0;
+
+    function paint(pct, note) {
+      var bar = $('#busyBar'), fill = $('#busyFill'), step = $('#busyStep');
+      if (!bar || !fill) return;
+      bar.classList.remove('hidden');
+      /* never backwards: a stage that finishes cheaply must not undo one
+         that reported optimistically */
+      shown = Math.max(shown, Math.min(100, Math.round(pct)));
+      fill.style.width = shown + '%';
+      if (step) step.textContent = note == null ? '' : note;
+    }
+
+    return {
+      /* stages: [{ key, weight, th, en }] */
+      start: function (stages) {
+        plan = stages; base = 0; span = 0; shown = 0;
+        var bar = $('#busyBar');
+        if (bar) bar.classList.remove('hidden');
+        paint(0, '');
+      },
+      /* move to a named stage; everything before it is complete */
+      stage: function (key, note) {
+        if (!plan) return;
+        var total = plan.reduce(function (a, s) { return a + s.weight; }, 0) || 1;
+        var before = 0, me = null;
+        plan.forEach(function (s) {
+          if (me || s.key === key) { if (!me) me = s; return; }
+          before += s.weight;
+        });
+        if (!me) return;
+        base = before / total * 100;
+        span = me.weight / total * 100;
+        busy(bilingual(me.th, me.en));
+        paint(base, note || '');
+      },
+      /* how far through the CURRENT stage, 0..1 */
+      within: function (frac, note) {
+        if (!plan) return;
+        paint(base + span * Math.max(0, Math.min(1, frac)), note);
+      },
+      done: function () { paint(100, ''); },
+      stop: function () {
+        plan = null; shown = 0;
+        var bar = $('#busyBar'), fill = $('#busyFill'), step = $('#busyStep');
+        if (bar) bar.classList.add('hidden');
+        if (fill) fill.style.width = '0';
+        if (step) step.textContent = '';
+      }
+    };
+  })();
+
+  /* n of N, in both languages, for the sub-line under the bar */
+  function ofCount(i, n, th, en) {
+    return th + ' ' + i + '/' + n + ' \u00b7 ' + en + ' ' + i + ' of ' + n;
   }
 
   function bilingual(th, en) {
@@ -284,7 +363,7 @@
     });
   }
 
-  function attempt(method, payload) {
+  function attempt(method, payload, onUp) {
     var body = Object.assign({}, payload, { pass: passcode });
 
     /* A direct request works in Chrome whatever version of Code.gs is
@@ -333,17 +412,66 @@
       });
     }
 
-    return fetch(scriptUrl, {
-      method: 'POST', redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(body)
-    }).then(function (r) { return r.json(); })
-      .catch(function () { return postBlind(body); });
+    /* fetch tells you nothing until it is finished, and on a note with
+       photographs the POST is nearly the whole wait. XMLHttpRequest reports
+       the bytes it has actually put on the wire, which is the one number a
+       person standing at the machine wants.
+
+       Falling back re-sends the payload, so it is only done when the upload
+       did NOT complete. If the bytes all went and the reply was merely
+       unreadable, the script has probably already written the row, and
+       sending several megabytes again to find out would cost more than it
+       could learn. saveNote upserts on the note id, so a resend updates the
+       same row rather than making a second one — but that is a reason the
+       fallback is SAFE, not a reason to take it lightly. */
+    var text = JSON.stringify(body);
+    var sent = false;
+
+    function viaFetch() {
+      return fetch(scriptUrl, {
+        method: 'POST', redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: text
+      }).then(function (r) { return r.json(); })
+        .catch(function () { return postBlind(body); });
+    }
+
+    if (typeof XMLHttpRequest === 'undefined') return viaFetch();
+
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', scriptUrl, true);
+      xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+      xhr.timeout = 180000;
+      if (xhr.upload && onUp) {
+        xhr.upload.onprogress = function (e) {
+          if (e.lengthComputable) onUp(e.loaded / e.total, e.loaded, e.total);
+        };
+        xhr.upload.onload = function () { sent = true; onUp(1); };
+      } else if (xhr.upload) {
+        xhr.upload.onload = function () { sent = true; };
+      }
+      xhr.onload = function () {
+        sent = true;
+        var r = null;
+        try { r = JSON.parse(xhr.responseText); } catch (e) { r = null; }
+        if (r) resolve(r);
+        else reject(new Error('unreadable reply (' + xhr.status + ')'));
+      };
+      xhr.onerror = function () { reject(new Error('network')); };
+      xhr.ontimeout = function () { reject(new Error('timeout')); };
+      xhr.send(text);
+    }).catch(function (e) {
+      if (sent) throw e;          /* the bytes went; do not send them twice */
+      return viaFetch();
+    });
   }
 
-  function api(method, payload) {
+  /* onUp, when given, is called with the fraction of the payload uploaded.
+     Every existing call site omits it and is unaffected. */
+  function api(method, payload, onUp) {
     if (!scriptUrl) return Promise.reject(new Error('ยังไม่ได้ตั้งค่า URL / no script URL'));
-    return attempt(method, payload).then(function (r) {
+    return attempt(method, payload, onUp).then(function (r) {
       if (r && r.ok === false && r.auth) {
         /* a read-only key is a valid key — never re-prompt for it */
         if (r.reason === 'readonly') {
@@ -353,7 +481,7 @@
         if (r.reason === 'blocked') { forgetIdentity(); throw new Error(r.error); }
         return askPasscode(!!passcode).then(function (given) {
           if (!given) throw new Error('ต้องใส่รหัสเข้าใช้งาน / an access key is required');
-          return attempt(method, payload).then(function (r2) {
+          return attempt(method, payload, onUp).then(function (r2) {
             if (r2 && r2.ok !== false) loadIdentity();
             return r2;
           });
@@ -2790,12 +2918,25 @@
     }, function () { p.inkUrl = ''; return src; });
   }
 
+  /* Set only while a save is running. The export loops and the PDF slicer
+     report through it; every other caller of these functions leaves it null
+     and is unaffected, so nothing has to grow a parameter it does not use. */
+  var saveReport = null;
+
+  function report(what, i, n) { if (saveReport) saveReport(what, i, n); }
+
   function exportAllPhotos() {
-    return Promise.all(S.photos.map(function (p) { return exportPhotoInk(p); }));
+    var done = 0, n = S.photos.length;
+    return Promise.all(S.photos.map(function (p) {
+      return exportPhotoInk(p).then(function (r) { report('photo', ++done, n); return r; });
+    }));
   }
 
   function exportAllSheets() {
-    return Promise.all(S.sheets.map(function (sh) { return exportSheet(sh); }));
+    var done = 0, n = S.sheets.length;
+    return Promise.all(S.sheets.map(function (sh) {
+      return exportSheet(sh).then(function (r) { report('sheet', ++done, n); return r; });
+    }));
   }
 
   /* =================== photos =================== */
@@ -3586,9 +3727,10 @@
      in shrinking type instead of running on to a third page — the note has
      a fixed size on paper and must keep it. */
   function pagesToPdf(pages, doc, scale) {
-    var added = 0;
+    var added = 0, page = 0;
     return pages.reduce(function (chain, pg) {
       return chain.then(function () {
+        report('pdfpage', ++page, pages.length);
         var breaks = breakOffsets(pg);
         var cssH = pg.getBoundingClientRect().height;
         pg.classList.add('pdfshot');
@@ -3901,8 +4043,8 @@
   var ARCHIVE_SCALE = PDF_SCALE;
 
   function archivePdf(id) {
-    if (!scriptUrl || !id) return Promise.resolve();
-    if (('onLine' in navigator) && navigator.onLine === false) return Promise.resolve();
+    if (!scriptUrl || !id) return Promise.resolve(false);
+    if (('onLine' in navigator) && navigator.onLine === false) return Promise.resolve(false);
     var tag = $('#pdfState');
     if (tag) {
       tag.style.display = '';
@@ -3914,7 +4056,8 @@
          the script's data-URL pattern choked on, so it goes before sending —
          both ends are now tolerant, which is how it should have been. */
       var url = doc.output('datauristring').replace(/;filename=[^;,]*/, '');
-      return api('POST', { action: 'pdf', id: id, name: pdfFileName(), dataUrl: url });
+      return api('POST', { action: 'pdf', id: id, name: pdfFileName(), dataUrl: url },
+        function (frac, loaded, total) { report('pdfup', loaded, total); });
     }).then(function (r) {
       if (tag) {
         var good = r && r.ok;
@@ -3925,6 +4068,7 @@
           : '\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e01\u0e47\u0e1a PDF / PDF not filed';
         setTimeout(function () { tag.style.display = 'none'; }, good ? 4000 : 9000);
       }
+      return !!(r && r.ok);
     }).catch(function () {
       /* The note is already saved. A PDF that could not be built or sent is
          worth one quiet line and nothing more — it will be filed on the next
@@ -3933,6 +4077,7 @@
         tag.textContent = '\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e01\u0e47\u0e1a PDF / PDF not filed';
         setTimeout(function () { tag.style.display = 'none'; }, 9000);
       }
+      return false;
     });
   }
 
@@ -3982,28 +4127,68 @@
     };
   }
 
+  function mb(bytes) { return (bytes / 1048576).toFixed(1); }
+
+  /* THE SAVE IS ONE RUN, AND IT ENDS WHEN THE PDF HAS LANDED.
+
+     It used to say "Saved" the moment the Sheet row was written and then go
+     on filing the PDF behind a small inline tag. That is true but it is not
+     what a person reads: they read the green message as finished, close the
+     note, and the PDF never reaches Drive. So the run now covers both, and
+     the message at the end says which of the two things actually happened —
+     because "saved and filed" and "saved, PDF not filed" call for different
+     actions from whoever is reading it.
+
+     The weights are what each stage really costs on a note with
+     photographs, not an even split: five even steps where one of them is
+     most of the wait is a bar that sits still and then jumps. */
   function doSave() {
-    var btn = $('#btnSave'), pl = null;
+    var btn = $('#btnSave'), pl = null, filed = false;
     btn.disabled = true;
-    btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21\u0e23\u0e39\u0e1b… / Preparing images…';
+    btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01… / Saving…';
+
+    progress.start([
+      { key: 'prep', weight: 15, th: 'กำลังเตรียมรูป…', en: 'Preparing images…' },
+      { key: 'send', weight: 45, th: 'กำลังส่งบันทึก…', en: 'Sending the note…' },
+      { key: 'pdf', weight: 18, th: 'กำลังสร้าง PDF…', en: 'Building the PDF…' },
+      { key: 'file', weight: 22, th: 'กำลังเก็บ PDF ลง Drive…', en: 'Filing the PDF…' }
+    ]);
+    progress.stage('prep');
+
+    saveReport = function (what, i, n) {
+      if (what === 'photo') progress.within(n ? i / n * 0.5 : 0.5, ofCount(i, n, 'รูปถ่าย', 'photograph'));
+      else if (what === 'sheet') progress.within(n ? 0.5 + i / n * 0.5 : 1, ofCount(i, n, 'ภาพวาด', 'drawing'));
+      else if (what === 'pdfpage') progress.within(n ? i / n : 1, ofCount(i, n, 'หน้า', 'page'));
+      else if (what === 'pdfup') progress.within(n ? i / n : 0, mb(i) + ' / ' + mb(n) + ' MB');
+    };
+
     return refreshPreview().then(function (pngs) {
       pl = payload(pngs);
-      /* the upload is the slow part and it is worth saying so, with a count,
-         rather than leaving a dead button for ten seconds */
       var n = (pl.figures || []).length + (pl.photos || []).length;
-      btn.textContent = n
-        ? '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07 ' + n + ' \u0e23\u0e39\u0e1b… / Uploading ' + n + ' image' + (n === 1 ? '' : 's') + '…'
-        : '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01… / Saving…';
+      var size = JSON.stringify(pl).length;
+      progress.stage('send', n
+        ? ofCount(0, n, 'รูป', 'image').replace('0/', '') + ' · ' + mb(size) + ' MB'
+        : mb(size) + ' MB');
       S.id = pl.id; S.createdAt = pl.createdAt;
       if (!scriptUrl) { queue(pl); throw new Error('ยังไม่ได้ตั้งค่า Google Sheet / Sheet not configured'); }
-      return api('POST', pl).then(function (r) {
+      return api('POST', pl, function (frac, loaded, total) {
+        progress.within(frac, mb(loaded) + ' / ' + mb(total) + ' MB');
+      }).then(function (r) {
         if (!r || !r.ok) throw new Error((r && r.error) || 'save failed');
+        /* the note is safe from here on; nothing below may undo it */
         S.mode = 'edit';
         if (!S.savedBy && me) S.savedBy = me.name || '';
-        toast('บันทึกเรียบร้อย / Saved to Google Sheet', 'ok');
         localStorage.removeItem(LS.draft);
-        /* only now, and never in a way that can undo any of the above */
-        archivePdf(pl.id);
+        progress.stage('pdf');
+        return archivePdf(pl.id).then(function (ok) {
+          filed = !!ok;
+          progress.done();
+          toast(filed
+            ? 'บันทึกและเก็บ PDF เรียบร้อย / Saved, and the PDF is filed in Drive'
+            : 'บันทึกเรียบร้อย แต่ยังไม่ได้เก็บ PDF — จะเก็บให้ในการบันทึกครั้งถัดไป / ' +
+              'Saved to the Sheet. The PDF was not filed; it will be filed on the next save.',
+            filed ? 'ok' : 'warn');
+        });
       });
     }).catch(function (e) {
       /* This said the note had been kept on the device while keeping nothing.
@@ -4032,6 +4217,8 @@
           e.message + ')', 'warn');
       }
     }).then(function () {
+      saveReport = null;
+      busy(false);
       btn.disabled = false; btn.textContent = 'บันทึก / Save';
       updateQueueBadge();
     });
@@ -4910,6 +5097,12 @@
       flushQueue();
     });
   }
+
+  /* A handful of internals the headless harness drives directly. Reading the
+     source for a regex tells you the code was written; calling it tells you
+     it works — and the one thing that matters about a progress bar, that it
+     never goes backwards, cannot be seen in a regex at all. */
+  window.__opnote = { progress: progress, ofCount: ofCount, mb: mb, busy: busy };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
