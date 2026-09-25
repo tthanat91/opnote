@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fn';
+  var APP_BUILD = '2026-08-02fo';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3976,6 +3976,22 @@
       var pages = $$('#previewBox .pg');
       if (!pages.length) throw new Error('nothing to print');
       var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      /* WHICH BUILD DREW THIS PAGE.
+
+         A PDF came back with a squashed figure and neither of us could tell
+         whether it predated the fix or defeated it, because the file says
+         nothing about the app that made it. It does now: open the document
+         properties and the build is in the Creator line. A note that still
+         looks wrong on a build known to be good is a different problem from
+         one that was simply made yesterday, and the two should not cost an
+         afternoon to tell apart. */
+      try {
+        doc.setProperties({
+          title: pdfFileName(),
+          creator: 'colovjr ' + APP_BUILD,
+          subject: 'Operative note' + (S.id ? ' · ' + S.id : '')
+        });
+      } catch (e) { /* metadata is a convenience, never a reason to fail */ }
       return pagesToPdf(pages, doc, scale).then(function () { return doc; });
     }).then(function (doc) { normal(); return doc; },
       function (e) { normal(); throw e; });
