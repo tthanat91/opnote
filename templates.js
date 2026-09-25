@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02fl';
+  global.TEMPLATES_BUILD = '2026-08-02fm';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -79,8 +79,6 @@
       'Immediate post-operative complication', 'radio',
       'None; Bleeding; Anastomotic problem; Airway or anesthetic event; ' +
       'Cardiac event; Other'),
-    f('common', DIAG, 'postop_complication_other', 'ระบุภาวะแทรกซ้อน',
-      'Complication — specify', 'text', '', 'postop_complication = Other'),
 
     f('common', DIAG, 'ebl', 'ประมาณการเสียเลือด (มล.)', 'Estimated blood loss (mL)', 'number'),
     f('common', DIAG, 'transfusion', 'การให้ทดแทน', 'Replacement / transfusion', 'text'),
@@ -230,8 +228,6 @@
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain', 'ชนิดท่อระบาย', 'Drain type', 'radio',
       'Jackson-Pratt drain; Blake drain; Penrose drain; Corrugated drain; Sump drain; Other',
       'cr_drain_placed = Yes'),
-    f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_other', 'ระบุชนิดท่อระบาย',
-      'Drain type — specify', 'text', '', 'cr_drain = Other'),
     f('colorectal', 'ปิดแผลและท่อระบาย | Closure', 'cr_drain_site', 'ตำแหน่งท่อระบาย', 'Drain site', 'radio',
       'Cul-de-sac (pelvis); Right paracolic gutter; Left paracolic gutter; Subhepatic; ' +
       'Subphrenic; Adjacent to the anastomosis; Other', 'cr_drain_placed = Yes'),
@@ -388,9 +384,16 @@
       'Isoperistaltic side-to-side; Antiperistaltic side-to-side; End-to-side; ' +
       'End-to-end, hand-sewn; End-to-end, circular stapled',
       'cr_procedure = Left hemicolectomy'),
+    /* The old list mixed the instrument with its cartridge — "GIA 80" and
+       "Endo GIA 60" are the same stapler at two sizes — so the size could
+       not be recorded for the others at all. Instrument and size are now
+       two questions. */
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_stapler',
       'เครื่องเย็บที่ใช้', 'Linear stapler used', 'radio',
-      'GIA 80; Endo GIA 60; Signia; Echelon; Tri-stapler',
+      'Signia; Echelon; Linear GIA; Other',
+      'cr_procedure = Left hemicolectomy'),
+    f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_stapler_size',
+      'ขนาดแม็ก', 'Cartridge length', 'radio', '45 mm; 60 mm; 75 mm; 80 mm',
       'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_enterotomy',
       'การปิดรูเย็บลำไส้', 'Enterotomy closure', 'radio',
@@ -458,8 +461,6 @@
       'Events during the transanal phase', 'checklist',
       'None; Wrong plane, recognised and corrected; Urethral injury; CO2 embolism; Other',
       'cr_tme_route = TaTME (two-team); TaTME (one-team)'),
-    f('colorectal', 'TaTME | Transanal TME', 'cr_ta_events_other', 'ระบุเหตุการณ์อื่น', 'Other event — specify', 'text', '',
-      'cr_ta_events = Other'),
 
     /* ---------------- PERINEAL PHASE ---------------- */
     f('colorectal', 'ฝีเย็บ | Perineal phase (APR)', 'cr_ap_position', 'ท่าในช่วงฝีเย็บ', 'Position for the perineal phase', 'radio',
@@ -538,8 +539,14 @@
        column as JSON, so the Sheet gains no columns as tracts are added */
     f('fistula', 'กายวิภาค | Anatomy', 'fi_tracts',
       'ทางเดินเพิ่มเติม', 'Additional tracts', 'repeat'),
+    /* Parks describes a tract that runs between an internal and an external
+       opening. A blind-ending sinus, a pilonidal track opening near the
+       anus, a wound that behaves like neither — these are seen often enough
+       that forcing them into one of the five was making the note say
+       something the surgeon did not mean. */
     f('fistula', 'กายวิภาค | Anatomy', 'fi_parks', 'Parks classification', 'Parks classification', 'radio',
-      'Superficial / submucosal; Intersphincteric; Transsphincteric; Suprasphincteric; Extrasphincteric'),
+      'Superficial / submucosal; Intersphincteric; Transsphincteric; Suprasphincteric; ' +
+      'Extrasphincteric; Other'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_complexity', 'ความซับซ้อน', 'Complexity', 'radio', 'Simple; Complex'),
     f('fistula', 'กายวิภาค | Anatomy', 'fi_features', 'ลักษณะเพิ่มเติม', 'Additional features', 'checklist',
       'None; Secondary tract; Horseshoe extension; Abscess cavity; Supralevator extension; ' +
@@ -999,7 +1006,7 @@
     f('anorectal', 'รูเปิดภายใน | Internal opening', 'ar_parks',
       'Parks classification', 'Parks classification', 'radio',
       'Superficial / submucosal; Intersphincteric; Transsphincteric; ' +
-      'Suprasphincteric; Extrasphincteric',
+      'Suprasphincteric; Extrasphincteric; Other',
       'ar_io_found = Identified'),
 
     f('anorectal', 'หัตถการ | Procedure', 'ar_procedure',

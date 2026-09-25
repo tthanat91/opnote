@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02fl',
+    build: '2026-08-02fm',
 
 
 
@@ -206,7 +206,11 @@
           text: 'No internal opening could be identified.' },
         { group: 'io', needs: ['ar_io_found'], equals: 'Not sought',
           text: 'The internal opening was not sought at this sitting.' },
-        { needs: ['ar_parks'], text: 'The tract was {ar_parks|lc} in type.' },
+        { group: 'pk', needs: ['ar_parks', 'ar_parks_other'], equals: 'Other',
+          text: 'The tract did not fit the Parks classification: {ar_parks_other}.' },
+        { group: 'pk', needs: ['ar_parks'], equals: 'Other',
+          text: 'The tract did not fit the Parks classification.' },
+        { group: 'pk', needs: ['ar_parks'], text: 'The tract was {ar_parks|lc} in type.' },
 
         { group: 'host', needs: ['ar_host'], equals: 'None',
           text: 'There was no host factor predisposing to anorectal sepsis.' },
@@ -226,7 +230,13 @@
       fistula: [
         /* fi_parks_text adds "high" or "low" to a transsphincteric tract
            from the recorded sphincter percentage */
-        { needs: ['fi_parks'], text: 'The tract was {fi_parks_text}.' },
+        /* Parks describes a tract between two openings; a sinus that ends
+           blind is not one, and saying it is would be wrong. */
+        { group: 'pk', needs: ['fi_parks', 'fi_parks_other'], equals: 'Other',
+          text: 'The tract did not fit the Parks classification: {fi_parks_other}.' },
+        { group: 'pk', needs: ['fi_parks'], equals: 'Other',
+          text: 'The tract did not fit the Parks classification.' },
+        { group: 'pk', needs: ['fi_parks'], text: 'The tract was {fi_parks_text}.' },
         { group: 'io', needs: ['fi_internal_opening', 'fi_internal_height'],
           text: 'The internal opening lay at {fi_internal_opening} o’clock, {fi_internal_height} cm from the anal verge.' },
         { group: 'io', needs: ['fi_internal_opening'], text: 'The internal opening lay at {fi_internal_opening} o’clock.' },
@@ -863,11 +873,11 @@
          both and the option label no longer names a brand it does not mean. */
       lh_transection: [
         { group: 'lhp', needs: ['cr_lh_prox_device', 'cr_lh_stapler'], equals: 'Linear cutting stapler',
-          text: 'The bowel was divided proximally with a linear cutting stapler ({cr_lh_stapler}).' },
+          text: 'The bowel was divided proximally with a linear cutting stapler ({cr_lh_stapler_text}).' },
         { group: 'lhp', needs: ['cr_lh_prox_device'],
           text: 'The bowel was divided proximally with a {cr_lh_prox_device|lc}.' },
         { group: 'lhd', needs: ['cr_lh_dist_device', 'cr_lh_stapler'], equals: 'Linear cutting stapler',
-          text: 'The bowel was divided distally with a linear cutting stapler ({cr_lh_stapler}).' },
+          text: 'The bowel was divided distally with a linear cutting stapler ({cr_lh_stapler_text}).' },
         { group: 'lhd', needs: ['cr_lh_dist_device'],
           text: 'The bowel was divided distally with a {cr_lh_dist_device|lc}.' }
       ],
@@ -879,11 +889,11 @@
           text: 'The bowel ends were delivered through the extraction wound and the anastomosis was fashioned extracorporeally.' },
 
         { group: 'lhc', needs: ['cr_lh_anast_config', 'cr_lh_stapler'], equals: 'Isoperistaltic',
-          text: 'A side-to-side anastomosis was made in the isoperistaltic orientation with a linear cutting stapler ({cr_lh_stapler}), the two limbs lying with their peristalsis running the same way.' },
+          text: 'A side-to-side anastomosis was made in the isoperistaltic orientation with a linear cutting stapler ({cr_lh_stapler_text}), the two limbs lying with their peristalsis running the same way.' },
         { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'Isoperistaltic',
           text: 'A side-to-side anastomosis was made in the isoperistaltic orientation, the two limbs lying with their peristalsis running the same way.' },
         { group: 'lhc', needs: ['cr_lh_anast_config', 'cr_lh_stapler'], equals: 'Antiperistaltic',
-          text: 'A side-to-side anastomosis was made in the antiperistaltic orientation with a linear cutting stapler ({cr_lh_stapler}), the two limbs lying head to head.' },
+          text: 'A side-to-side anastomosis was made in the antiperistaltic orientation with a linear cutting stapler ({cr_lh_stapler_text}), the two limbs lying head to head.' },
         { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'Antiperistaltic',
           text: 'A side-to-side anastomosis was made in the antiperistaltic orientation, the two limbs lying head to head.' },
         { group: 'lhc', needs: ['cr_lh_anast_config'], equals: 'End-to-side',
@@ -1766,7 +1776,11 @@
           text: 'The internal opening was identified at {ar_io_clock} o’clock.' },
         { group: 'io', needs: ['ar_io_found'], equals: 'Identified',
           text: 'The internal opening was identified.' },
-        { needs: ['ar_parks'], text: 'The tract was {ar_parks|lc} in type.' }
+        { group: 'pk', needs: ['ar_parks', 'ar_parks_other'], equals: 'Other',
+          text: 'The tract did not fit the Parks classification: {ar_parks_other}.' },
+        { group: 'pk', needs: ['ar_parks'], equals: 'Other',
+          text: 'The tract did not fit the Parks classification.' },
+        { group: 'pk', needs: ['ar_parks'], text: 'The tract was {ar_parks|lc} in type.' }
       ],
 
       ar_eua_only: [
@@ -2250,7 +2264,11 @@
       { group: 'ext', needs: ['fi_external_opening'],
         text: 'The external opening lay at {fi_external_opening} o’clock.' },
 
-      { needs: ['fi_parks'], text: 'The tract was {fi_parks_text} in type.' },
+      { group: 'pk', needs: ['fi_parks', 'fi_parks_other'], equals: 'Other',
+        text: 'The tract did not fit the Parks classification: {fi_parks_other}.' },
+      { group: 'pk', needs: ['fi_parks'], equals: 'Other',
+        text: 'The tract did not fit the Parks classification.' },
+      { group: 'pk', needs: ['fi_parks'], text: 'The tract was {fi_parks_text} in type.' },
       { needs: ['fi_complexity'], text: 'It was classified as a {fi_complexity|lc} fistula.' },
       { needs: ['fi_features'], text: 'Additional findings: {fi_features}.' },
       { needs: ['fi_sphincter_involved'],

@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fl';
+  var APP_BUILD = '2026-08-02fm';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -522,6 +522,8 @@
     /* the name of whoever this device is signed in as, with Sign out beside
        it — so nobody writes a note under a colleague's name by accident */
     var known = me && (me.name || me.license);
+    /* and on the note in front of them, if it is still waiting for one */
+    if (known && S && S.mode === 'new') seedDefaults();
     $('#userBox').style.display = known ? '' : 'none';
     if (known) {
       $('#userBadge').textContent = me.name || me.license;
@@ -1249,6 +1251,33 @@
     var n = $('[data-key="department"]');
     if (n && !n.value) n.value = S.data.department;
 
+    /* THE NAME THAT SOMETIMES DID NOT APPEAR.
+
+       The recorder was written once — when New was pressed, or at startup
+       when there was no draft to restore — and never again. Sign in AFTER
+       starting the note and your name never reached the field; and the idle
+       sign-out makes exactly that sequence ordinary, because coming back
+       means signing in with the note already open. The name was not lost,
+       it was never asked for a second time.
+
+       So it is seeded like any other default now: on a note that has not
+       been opened from the Sheet, while the field is still empty. Typing a
+       name makes it non-empty and it is left alone from then on, and a note
+       loaded from the Sheet is never touched — otherwise opening a
+       colleague's note and re-saving it would quietly put your name on
+       their work. */
+    if (S.mode === 'new') {
+      [['recorder', (me && me.name) || prefs.recorder],
+       ['surgeon', prefs.surgeon]].forEach(function (pair) {
+        var k = pair[0], who = String(pair[1] || '').trim();
+        if (!who) return;
+        if (String(S.data[k] == null ? '' : S.data[k]).trim()) return;
+        S.data[k] = who;
+        var node = $('[data-key="' + k + '"]');
+        if (node && !node.value) node.value = who;
+      });
+    }
+
     Object.keys(FIELD_DEFAULTS).forEach(function (k) {
       var cur = S.data[k];
       if (String(cur == null ? '' : cur).trim()) return;
@@ -1587,6 +1616,16 @@
   var DERIVED = {
     /* a transsphincteric tract is called high or low by how much of the
        external sphincter lies below it, and 30% is the line Ball uses */
+    /* instrument and cartridge are two answers and one phrase */
+    cr_lh_stapler_text: function () {
+      var name = String(S.data.cr_lh_stapler || '');
+      if (!name) return '';
+      if (/^Other/i.test(name)) {
+        name = String(S.data.cr_lh_stapler_other || '').trim() || 'a linear cutting stapler';
+      }
+      var size = String(S.data.cr_lh_stapler_size || '').trim();
+      return size ? name + ' ' + size : name;
+    },
     fi_parks_text: function () {
       var parks = String(S.data.fi_parks || '');
       if (!parks) return '';
@@ -3247,6 +3286,24 @@
   function boxFigures(pngs) {
     var n = inBoxCount(pngs);
     if (!n) return '';
+    /* TWO KINDS OF SET, AND THEY WANT OPPOSITE THINGS.
+
+       A fistula or an abscess opens on three views of one anatomy. None of
+       them is the main one — you read the axial against the coronal — so
+       they belong side by side at equal size, and the paragraph goes
+       underneath.
+
+       A colectomy opens on ONE diagram, the colon, and anything beside it
+       was added afterwards to show something particular. Making all of them
+       equal shrank the colon to a third of the width it used to have, which
+       is the drawing the note is actually about. So here the first keeps
+       the size it had when it was alone, floats, and the paragraph wraps
+       down its side exactly as before; the added ones sit under it at
+       a little over half the width.
+
+       Which layout applies follows from what the category itself opens on:
+       a category whose defaults are already a set has co-equal views. */
+    var band = (window.FIGURE_DEFAULTS[S.category] || []).length >= 2;
     var figs = '', i;
     for (i = 0; i < n; i++) {
       var key = S.sheets[i].fig;
@@ -3254,7 +3311,8 @@
       /* the blank sheet is squared paper to draw on, not a diagram of
          anything; captioning a drawing "Blank sheet" names the stationery */
       var cap = key === 'blank' ? '' : (n > 1 ? (f.short || f.en || '') : (f.en || ''));
-      figs += '<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
+      var cls = 'fig' + (band || n === 1 ? '' : (i === 0 ? ' lead' : ' extra'));
+      figs += '<figure class="' + cls + '"><img src="' + pngs[i] + '" alt="">' +
         '<figcaption>' + esc(cap) + '</figcaption></figure>';
     }
     /* no caption under the set: three labelled views sitting together in
@@ -3265,6 +3323,9 @@
        into. The set therefore stops floating and sits as a band across the
        top, with the findings written underneath it. */
     if (n === 1) return figs;
+    /* no wrapper on the lead layout: a block around them would reserve its
+       own height and the paragraph would start below instead of beside */
+    if (!band) return figs;
     return '<div class="figset">' + figs + '</div>';
   }
 
@@ -3512,10 +3573,16 @@
     var basePad = 6;                      /* the 6px the stylesheet gives it */
     var slackPx = FIND_SLACK_MM * MM_PX;
 
+    var EXTRA = 0.55;                     /* of the lead, in both directions */
+
     function setFig(scale) {
       if (!find || !kind) return;
       find.style.setProperty(kind.vars[0], (kind.w * scale).toFixed(1) + 'mm');
       find.style.setProperty(kind.vars[1], (kind.h * scale).toFixed(1) + 'mm');
+      if (kind === FIG_KIND.solo) {
+        find.style.setProperty('--imgw2', (kind.w * scale * EXTRA).toFixed(1) + 'mm');
+        find.style.setProperty('--imgh2', (kind.h * scale * EXTRA).toFixed(1) + 'mm');
+      }
     }
 
     /* lay the text out at a given figure size and report whether it fits */
