@@ -35,7 +35,7 @@
 
     /* bumped with every edit — app.js compares it and complains if this
        file was not uploaded alongside the others */
-    build: '2026-08-02fm',
+    build: '2026-08-02fn',
 
 
 
@@ -872,14 +872,10 @@
          was and the stapler field says which one, so the sentence carries
          both and the option label no longer names a brand it does not mean. */
       lh_transection: [
-        { group: 'lhp', needs: ['cr_lh_prox_device', 'cr_lh_stapler'], equals: 'Linear cutting stapler',
-          text: 'The bowel was divided proximally with a linear cutting stapler ({cr_lh_stapler_text}).' },
-        { group: 'lhp', needs: ['cr_lh_prox_device'],
-          text: 'The bowel was divided proximally with a {cr_lh_prox_device|lc}.' },
-        { group: 'lhd', needs: ['cr_lh_dist_device', 'cr_lh_stapler'], equals: 'Linear cutting stapler',
-          text: 'The bowel was divided distally with a linear cutting stapler ({cr_lh_stapler_text}).' },
-        { group: 'lhd', needs: ['cr_lh_dist_device'],
-          text: 'The bowel was divided distally with a {cr_lh_dist_device|lc}.' }
+        { needs: ['cr_lh_prox_device'],
+          text: 'The bowel was divided proximally with {cr_lh_prox_text}.' },
+        { needs: ['cr_lh_dist_device'],
+          text: 'The bowel was divided distally with {cr_lh_dist_text}.' }
       ],
 
       lh_anastomosis: [

@@ -33,7 +33,7 @@
   var TEAM = 'ทีมผ่าตัด | Operative team';
   var DIAG = 'การวินิจฉัยและหัตถการ | Diagnosis & procedure';
 
-  global.TEMPLATES_BUILD = '2026-08-02fm';
+  global.TEMPLATES_BUILD = '2026-08-02fn';
 
   global.DEFAULT_TEMPLATES = [
 
@@ -367,13 +367,13 @@
        ================================================================= */
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_prox_device',
       'วิธีตัดลำไส้ด้านต้น', 'Proximal transection — device', 'radio',
-      'Linear cutting stapler; Linear stapler (TA); Energy device; ' +
-      'Scalpel between crushing clamps',
+      'Signia; Echelon; Linear GIA; Linear stapler (TA); Energy device; ' +
+      'Scalpel between crushing clamps; Other',
       'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_dist_device',
       'วิธีตัดลำไส้ด้านปลาย', 'Distal transection — device', 'radio',
-      'Linear cutting stapler; Linear stapler (TA); Energy device; ' +
-      'Scalpel between crushing clamps',
+      'Signia; Echelon; Linear GIA; Linear stapler (TA); Energy device; ' +
+      'Scalpel between crushing clamps; Other',
       'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_anast_site',
       'ตำแหน่งการต่อลำไส้', 'Anastomosis performed', 'radio',
@@ -389,7 +389,7 @@
        not be recorded for the others at all. Instrument and size are now
        two questions. */
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_stapler',
-      'เครื่องเย็บที่ใช้', 'Linear stapler used', 'radio',
+      'เครื่องเย็บที่ใช้ต่อลำไส้', 'Stapler used for the anastomosis', 'radio',
       'Signia; Echelon; Linear GIA; Other',
       'cr_procedure = Left hemicolectomy'),
     f('colorectal', 'ตัดลำไส้ด้านซ้าย | Left hemicolectomy', 'cr_lh_stapler_size',

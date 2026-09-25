@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fm';
+  var APP_BUILD = '2026-08-02fn';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1613,9 +1613,36 @@
      read-only, exist only for the sentence templates to quote, and have no
      row in the Templates tab — so they never appear as a question on screen
      and never take a column in the Sheet. */
+  function withArticle(phrase) {
+    return (/^[aeiou]/i.test(phrase) ? 'an ' : 'a ') + phrase;
+  }
+
+  /* The transection fields name the instrument now, the way the anastomosis
+     field always did. A cutting stapler takes the cartridge length with it;
+     a TA, an energy device or a knife between clamps has no cartridge. */
+  function lhDevice(key) {
+    var d = String(S.data[key] || '').trim();
+    if (!d) return '';
+    if (/^Other/i.test(d)) {
+      d = String(S.data[key + '_other'] || '').trim();
+      return d ? withArticle(d) : 'another instrument';
+    }
+    if (!/^(Signia|Echelon|Linear GIA)$/i.test(d)) return withArticle(lcOrdinary(d));
+    var size = String(S.data.cr_lh_stapler_size || '').trim();
+    /* "a Linear GIA linear cutting stapler" says it twice */
+    var name = /linear/i.test(d) ? lcOrdinary(d) + ' stapler' : d + ' linear cutting stapler';
+    return withArticle(name + (size ? ' (' + size + ' cartridge)' : ''));
+  }
+
   var DERIVED = {
     /* a transsphincteric tract is called high or low by how much of the
        external sphincter lies below it, and 30% is the line Ball uses */
+    /* "with a Signia linear cutting stapler (60 mm cartridge)", or "with an
+       energy device" — the article has to follow the word, which is why this
+       is built rather than written into the sentence. */
+    cr_lh_prox_text: function () { return lhDevice('cr_lh_prox_device'); },
+    cr_lh_dist_text: function () { return lhDevice('cr_lh_dist_device'); },
+
     /* instrument and cartridge are two answers and one phrase */
     cr_lh_stapler_text: function () {
       var name = String(S.data.cr_lh_stapler || '');
@@ -3209,10 +3236,25 @@
   /* Drawings and photographs fill one grid between them. Two tables left a
      half-empty row wherever the drawings ended, and the photographs started
      again on a fresh line. */
+  /* The photographs have declared their pixel size since the day they came
+     out square; the figure sheets never did, and the stylesheet was papering
+     over it by pinning the image to a fixed box and asking object-fit to
+     letterbox inside it. Browsers honour object-fit. html2canvas, which is
+     what actually draws the PDF, has no notion of it at all — there is not
+     one mention of it in the whole library — so on paper the drawing was
+     simply stretched to fill whatever box the CSS named, while the screen
+     looked correct. Declaring the real proportions puts the ratio in the
+     markup, where every renderer can see it, and lets the box follow. */
+  function figDim(key) {
+    var f = window.FIGURES[key] || {};
+    return (f.w && f.h) ? ' width="' + f.w + '" height="' + f.h + '"' : '';
+  }
+
   function imagesHTML(pngs, from) {
     var cells = [];
     for (var i = from; i < pngs.length; i++) {
-      cells.push('<figure class="fig"><img src="' + pngs[i] + '" alt="">' +
+      cells.push('<figure class="fig"><img' + figDim(S.sheets[i].fig) +
+        ' src="' + pngs[i] + '" alt="">' +
         '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>');
     }
     S.photos.forEach(function (p) {
@@ -3312,7 +3354,8 @@
          anything; captioning a drawing "Blank sheet" names the stationery */
       var cap = key === 'blank' ? '' : (n > 1 ? (f.short || f.en || '') : (f.en || ''));
       var cls = 'fig' + (band || n === 1 ? '' : (i === 0 ? ' lead' : ' extra'));
-      figs += '<figure class="' + cls + '"><img src="' + pngs[i] + '" alt="">' +
+      figs += '<figure class="' + cls + '"><img' + figDim(key) +
+        ' src="' + pngs[i] + '" alt="">' +
         '<figcaption>' + esc(cap) + '</figcaption></figure>';
     }
     /* no caption under the set: three labelled views sitting together in
