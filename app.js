@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fp';
+  var APP_BUILD = '2026-08-02fq';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3218,6 +3218,38 @@
 
      The row is now as wide as it has pictures, up to four. Two photographs
      take half the sheet each. */
+  /* HOW WIDE IS ONE CELL, IN MILLIMETRES.
+
+     The sheet is 198 mm with 6 mm of padding each side, so the plate has
+     186 mm to divide; a couple of millimetres come off each cell for the
+     gap between pictures. This is arithmetic the app can do, and doing it
+     here is the whole point of what follows. */
+  var PLATE_MM = 186;
+
+  function cellMm(per) { return PLATE_MM / per - 2; }
+
+  /* THE SHAPE IS SETTLED HERE, NOT BY THE STYLESHEET.
+
+     Three times now a picture has come out of the PDF at the wrong
+     proportions, and each time the cause was a different interaction I
+     could not see from the source: a fixed box with object-fit, which the
+     rasteriser ignores; then a fixed height that something downstream
+     overrode, so a photograph asked to be 62 mm tall came out at 25.6 mm
+     while its width kept the ratio of a 62 mm one.
+
+     Every one of those failures has the same shape: the app states the
+     size it wants in ONE axis and leaves the other to be worked out by
+     something else — CSS width:auto, a max-width clamp, a table's column
+     algorithm, the rasteriser's idea of an intrinsic size. So it is worked
+     out HERE instead, from the picture's own pixels, and both axes are
+     written onto the tag. Nothing is left to resolve, so nothing can
+     resolve it wrongly. */
+  function fitBox(w, h, maxW, maxH) {
+    if (!w || !h) return '';
+    var k = Math.min(maxW / w, maxH / h);
+    return ' style="width:' + (w * k).toFixed(1) + 'mm;height:' + (h * k).toFixed(1) + 'mm"';
+  }
+
   function imageTable(cells, cls) {
     if (!cells.length) return '';
     var per = Math.min(4, cells.length);
@@ -3252,8 +3284,18 @@
 
   function imagesHTML(pngs, from) {
     var cells = [];
+    /* how many share a row decides how wide each may be, and the width
+       decides the height — so the count has to be known before any of the
+       pictures are sized */
+    var total = (pngs.length - from) + S.photos.filter(function (p) {
+      return p.dataUrl || p.url || p.inkUrl;
+    }).length;
+    var cw = cellMm(Math.min(4, total) || 1);
+
     for (var i = from; i < pngs.length; i++) {
+      var fg = window.FIGURES[S.sheets[i].fig] || {};
       cells.push('<figure class="fig"><img' + figDim(S.sheets[i].fig) +
+        fitBox(fg.w, fg.h, cw, 42) +
         ' src="' + pngs[i] + '" alt="">' +
         '<figcaption>' + esc(window.FIGURES[S.sheets[i].fig].en) + '</figcaption></figure>');
     }
@@ -3267,8 +3309,10 @@
          tag states the ratio in the markup, so nothing downstream has to
          work it out and nothing can get it wrong. */
       var dim = (p.w && p.h) ? ' width="' + p.w + '" height="' + p.h + '"' : '';
-      cells.push('<figure class="pph"><img' + dim + ' src="' +
-        (p.inkUrl || p.dataUrl || p.url) + '" alt="">' +
+      /* a specimen is the evidence; it may have more of the sheet than a
+         line drawing, and it is never allowed to change shape to get it */
+      cells.push('<figure class="pph"><img' + dim + fitBox(p.w, p.h, cw, 62) +
+        ' src="' + (p.inkUrl || p.dataUrl || p.url) + '" alt="">' +
         '<figcaption>' + esc(p.caption || '') + '</figcaption></figure>');
     });
     return imageTable(cells, 'figs');

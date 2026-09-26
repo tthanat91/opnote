@@ -539,10 +539,13 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
    the screen looked perfectly correct. Nothing in the printed document may
    depend on it. Every <img> now declares its real pixel size instead, so the
    box takes the picture's own proportions and there is nothing to letterbox. */
-.imgtab figure img{max-width:100%;max-height:42mm}
+/* Nothing here sizes these pictures any more. app.js works out both axes
+   from the picture's own pixels and writes them onto the tag, because
+   every time one axis was left for the stylesheet or the rasteriser to
+   resolve, it resolved it wrongly and a specimen went to paper the wrong
+   shape. A rule here would only be something new to fight with. */
 /* a specimen photograph is the evidence; it is worth more of the sheet than
    a line drawing from the bank */
-.imgtab figure.pph img{max-height:62mm}
 .imgtab figcaption{font-size:9.5px;color:#555;margin-top:2px}
 .imgtab.photos figure img{border:1px solid #999}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
@@ -626,8 +629,6 @@ table.flow td{padding-top:4px;vertical-align:top}
     break-inside:auto;page-break-inside:auto}
   table.flow td{vertical-align:top}
   /* smaller figures fit more per sheet and break less often */
-  .imgtab figure img{max-height:34mm}
-  .imgtab figure.pph img{max-height:52mm}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
@@ -1045,13 +1046,13 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=fp"></script>
-<script src="figures.js?v=fp"></script>
-<script src="figures-original.js?v=fp"></script>
-<script src="figures-anorectal.js?v=fp"></script>
-<script src="letterhead.js?v=fp"></script>
-<script src="narrative.js?v=fp"></script>
-<script src="templates.js?v=fp"></script>
-<script src="app.js?v=fp"></script>
+<script src="config.js?v=fq"></script>
+<script src="figures.js?v=fq"></script>
+<script src="figures-original.js?v=fq"></script>
+<script src="figures-anorectal.js?v=fq"></script>
+<script src="letterhead.js?v=fq"></script>
+<script src="narrative.js?v=fq"></script>
+<script src="templates.js?v=fq"></script>
+<script src="app.js?v=fq"></script>
 </body>
 </html>
