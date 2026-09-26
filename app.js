@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fr';
+  var APP_BUILD = '2026-08-02fs';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3673,15 +3673,57 @@
        It cannot simply reuse fitBox, because the size is not fixed: the
        fitting loop grows the picture step by step to fill whatever the
        paragraph leaves, so every picture is re-measured at each step. */
+    var PX_MM = 96 / 25.4;                /* CSS mm are absolute */
+    var GAP_MM = 2;
+
+    function intrinsic(im) {
+      return [+im.getAttribute('width') || im.naturalWidth || 0,
+              +im.getAttribute('height') || im.naturalHeight || 0];
+    }
+
+    /* A BAND IS LEVELLED BY HEIGHT, NOT BY WIDTH.
+
+       Capping three pictures at the same WIDTH only makes them the same
+       height if they happen to be the same shape. The three anorectal
+       sheets are, because they were redrawn onto one canvas; the three
+       fistula diagrams never were — 780x738, 864x682, 790x636 — so the
+       axial view came out 41.6 mm tall beside a 34.7 mm coronal, and the
+       row read as one big picture and two small ones.
+
+       So the height is chosen first and shared: as tall as the fitting
+       loop currently allows, or as tall as will still let the three sit
+       side by side, whichever is smaller. Each width then follows from
+       each picture's own shape, which is the whole point. */
+    function sizeBand(imgs, scale) {
+      var sumR = 0, i;
+      for (i = 0; i < imgs.length; i++) {
+        var d = intrinsic(imgs[i]);
+        if (!d[0] || !d[1]) return false;
+        sumR += d[0] / d[1];
+      }
+      /* what the box really has, measured rather than assumed */
+      var availMm = (box.clientWidth / PX_MM) - 4 - GAP_MM * (imgs.length - 1);
+      var h = Math.min(kind.h * scale, (availMm * 0.98) / sumR);
+      imgs.forEach(function (im) {
+        var d = intrinsic(im), w = h * (d[0] / d[1]);
+        im.style.width = w.toFixed(1) + 'mm';
+        im.style.height = h.toFixed(1) + 'mm';
+        if (im.parentNode) im.parentNode.style.flex = '0 0 ' + w.toFixed(1) + 'mm';
+      });
+      return true;
+    }
+
     function sizeFigures(scale) {
+      var band = $$('.figset figure.fig img', box);
+      if (band.length && sizeBand(band, scale)) return;
+
       $$('figure.fig img', box).forEach(function (im) {
-        var iw = +im.getAttribute('width') || im.naturalWidth || 0;
-        var ih = +im.getAttribute('height') || im.naturalHeight || 0;
-        if (!iw || !ih) return;
+        var d = intrinsic(im);
+        if (!d[0] || !d[1]) return;
         var small = / extra( |$)/.test(' ' + (im.parentNode.className || ''));
         var f = (kind === FIG_KIND.solo && small) ? EXTRA : 1;
-        var k = Math.min(kind.w * scale * f / iw, kind.h * scale * f / ih);
-        var w = iw * k, h = ih * k;
+        var k = Math.min(kind.w * scale * f / d[0], kind.h * scale * f / d[1]);
+        var w = d[0] * k, h = d[1] * k;
         im.style.width = w.toFixed(1) + 'mm';
         im.style.height = h.toFixed(1) + 'mm';
         /* the float is exactly as wide as the picture, so the paragraph
