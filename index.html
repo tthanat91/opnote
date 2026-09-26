@@ -406,12 +406,11 @@ table.idbar td.wide{width:32%}
 /* the first drawing sits in the lower right of the findings box, with the
    paragraph flowing around it */
 .findbox figure.fig{float:right;margin:0 0 4px 10px;width:var(--imgw,52mm);text-align:center}
-.findbox figure.fig img{display:block;margin:0 auto;max-width:var(--imgw,52mm);max-height:var(--imgh,38mm)}
+.findbox figure.fig img{display:block;margin:0 auto}
 .findbox .bbody::after{content:'';display:block;clear:both}
 /* the added figures: a little over half the lead, stacked beneath it, with
    the paragraph still wrapping down the left of the whole column */
 .findbox figure.fig.extra{width:var(--imgw2,29mm);clear:right}
-.findbox figure.fig.extra img{max-width:var(--imgw2,29mm);max-height:var(--imgh2,21mm)}
 .findbox figure.fig.extra figcaption{font-size:9.5px;line-height:1.15}
 /* three small views floated together, so the paragraph that interprets them
    wraps around the set instead of around each picture separately */
@@ -475,7 +474,7 @@ button.mini.loading{opacity:1;position:relative}
 .findbox .figset{display:flex;flex-wrap:nowrap;justify-content:center;
   align-items:flex-start;gap:2mm;margin:0 0 5px;width:100%}
 .findbox .figset figure.fig{float:none;flex:0 1 var(--figw,44mm);min-width:0;margin:0;text-align:center}
-.findbox .figset figure.fig img{display:block;margin:0 auto;max-width:100%;max-height:var(--figh,44mm)}
+.findbox .figset figure.fig img{display:block;margin:0 auto}
 .findbox .figset figcaption{font-size:10px;line-height:1.15}
 /* and the box grows to hold the band plus the paragraph */
 .findbox.tall .bbody{height:100mm}
@@ -492,8 +491,7 @@ button.mini.loading{opacity:1;position:relative}
 .dsec .ptext{break-inside:auto}
 .catline{border:1px solid #000;padding:3px 8px;margin-bottom:6px;font-size:12.5px;background:#f6f6f6}
 figure.fig{margin:8px 0;text-align:center;break-inside:avoid}
-figure.fig img{max-width:var(--imgw,55mm);max-height:var(--imgh,38mm);
-  border:1px solid #ccc}
+figure.fig img{border:1px solid #ccc}
 figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
 /* A table, not a grid. A browser will slice a grid item across a page break;
    a table row it moves whole. Four fixed-width cells to a row, so a wide
@@ -632,7 +630,6 @@ table.flow td{padding-top:4px;vertical-align:top}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
-  figure.fig img{max-height:60mm}
 }
 
 @media (max-width:640px){
@@ -1046,13 +1043,13 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=fq"></script>
-<script src="figures.js?v=fq"></script>
-<script src="figures-original.js?v=fq"></script>
-<script src="figures-anorectal.js?v=fq"></script>
-<script src="letterhead.js?v=fq"></script>
-<script src="narrative.js?v=fq"></script>
-<script src="templates.js?v=fq"></script>
-<script src="app.js?v=fq"></script>
+<script src="config.js?v=fr"></script>
+<script src="figures.js?v=fr"></script>
+<script src="figures-original.js?v=fr"></script>
+<script src="figures-anorectal.js?v=fr"></script>
+<script src="letterhead.js?v=fr"></script>
+<script src="narrative.js?v=fr"></script>
+<script src="templates.js?v=fr"></script>
+<script src="app.js?v=fr"></script>
 </body>
 </html>

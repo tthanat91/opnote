@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fq';
+  var APP_BUILD = '2026-08-02fr';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3662,6 +3662,34 @@
 
     var EXTRA = 0.55;                     /* of the lead, in both directions */
 
+    /* THE SAME LESSON AS THE PHOTOGRAPHS, ONE PATH LATER.
+
+       The plate stopped distorting the moment the app worked out both axes
+       itself; this box was still handing the figures a pair of maxima and
+       trusting the layout to pick the second axis from the first. It does
+       not, reliably — a portrait colon diagram, 800 x 1160, was coming out
+       landscape. So the same arithmetic runs here.
+
+       It cannot simply reuse fitBox, because the size is not fixed: the
+       fitting loop grows the picture step by step to fill whatever the
+       paragraph leaves, so every picture is re-measured at each step. */
+    function sizeFigures(scale) {
+      $$('figure.fig img', box).forEach(function (im) {
+        var iw = +im.getAttribute('width') || im.naturalWidth || 0;
+        var ih = +im.getAttribute('height') || im.naturalHeight || 0;
+        if (!iw || !ih) return;
+        var small = / extra( |$)/.test(' ' + (im.parentNode.className || ''));
+        var f = (kind === FIG_KIND.solo && small) ? EXTRA : 1;
+        var k = Math.min(kind.w * scale * f / iw, kind.h * scale * f / ih);
+        var w = iw * k, h = ih * k;
+        im.style.width = w.toFixed(1) + 'mm';
+        im.style.height = h.toFixed(1) + 'mm';
+        /* the float is exactly as wide as the picture, so the paragraph
+           wraps against the drawing and not against empty paper */
+        if (im.parentNode) im.parentNode.style.width = w.toFixed(1) + 'mm';
+      });
+    }
+
     function setFig(scale) {
       if (!find || !kind) return;
       find.style.setProperty(kind.vars[0], (kind.w * scale).toFixed(1) + 'mm');
@@ -3670,6 +3698,7 @@
         find.style.setProperty('--imgw2', (kind.w * scale * EXTRA).toFixed(1) + 'mm');
         find.style.setProperty('--imgh2', (kind.h * scale * EXTRA).toFixed(1) + 'mm');
       }
+      sizeFigures(scale);
     }
 
     /* lay the text out at a given figure size and report whether it fits */
