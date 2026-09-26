@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fo';
+  var APP_BUILD = '2026-08-02fp';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -4852,7 +4852,31 @@
     });
 
     var draft = buildFindings(S.category);
-    return '<br><span class="muted">findings — lists ' + counts +
+    /* WHAT SHAPE DID THE PICTURE ACTUALLY COME OUT?
+
+       Twice I have fixed this from the source and twice it was still wrong
+       on the iPad, because the only thing that settles it is what the
+       browser DID, and the browser is not here. So the preview now reports
+       it: for every picture on the printed page, the shape it was uploaded
+       at and the shape it was laid out at. If the two differ, the layout is
+       distorting it and the numbers say by how much. */
+    var shapes = $$('#previewBox .imgtab figure img, #previewBox .findbox figure.fig img')
+      .map(function (im, i) {
+        var r = im.getBoundingClientRect();
+        var nw = im.naturalWidth || 0, nh = im.naturalHeight || 0;
+        if (!nw || !nh || !r.height) return '';
+        var want = nw / nh, got = r.width / r.height;
+        var off = Math.abs(got / want - 1);
+        return (i + 1) + ': ' + nw + '×' + nh + ' (' + want.toFixed(2) + ') → ' +
+          Math.round(r.width) + '×' + Math.round(r.height) + ' (' + got.toFixed(2) + ')' +
+          (off > 0.02 ? ' ⚠ ' + (got > want ? 'stretched' : 'squashed') + ' ×' +
+            (got > want ? got / want : want / got).toFixed(2) : ' ok');
+      }).filter(Boolean);
+
+    return (shapes.length
+      ? '<br><span class="muted">pictures — ' + esc(shapes.join(' · ')) + '</span>'
+      : '') +
+      '<br><span class="muted">findings — lists ' + counts +
       ' · category <code>' + esc(S.category) + '</code>' +
       ' · fields answered ' + ticked.length +
       ' · sentences matched ' + matched + '</span>' +

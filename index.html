@@ -505,7 +505,27 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
 .imgtab tr,.imgtab td{break-inside:avoid;page-break-inside:avoid}
 .imgtab td{vertical-align:top;padding:0}   /* width is set per row */
 .imgtab figure{margin:0;text-align:center}
-/* A HEIGHT, NOT A CEILING, AND NO object-fit ANYWHERE NEAR IT.
+/* A CEILING IN BOTH DIRECTIONS, AND NOTHING ELSE.
+
+   This rule has now been wrong twice in two different ways, so it is worth
+   stating the principle rather than the fix: a picture that is going to be
+   printed may be CAPPED in either direction and SET in neither.
+
+   Fixing the height and letting the width follow lines a row up along one
+   baseline, which is why it was written that way. But the moment max-width
+   bites, the width shrinks and the fixed height does not, and the specimen
+   is squashed; and if anything else overrides that height — as something in
+   the rasteriser evidently does, since a photograph asked to be 62 mm tall
+   came out of the PDF at 25.6 mm — the picture is stretched the other way.
+   Two maxima cannot do either: they only ever scale it proportionally.
+
+   The cost is that a row of photographs no longer shares an exact baseline.
+   That is a cosmetic loss. A specimen printed at the wrong proportions in a
+   medical record is not cosmetic, and the trade is not close.
+
+   (The old note follows, for why the height was ever fixed.)
+
+   A HEIGHT, NOT A CEILING, AND NO object-fit ANYWHERE NEAR IT.
 
    max-height let every picture keep its own proportions, so a tall specimen
    photograph came out 42 mm and a wide one 26 mm, and the row ended ragged.
@@ -519,10 +539,10 @@ figure.fig figcaption{font-size:10px;color:#555;margin-top:2px}
    the screen looked perfectly correct. Nothing in the printed document may
    depend on it. Every <img> now declares its real pixel size instead, so the
    box takes the picture's own proportions and there is nothing to letterbox. */
-.imgtab figure img{width:auto;max-width:100%;height:42mm}
+.imgtab figure img{max-width:100%;max-height:42mm}
 /* a specimen photograph is the evidence; it is worth more of the sheet than
    a line drawing from the bank */
-.imgtab figure.pph img{height:62mm}
+.imgtab figure.pph img{max-height:62mm}
 .imgtab figcaption{font-size:9.5px;color:#555;margin-top:2px}
 .imgtab.photos figure img{border:1px solid #999}
 .signline{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:14px;font-size:12px}
@@ -606,8 +626,8 @@ table.flow td{padding-top:4px;vertical-align:top}
     break-inside:auto;page-break-inside:auto}
   table.flow td{vertical-align:top}
   /* smaller figures fit more per sheet and break less often */
-  .imgtab figure img{height:34mm}
-  .imgtab figure.pph img{height:52mm}
+  .imgtab figure img{max-height:34mm}
+  .imgtab figure.pph img{max-height:52mm}
   .dsec{break-before:auto;page-break-before:auto;break-inside:auto}
   .dsec h5{break-after:avoid;page-break-after:avoid}
   .ptext{orphans:2;widows:2}
@@ -1025,13 +1045,13 @@ table.flow td{padding-top:4px;vertical-align:top}
      changed files, bump every "v" below to the next letter or number and
      upload index.html too — that is the only reliable way to defeat both the
      browser cache and the GitHub Pages CDN. -->
-<script src="config.js?v=fo"></script>
-<script src="figures.js?v=fo"></script>
-<script src="figures-original.js?v=fo"></script>
-<script src="figures-anorectal.js?v=fo"></script>
-<script src="letterhead.js?v=fo"></script>
-<script src="narrative.js?v=fo"></script>
-<script src="templates.js?v=fo"></script>
-<script src="app.js?v=fo"></script>
+<script src="config.js?v=fp"></script>
+<script src="figures.js?v=fp"></script>
+<script src="figures-original.js?v=fp"></script>
+<script src="figures-anorectal.js?v=fp"></script>
+<script src="letterhead.js?v=fp"></script>
+<script src="narrative.js?v=fp"></script>
+<script src="templates.js?v=fp"></script>
+<script src="app.js?v=fp"></script>
 </body>
 </html>
