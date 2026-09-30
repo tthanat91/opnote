@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fs';
+  var APP_BUILD = '2026-08-02ft';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3244,15 +3244,34 @@
      out HERE instead, from the picture's own pixels, and both axes are
      written onto the tag. Nothing is left to resolve, so nothing can
      resolve it wrongly. */
+  /* When the pixel size is known both axes are stated and nothing else is
+     allowed to have an opinion. When it is NOT known — a picture whose
+     measurement failed, or one restored from a note saved before the app
+     recorded it — there is nothing to compute from, and since no stylesheet
+     rule sizes these any more, an unsized picture would render at its own
+     pixel size and burst the sheet. Those, and only those, keep a cap. */
   function fitBox(w, h, maxW, maxH) {
-    if (!w || !h) return '';
+    if (!w || !h) return ' class="unsized" style="max-width:100%;max-height:' + maxH + 'mm"';
     var k = Math.min(maxW / w, maxH / h);
     return ' style="width:' + (w * k).toFixed(1) + 'mm;height:' + (h * k).toFixed(1) + 'mm"';
   }
 
+  /* FOUR ACROSS, THEN ONE ALONE.
+
+     Five pictures used to go out as a row of four and a row of one: every
+     picture squeezed to a quarter of the sheet, and three empty cells
+     beside the last one. Balancing the rows instead — three and two —
+     makes each picture half again as wide and leaves no orphan. The rule
+     is the same one a printer would use: as few rows as will hold them,
+     then share them out evenly. */
+  function perRow(n) {
+    if (n < 1) return 1;
+    return Math.ceil(n / Math.ceil(n / 4));
+  }
+
   function imageTable(cells, cls) {
     if (!cells.length) return '';
-    var per = Math.min(4, cells.length);
+    var per = perRow(cells.length);
     var w = (100 / per).toFixed(2) + '%';
     var rows = '', i;
     for (i = 0; i < cells.length; i += per) {
@@ -3290,7 +3309,7 @@
     var total = (pngs.length - from) + S.photos.filter(function (p) {
       return p.dataUrl || p.url || p.inkUrl;
     }).length;
-    var cw = cellMm(Math.min(4, total) || 1);
+    var cw = cellMm(perRow(total));
 
     for (var i = from; i < pngs.length; i++) {
       var fg = window.FIGURES[S.sheets[i].fig] || {};
@@ -5367,7 +5386,12 @@
      source for a regex tells you the code was written; calling it tells you
      it works — and the one thing that matters about a progress bar, that it
      never goes backwards, cannot be seen in a regex at all. */
-  window.__opnote = { progress: progress, ofCount: ofCount, mb: mb, busy: busy };
+  window.__opnote = { progress: progress, ofCount: ofCount, mb: mb, busy: busy,
+    /* the plate builder and the note it works from, so the harness can put
+       five photographs of five different shapes through the real code path
+       rather than re-implementing the arithmetic and testing the copy */
+    imagesHTML: imagesHTML, fitBox: fitBox, cellMm: cellMm,
+    state: function () { return S; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
