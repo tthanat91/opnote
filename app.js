@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02ft';
+  var APP_BUILD = '2026-08-02fu';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1301,6 +1301,29 @@
     S.data.operation = txt;
   }
 
+  /* WHAT WAS TAKEN OUT AND WHAT WAS SENT ARE USUALLY THE SAME SENTENCE.
+
+     Almost every time, the specimen that goes to the laboratory is exactly
+     the organ that came out, and typing it a second time is the sort of
+     duplication a form should spare you. So the pathology box tracks the
+     organ-removed box — until you touch it, at which point it is yours and
+     the copying stops. That matters, because the two are not always the
+     same: a right hemicolectomy specimen may go in two pots, part of a
+     liver nodule may go fresh for frozen section, and the appendix may be
+     sent separately. Emptying the box hands control back, so there is a way
+     to undo a mistaken edit without reloading the note. */
+  function autofillPathology() {
+    var node = $('[data-key="pathology_sent"]');
+    if (!node) return;
+    /* an empty box means nothing was typed, whatever a stale flag says */
+    if (!String(node.value || '').trim()) S.data.pathology_sent_manual = false;
+    if (S.data.pathology_sent_manual) return;
+    var txt = String(S.data.organ_removed == null ? '' : S.data.organ_removed).trim();
+    if (!txt) return;
+    if (node.value !== txt) node.value = txt;
+    S.data.pathology_sent = txt;
+  }
+
   /* read every visible control back into S.data */
   function harvest() {
     var lists = {};
@@ -1323,6 +1346,7 @@
     seedDefaults();
     autofillOperation();
     autofillFindings();
+    autofillPathology();
     return S.data;
   }
 
@@ -5076,7 +5100,7 @@
       var k = e.target.dataset && e.target.dataset.key;
       if (!k) return;
       /* only a keystroke counts as taking over — a programmatic fill does not */
-      if ((k === 'operation' || k === 'findings') && e.type === 'input') {
+      if ((k === 'operation' || k === 'findings' || k === 'pathology_sent') && e.type === 'input') {
         S.data[k + '_manual'] = !!e.target.value.trim();
       }
       clearMissingFlag(e.target);
@@ -5391,6 +5415,9 @@
        five photographs of five different shapes through the real code path
        rather than re-implementing the arithmetic and testing the copy */
     imagesHTML: imagesHTML, fitBox: fitBox, cellMm: cellMm,
+    /* the copy from organ-removed to pathology, so the harness can watch a
+       hand edit take control and an emptied box hand it back */
+    autofillPathology: autofillPathology,
     state: function () { return S; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
