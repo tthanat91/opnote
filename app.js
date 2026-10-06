@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fu';
+  var APP_BUILD = '2026-08-02fv';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -3902,6 +3902,22 @@
      never quite looked like the printout of the same note. */
   var PDF_W = 198, PDF_H = 285, PDF_Y = 6;
 
+  /* A NUDGE TO THE RIGHT, FOR THE SIDE THE PAPER IS HELD ON.
+
+     The plate is otherwise centred on the sheet — 6 mm of bare paper each
+     side — and a note that is filed in a chart is punched, stapled or bound
+     on its left edge, which eats into the margin the reader actually needs.
+     So the whole plate is shifted this many millimetres to the right.
+
+     The width is deliberately NOT reduced to pay for it: narrowing the plate
+     would shrink every line of text and every figure by the same proportion,
+     and the point of the 198 x 285 pair is that what is rastered is printed
+     at the size it was measured at. The cost is borne by the right margin
+     instead, which falls to 6 - PDF_X mm. Two is about as far as that can go:
+     most office printers cannot lay ink inside 4 mm of the edge, and past
+     that the right-hand rule of the table starts to be shaved off. */
+  var PDF_X = 2;
+
   /* HOW TALL PAGE ONE IS ALLOWED TO BE, and why it is not 285.
 
      Growing it to the full 285 mm produced a blank second sheet whenever the
@@ -4092,12 +4108,12 @@
             var wmm = PDF_W * (hmm / (h / pxPerMm));
             var top = PDF_Y;
             if (repeat) {
-              doc.addImage(bar, 'PNG', (210 - PDF_W) / 2, top, PDF_W, barMm,
+              doc.addImage(bar, 'PNG', (210 - PDF_W) / 2 + PDF_X, top, PDF_W, barMm,
                 undefined, 'FAST');
               top += barMm;
             }
             doc.addImage(strip.toDataURL(MIME, QUAL), FMT,
-              (210 - wmm) / 2, top, wmm, hmm, undefined, 'FAST');
+              (210 - wmm) / 2 + PDF_X, top, wmm, hmm, undefined, 'FAST');
             added++;
             y += h;
           }
