@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fv';
+  var APP_BUILD = '2026-08-02fw';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -4010,6 +4010,63 @@
      used to be scaled down to fit, which is why a long narrative came out
      in shrinking type instead of running on to a third page — the note has
      a fixed size on paper and must keep it. */
+  /* THE WORDS THAT RAN INTO EACH OTHER.
+
+     A note came back with "The hepatic flexure was mobilized" printed as
+     "Thehepaticflexurewasmobilized", while two words later the spaces were
+     perfectly fine. The giveaway is which gaps closed: short words kept
+     theirs, long words lost theirs, and the longest overlapped what followed.
+     That is not a spacing bug. It is one font being MEASURED and a slightly
+     wider one being DRAWN, the error accumulating letter by letter until a
+     word has eaten the space after it.
+
+     html2canvas does not photograph the page. It walks the elements and
+     redraws every word onto a canvas with ctx.fillText, positioning each at
+     the rectangle the DOM reports. The DOM is laid out in Sarabun, which is
+     embedded in this file. The canvas it draws into belongs to THIS document,
+     and ctx.font resolves against the fonts this document has actually
+     loaded — not the ones it has merely declared. A web font is fetched the
+     moment it is first needed for layout, which is not the same moment, so
+     there is a window in which the DOM is set in Sarabun and the canvas is
+     drawing in whatever the system offers instead. Everything about the
+     result looks almost right, which is why it survived into the chart.
+
+     So the faces are loaded, explicitly and by name, and nothing is rastered
+     until they are: here for the canvas, and again inside the clone through
+     onclone, which html2canvas waits for. The glyph list given to fonts.load
+     carries Thai, Latin and digits, because the browser is entitled to load
+     only the subset it has been asked about. */
+  var FONT_FACES = ['400 16px Sarabun', '700 16px Sarabun'];
+  var FONT_PROBE = 'ก่ ABC abc 0123456789';
+  function fontsReady(d) {
+    d = d || document;
+    if (!d.fonts || !d.fonts.load) return Promise.resolve();
+    var all;
+    try {
+      all = FONT_FACES.map(function (f) { return d.fonts.load(f, FONT_PROBE); });
+    } catch (e) { return Promise.resolve(); }
+    /* a face that will not load must not stop the note being filed: the PDF
+       is worth more than the typeface it is set in */
+    return Promise.all(all).then(function () { return d.fonts.ready; })
+      .catch(function () { })
+      .then(function () { });
+  }
+
+  /* Did it work? Measured rather than assumed, because the failure above was
+     invisible until it reached paper. A string set in Sarabun and the same
+     string set in the generic fallback have different widths; identical
+     widths mean the name resolved to nothing and the canvas is about to draw
+     in the wrong font again. Reported, never thrown. */
+  function fontLoaded() {
+    try {
+      var c = document.createElement('canvas').getContext('2d');
+      c.font = '16px Sarabun'; var a = c.measureText(FONT_PROBE).width;
+      c.font = '16px monospace'; var b = c.measureText(FONT_PROBE).width;
+      c.font = '16px Sarabun, monospace'; var k = c.measureText(FONT_PROBE).width;
+      return !(a === b && k === b);
+    } catch (e) { return true; }
+  }
+
   function pagesToPdf(pages, doc, scale) {
     var added = 0, page = 0;
     return pages.reduce(function (chain, pg) {
@@ -4019,7 +4076,10 @@
         var cssH = pg.getBoundingClientRect().height;
         pg.classList.add('pdfshot');
         return window.html2canvas(pg, {
-          scale: scale, backgroundColor: '#ffffff', useCORS: true, logging: false
+          scale: scale, backgroundColor: '#ffffff', useCORS: true, logging: false,
+          /* the clone is a second document with its own font set, and it is
+             the one whose layout decides where each word is placed */
+          onclone: function (cloned) { return fontsReady(cloned); }
         }).then(function (canvas) {
           pg.classList.remove('pdfshot');
           var pxPerMm = canvas.width / PDF_W;
@@ -4122,7 +4182,9 @@
           throw e;
         });
       });
-    }, Promise.resolve());
+    /* nothing is rastered until the faces the page is laid out in are loaded
+       in this document too — see the note above pagesToPdf */
+    }, fontsReady());
   }
 
   /* One way of building the document, used by the button the surgeon presses
@@ -5047,7 +5109,16 @@
             (got > want ? got / want : want / got).toFixed(2) : ' ok');
       }).filter(Boolean);
 
-    return (shapes.length
+    /* The font the PDF will be DRAWN in, which is not necessarily the font
+       the page is SET in. When those two part company the words run into
+       each other on paper and nowhere else, so it is said out loud here. */
+    var font = fontLoaded()
+      ? ''
+      : '<br><b style="color:#a12f2f">Sarabun is not loaded in this browser</b>' +
+        '<span class="muted"> — the PDF would be drawn in a substitute font and' +
+        ' the words would run together. Reload the page before saving.</span>';
+
+    return font + (shapes.length
       ? '<br><span class="muted">pictures — ' + esc(shapes.join(' · ')) + '</span>'
       : '') +
       '<br><span class="muted">findings — lists ' + counts +
@@ -5434,6 +5505,8 @@
     /* the copy from organ-removed to pathology, so the harness can watch a
        hand edit take control and an emptied box hand it back */
     autofillPathology: autofillPathology,
+    /* the font gate the PDF is drawn behind */
+    fontsReady: fontsReady, fontLoaded: fontLoaded,
     state: function () { return S; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
