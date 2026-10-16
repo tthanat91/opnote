@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fw';
+  var APP_BUILD = '2026-08-02fx';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -1161,8 +1161,41 @@
   function buildCommonForm() {
     renderFields(fieldsFor('common').filter(commonOnPageOne), $('#commonFields'));
   }
+  /* THE DRAFT THAT CAME BEFORE WHAT IT IS DRAFTED FROM.
+
+     On a hemorrhoid note the step-by-step box, with its "Draft from the
+     fields ticked" button, was sitting ABOVE the technique it is drafted
+     from, so the button was offered before there was anything to draft and
+     the surgeon had to scroll back up to press it.
+
+     The order of the fields is the order of the rows in the Templates tab —
+     the app renders them exactly as the Sheet gives them, which is what
+     lets a new question be added by typing a row. templates.js has the
+     steps section last for every category; the Sheet had drifted for
+     hemorrhoid. Reordering the Sheet would fix today's note and nothing
+     else, so the rule is enforced here instead: wherever the rows put it,
+     a section containing a step-by-step box is rendered last, after
+     everything it reads. The findings box keeps the very foot of the page,
+     for the reason given above it.
+
+     Sections otherwise keep the order and the grouping the Sheet gives
+     them, so this moves one block and disturbs nothing else. */
+  function stepsLast(list) {
+    var isStepSection = {};
+    list.forEach(function (f) {
+      if (/_steps$/.test(f.key)) isStepSection[f.section] = true;
+    });
+    if (!Object.keys(isStepSection).length) return list;
+    var head = [], tail = [];
+    list.forEach(function (f) {
+      (isStepSection[f.section] ? tail : head).push(f);
+    });
+    return head.concat(tail);
+  }
+
   function buildCategoryForm() {
-    renderFields(fieldsFor(S.category).concat(fieldsFor('common').filter(commonOnPageTwo)),
+    renderFields(stepsLast(fieldsFor(S.category))
+      .concat(fieldsFor('common').filter(commonOnPageTwo)),
       $('#catFields'));
   }
 
@@ -5507,6 +5540,8 @@
     autofillPathology: autofillPathology,
     /* the font gate the PDF is drawn behind */
     fontsReady: fontsReady, fontLoaded: fontLoaded,
+    /* the rule that keeps a step-by-step box below what it drafts from */
+    stepsLast: stepsLast,
     state: function () { return S; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
