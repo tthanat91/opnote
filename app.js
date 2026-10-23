@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fx';
+  var APP_BUILD = '2026-08-02fz';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -4100,6 +4100,147 @@
     } catch (e) { return true; }
   }
 
+  /* ASK THE DEVICE, DO NOT TRUST IT.
+
+     Two notes reached the chart with the words run together — "The hepatic
+     flexure was mobilized" printed as one word — and the same build on the
+     same day produced perfect PDFs elsewhere. Measured against Sarabun's
+     own outlines, the letters in the bad PDFs are the right font at the
+     right size but carry about 4% too much advance each, the error building
+     up along the line until a long word swallows the space after it. So the
+     fault is in WHERE the renderer puts each word on one particular device,
+     not in what it draws them with.
+
+     Which device cannot be known from here, and a defect that only appears
+     on paper, days later, in someone else's hand, is the worst kind. So the
+     app now measures its own work before it files it: one short line is put
+     through the real renderer and the ink it produces is compared with what
+     the browser itself laid out. Agreement is exact on a sound device —
+     within a fraction of a percent. A device that draws it wider is a device
+     whose PDF must not be trusted, and the save says so instead of filing a
+     ruined record quietly.
+
+     The probe is deliberately tiny and lives off the page: it costs one
+     small canvas per save and nothing on paper. */
+  var lastRasterFault = null;
+
+  function inkWidth(cv) {
+    var g = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    var lo = -1, hi = -1, c, r, i;
+    for (c = 0; c < cv.width; c++) {
+      for (r = 0; r < cv.height; r++) {
+        i = (r * cv.width + c) * 4;
+        if (g[i + 3] > 40 && (g[i] < 140 || g[i + 1] < 140 || g[i + 2] < 140)) {
+          if (lo < 0) lo = c;
+          hi = c; break;
+        }
+      }
+    }
+    return hi < 0 ? 0 : hi - lo + 1;
+  }
+
+  /* resolves to a report; never rejects, because a probe that fails is not
+     a reason to refuse to save a note */
+  /* MEASURE THE SHEET, NOT A SPECIMEN OF IT.
+
+     The first version of this check put one short line through the renderer
+     and compared it with the browser's own layout. Two iPhones and a Mac
+     passed it — and one of those iPhones had produced a ruined PDF the week
+     before. A probe that a faulty device passes is worse than none, because
+     it reports health.
+
+     So the check is made on the real thing: the page that is about to
+     become the PDF, in the canvas that was just drawn from it. No second
+     render, nothing synthetic, no extra time.
+
+     It takes the three widest single-line runs of text on the sheet, and for
+     each compares the ink in the canvas with the width the browser gave that
+     same text. The median decides, because a table rule or a neighbouring
+     cell can wander into one band and inflate it, and three lines will not
+     agree on a lie. The threshold is 3%: the fault that reached the chart ran
+     to 4-6%, and ordinary rounding never reaches 1%. */
+  var LINE_MIN_CHARS = 20, LINE_MIN_PX = 150, FAULT_AT = 1.03;
+
+  function widestLines(pg, n) {
+    var out = [];
+    if (!document.createTreeWalker || !window.NodeFilter) return out;
+    var w = document.createTreeWalker(pg, NodeFilter.SHOW_TEXT, null, false), node;
+    while ((node = w.nextNode())) {
+      if (String(node.nodeValue || '').trim().length < LINE_MIN_CHARS) continue;
+      var r = document.createRange();
+      r.selectNodeContents(node);
+      var rects = r.getClientRects();
+      /* one rect means one line; a wrapped run gives several and its width
+         is the box, not the text */
+      if (rects.length !== 1) continue;
+      if (rects[0].width < LINE_MIN_PX || rects[0].height < 4) continue;
+      out.push(rects[0]);
+    }
+    out.sort(function (a, b) { return b.width - a.width; });
+    return out.slice(0, n);
+  }
+
+  /* ink width inside one horizontal band of the canvas, in canvas pixels */
+  function bandInk(cv, x0, y0, x1, y1) {
+    x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0));
+    x1 = Math.min(cv.width, Math.ceil(x1)); y1 = Math.min(cv.height, Math.ceil(y1));
+    if (x1 - x0 < 2 || y1 - y0 < 2) return 0;
+    var g = cv.getContext('2d').getImageData(x0, y0, x1 - x0, y1 - y0).data;
+    var w = x1 - x0, h = y1 - y0, lo = -1, hi = -1, c, r, i;
+    for (c = 0; c < w; c++) {
+      for (r = 0; r < h; r++) {
+        i = (r * w + c) * 4;
+        if (g[i + 3] > 40 && (g[i] < 140 || g[i + 1] < 140 || g[i + 2] < 140)) {
+          if (lo < 0) lo = c;
+          hi = c; break;
+        }
+      }
+    }
+    return hi < 0 ? 0 : hi - lo + 1;
+  }
+
+  function pageTextCheck(pg, cv, scale) {
+    try {
+      var box = pg.getBoundingClientRect();
+      var lines = widestLines(pg, 3);
+      if (lines.length < 2) return { ok: true, skipped: 'nothing single-line to measure' };
+      var ratios = [];
+      lines.forEach(function (r) {
+        /* the band is the text's own rectangle, opened to the right so that
+           text drawn too wide is seen overflowing rather than clipped */
+        var ink = bandInk(cv,
+          (r.left - box.left) * scale - 2 * scale,
+          (r.top - box.top) * scale + 1,
+          (r.right - box.left) * scale + 14 * scale,
+          (r.bottom - box.top) * scale - 1);
+        if (ink) ratios.push(ink / scale / r.width);
+      });
+      if (!ratios.length) return { ok: true, skipped: 'no ink found' };
+      ratios.sort(function (a, b) { return a - b; });
+      var med = ratios[Math.floor(ratios.length / 2)];
+      return { ok: med < FAULT_AT, ratio: med, all: ratios, lines: lines.length };
+    } catch (e) {
+      /* a check that throws must never cost the surgeon the note */
+      return { ok: true, skipped: String(e) };
+    }
+  }
+
+  /* what the device is, in one line, for when the report has to be read by
+     someone who is not holding it */
+  function deviceLine() {
+    var r = { ua: navigator.userAgent, dpr: window.devicePixelRatio, w: window.innerWidth };
+    try {
+      var t = document.createElement('boundtest');
+      t.style.height = '123px'; t.style.display = 'block';
+      document.body.appendChild(t);
+      var rg = document.createRange(); rg.selectNode(t);
+      r.range = Math.round(rg.getBoundingClientRect().height) === 123;
+      document.body.removeChild(t);
+    } catch (e) { r.range = 'n/a'; }
+    r.seg = !!(window.Intl && Intl.Segmenter);
+    return r;
+  }
+
   function pagesToPdf(pages, doc, scale) {
     var added = 0, page = 0;
     return pages.reduce(function (chain, pg) {
@@ -4114,6 +4255,11 @@
              the one whose layout decides where each word is placed */
           onclone: function (cloned) { return fontsReady(cloned); }
         }).then(function (canvas) {
+          /* before the class comes off, while the sheet is still laid out
+             exactly as it was photographed */
+          if (page === 1) lastRasterFault = null;
+          var rc = pageTextCheck(pg, canvas, scale);
+          if (!rc.ok) lastRasterFault = rc;
           pg.classList.remove('pdfshot');
           var pxPerMm = canvas.width / PDF_W;
           var pxPerCss = canvas.height / (cssH || 1);
@@ -4575,9 +4721,22 @@
         if (!S.savedBy && me) S.savedBy = me.name || '';
         localStorage.removeItem(LS.draft);
         progress.stage('pdf');
+        /* measured before the pages are built, so a device that cannot draw
+           the text is named in the same breath as the save — see the note
+           above pageTextCheck */
+        /* the pages are measured as they are photographed, inside
+           archivePdf — see the note above pageTextCheck */
         return archivePdf(pl.id).then(function (ok) {
           filed = !!ok;
           progress.done();
+          if (lastRasterFault) {
+            toast('บันทึกเรียบร้อย แต่ PDF จากเครื่องนี้ตัวอักษรซ้อนกัน — ' +
+              'กรุณาสั่งพิมพ์จากปุ่ม Print แทน / ' +
+              'Saved. But this device draws the PDF text ' +
+              Math.round((lastRasterFault.ratio - 1) * 100) + '% too wide, so the ' +
+              'words run together on paper. Print from the Print button instead.', 'warn');
+            return;
+          }
           toast(filed
             ? 'บันทึกและเก็บ PDF เรียบร้อย / Saved, and the PDF is filed in Drive'
             : 'บันทึกเรียบร้อย แต่ยังไม่ได้เก็บ PDF — จะเก็บให้ในการบันทึกครั้งถัดไป / ' +
@@ -5145,13 +5304,26 @@
     /* The font the PDF will be DRAWN in, which is not necessarily the font
        the page is SET in. When those two part company the words run into
        each other on paper and nowhere else, so it is said out loud here. */
+    /* and if a save has already caught this device drawing the text wrong,
+       the numbers stay on screen where they can be photographed */
+    var rf = '';
+    if (lastRasterFault) {
+      var dv = deviceLine();
+      rf = '<br><b style="color:#a12f2f">this device draws the PDF text ' +
+        Math.round((lastRasterFault.ratio - 1) * 100) + '% too wide</b>' +
+        '<span class="muted"> — lines ' + (lastRasterFault.all || [])
+          .map(function (x) { return x.toFixed(3); }).join(' ') +
+        ' · range ' + dv.range + ' · segmenter ' + dv.seg +
+        ' · dpr ' + dv.dpr + ' · ' + esc(String(dv.ua).slice(0, 80)) + '</span>';
+    }
+
     var font = fontLoaded()
       ? ''
       : '<br><b style="color:#a12f2f">Sarabun is not loaded in this browser</b>' +
         '<span class="muted"> — the PDF would be drawn in a substitute font and' +
         ' the words would run together. Reload the page before saving.</span>';
 
-    return font + (shapes.length
+    return rf + font + (shapes.length
       ? '<br><span class="muted">pictures — ' + esc(shapes.join(' · ')) + '</span>'
       : '') +
       '<br><span class="muted">findings — lists ' + counts +
@@ -5542,6 +5714,9 @@
     fontsReady: fontsReady, fontLoaded: fontLoaded,
     /* the rule that keeps a step-by-step box below what it drafts from */
     stepsLast: stepsLast,
+    /* the device self-check: does this browser draw what it measured? */
+    pageTextCheck: pageTextCheck, widestLines: widestLines,
+    bandInk: bandInk, inkWidth: inkWidth, deviceLine: deviceLine,
     state: function () { return S; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
