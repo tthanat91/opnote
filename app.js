@@ -48,7 +48,7 @@
 
   /* Shown in Settings. If this is not the newest value, the browser is
      serving a cached copy of app.js — bump the ?v= tokens in index.html. */
-  var APP_BUILD = '2026-08-02fz';
+  var APP_BUILD = '2026-08-02ga';
 
   var prefs = Object.assign({}, DEFAULT_PREFS, readJSON(LS.prefs, {}));
   /* Opened as a file rather than from a web address — which is how the app
@@ -4518,14 +4518,75 @@
     });
   }
 
+  /* THE LAYOUT THAT WAS MEASURED IN ONE FONT AND PAINTED IN ANOTHER.
+
+     Six notes saved from the same iPad on the same afternoon: five perfect,
+     one with the words run together. Same build, same device, same person —
+     so it is not a setting, it is a race.
+
+     And the fellow's photograph settled where the race is run: the words
+     were already jammed ON THE SCREEN, in Safari's own rendering, before
+     any PDF existed. html2canvas has been innocent throughout; it
+     faithfully photographs a page that is already wrong.
+
+     What WebKit does, when a web font arrives after the first layout, is
+     repaint the text in the new face without always laying it out again.
+     The glyphs become Sarabun while the advances stay those of the fallback
+     that was on screen a moment earlier. That is exactly what the two ruined
+     PDFs measure: Sarabun's own outlines, at the right size, with about 4%
+     too much advance each, the error accumulating along a line until a long
+     word swallows the space after it. It is a race, so it strikes one note
+     and spares the next.
+
+     The cure is to make the page lay itself out again once the font is
+     really there. Hiding an element and showing it costs a full relayout —
+     crude, but it is the one thing no engine can satisfy from a stale
+     measurement. */
+  function relayout(el) {
+    el = el || document.body;
+    try {
+      /* Hiding an element un-focuses whatever is inside it and sends the
+         page back to the top. On the sheet, which nobody types into, that
+         costs nothing; on the form it would take the keyboard away from a
+         surgeon mid-word, so the caller checks first and the scroll is put
+         back either way. */
+      var y = window.pageYOffset || 0;
+      var prev = el.style.display;
+      el.style.display = 'none';
+      /* reading a geometry property is what forces the engine to flush */
+      void el.offsetHeight;
+      el.style.display = prev || '';
+      void el.offsetHeight;
+      if (y) window.scrollTo(0, y);
+    } catch (e) { }
+  }
+
+  /* the whole app, but never while someone is typing into it */
+  function relayoutIfIdle() {
+    var a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || '')) return false;
+    if (document.body && document.body.classList.contains('drawing')) return false;
+    relayout(document.body);
+    return true;
+  }
+
   function refreshPreview() {
     harvest();
-    return exportAllPhotos().then(exportAllSheets).then(function (pngs) {
+    /* nothing is measured until the font is loaded AND the page has been
+       laid out again in it — see the note above relayout */
+    return fontsReady().then(function () {
+      relayout($('#printRoot'));
+      relayout($('#previewBox'));
+      return exportAllPhotos();
+    }).then(exportAllSheets).then(function (pngs) {
       var html = buildDocument(pngs);
       $('#printRoot').innerHTML = html;
       $('#previewBox').innerHTML = html;
       return imagesSettled($('#previewBox')).then(function () { return pngs; });
     }).then(function (pngs) {
+      /* the sheet has just been built; lay it out again before a single
+         measurement is taken from it, so no stale shaping survives */
+      relayout($('#previewBox'));
       fitPageOne();
       fitFindings($('#previewBox'));
       /* the same reason: the printed copy cannot be measured while hidden,
@@ -5715,11 +5776,17 @@
     /* the rule that keeps a step-by-step box below what it drafts from */
     stepsLast: stepsLast,
     /* the device self-check: does this browser draw what it measured? */
+    relayout: relayout, relayoutIfIdle: relayoutIfIdle,
     pageTextCheck: pageTextCheck, widestLines: widestLines,
     bandInk: bandInk, inkWidth: inkWidth, deviceLine: deviceLine,
     state: function () { return S; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+
+  /* The fellow's photograph showed the words already run together on the
+     iPad's screen, before any PDF existed. Whatever is on screen when the
+     font finally arrives is laid out again here, once, for the whole app. */
+  fontsReady().then(function () { relayoutIfIdle(); });
 
 })();
